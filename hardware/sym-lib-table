@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Power_v1.2-eagle-import")(type "KiCad")(uri "C:/docs/plh_projects_svn/Stargate-PCBs/Power_v1.2/KiCAD/Power_v1.2-eagle-import.kicad_sym")(options "")(descr ""))
+  (lib (name "Adafruit Motor HAT rev A-eagle-import")(type "KiCad")(uri "C:/docs/plh_projects_svn/DC Motor Hat - orig/KiCAD/Adafruit Motor HAT rev A-eagle-import.kicad_sym")(options "")(descr ""))
+)
