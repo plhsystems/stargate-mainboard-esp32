@@ -1,4 +1,4 @@
-# Stargate type
+# Stargate types
 
 There are 4 types of Stargate supported by the mainboard.
 
@@ -16,16 +16,16 @@ There is no chevron light effect in the movie, only in the serie. But the lightn
 The SG1 gate is similar to the the movie version, except only the top-most master chevron move.
 To dial, every glyph will get locked using the master chevron. Then every chevron light-up in sequence, starting with the one right of the master one, going clockwise. 
 
---- DIAGRAM ---
+-- ADD A DIAGRAM HERE -- 
 
 ## Atlantis
 
 There are no physical spinning ring, every glyph location where the ring would normally be are screen, able to display any glyph.
 
--- DIAGRAM --
+-- ADD A DIAGRAM HERE --
 
 ## Universe
 
-Instead of having a ring, the entire gate spin above the base. All chevrons are always lit but the glyph lit up on the gate when it get locked.
+Instead of having a ring, the entire gate spin above the base. All chevrons are always lit but the glyph light up on the gate when it get locked.
 
---diagram--
+-- ADD A DIAGRAM HERE --
