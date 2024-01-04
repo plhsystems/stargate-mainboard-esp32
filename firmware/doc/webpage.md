@@ -15,6 +15,8 @@ It will communicate with the microcontroller using a REST/API or websocket.
 
 # Pages
 
+- Wizard page
+  A step by step test and configuration wizard. Every components are tested one by one, user will need to provide inputs to confirm everything works. Example, ensure the stepper spin in the right direction at the right speed. Test all chevron lights, wormhole etc.  
 - Diagnostic page
      - Display errors.
      - Allows to individually test components.
@@ -31,6 +33,8 @@ It will communicate with the microcontroller using a REST/API or websocket.
 
 # Default landing page 
 
+- Wizard page
+  Default page, until the wizard is successfully completed.
 - Diagnostic page
   If an error preventing the system from working is detected. Any detectable hardware error or missing configuration.
 - System/OTA page
