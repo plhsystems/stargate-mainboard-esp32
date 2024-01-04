@@ -61,7 +61,7 @@ It will also test the chevrons lights in this step.
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
 It will also provide a volume adjustment slider on the page.
 
-## Test the wormhole 
+## Test the wormhole (mandatory)
 
 | Name | Value |
 |---|---|
@@ -71,11 +71,25 @@ Ask to the user what kind of wormhole is used.
 
 Provide a way to do some setup if required and a test button.
 
-## Test the DHD
+## Test the DHD (optional)
 
 Confirm the DHD is connected.
 Will display the DHD keypress status.
 Troubleshoot informations will be given to help the user.
+
+## Ramp lightning (optional)
+
+| Name | Value |
+|---|---|
+| Active? | Ramp lighting is activated? |
+| Max PWM | 100 |
+| Animation off-on time | 1000 |
+| Animation on-off time | 500 |
+
+Ramp lightning is an optional feature.
+The output is a generic one, it could be potentially used for other purpose.
+
+A button to test the animations will be provided. 
 
 ## Sub-space network (optional)
 
