@@ -32,11 +32,18 @@ These are all functions we would like to support.
    - Should be able to calibrate itself automatically (tick count per rotation, speed etc. ) 
 - Should be easy to configure
    - Easily import or export a configuration (json file)
-- Should have a mode to test all sensors, motors, light etc.. without restriction for debugging purpose.
-- Debug console, accessible from TCP/IP or UART.
 
 # Wish objectives
+
+These one are secondary, at least not mandatory but could be fun to have. 
 
 - Support automatic OTA check and download. Including all assets (audio/web/etc..)
 - Have a failsafe mode? (factory reset) 
 - Nice looking page to dial or get the current gate status
+- REST API (HTTP/MQTT?)
+
+# Debug & diagnostic mode
+
+- Should have the ability to do hardware diagnostic, as much as the software allows it. Example : ensure all i2c devices respond.
+- Should have a mode to test all sensors, motors, light etc.. without restriction for debugging purpose.
+- Debug console, accessible from TCP/IP or UART.
