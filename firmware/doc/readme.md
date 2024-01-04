@@ -21,7 +21,7 @@ These are all functions we would like to support.
 - Integrated audio amplifier for sound effects
 - Support for SDCard, to increase the available storage space.
 - Support the wormhole effect, may support more than one effect or wormhole type.
-- Support easy OTA
+- Support OTA (not necessarily fully automatic) 
 - Connection to other existing Stargate on the network
 - Wi-Fi support (Station + SoftAP)
 - Support three type of Stargate (Movie/SG1/Atlantis/Universe)
@@ -39,3 +39,4 @@ These are all functions we would like to support.
 # Wish objectives
 
 - Support automatic OTA check and download. Including all assets (audio/web/etc..)
+- Have a failsafe mode? (factory reset) 
