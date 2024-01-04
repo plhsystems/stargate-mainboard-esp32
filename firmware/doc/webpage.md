@@ -6,12 +6,12 @@ It will communicate with the microcontroller using a REST/API or websocket.
 ## Objectives
 
 - Display any fatal error and give a way to fix it.
--    - Example: Mainboard defect or missing essential configurations.
+   - Example: Mainboard defect or missing essential configurations.
 - Setup the gate for the first time.
 - Test the hardware easily
 - Allows to dial and show the current state of the gate.
--    - Outgoing wormhole? Incoming? from whom?
-     - Errors
+      - Outgoing wormhole? Incoming? from whom?
+      - Errors
 
 # Pages
 
@@ -23,7 +23,7 @@ It will communicate with the microcontroller using a REST/API or websocket.
      - Change user configurations.
      - Import/Export configuration into a JSON file.
 - Status page
-     - Dial another Stargate
+     - Dial
      - Display errors and general status
 - System/OTA page
      - Upload a new firmware
@@ -34,7 +34,7 @@ It will communicate with the microcontroller using a REST/API or websocket.
 - Diagnostic page
   If an error preventing the system from working is detected. Any detectable hardware error or missing configuration.
 - System/OTA page
-  If assets are missing, like audio files.
+  If assets are missing, like the audio files.
 - Status page
   If the gate is configured correctly
 
