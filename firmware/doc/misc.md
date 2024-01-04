@@ -9,7 +9,9 @@ If we want to do a fade-in / fade-out using a for loop increasing linearly the d
 
 Recommended formula to give a perceived linear effect to human eyes (sorry Thor).
 
-Input between [0-1]
-Output between [0-1]
+| Variable | Description |
+|---|---|
+| input |Input between [0-1]
+| output |Output between [0-1]
 
-$$ out=(10^(input))/9 $$
+$$ out={(10^{input}-1) \over 9} $$
