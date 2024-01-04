@@ -12,6 +12,7 @@ The current iteration of the Stargate using the raspberry pi needs a lot of exte
 
 These are all functions we would like to support. 
 
+- Control and configuration by using a webpage hosted on the ESP32. 
 - Support of the existing DHD board (based on STM32) 
 - Control 9 chevrons lightning (optionally just 7)
 - Control 9 all chevrons up/down movement
@@ -24,3 +25,17 @@ These are all functions we would like to support.
 - Connection to other existing Stargate on the network
 - Wi-Fi support (Station + SoftAP)
 - Support three type of Stargate (Movie/SG1/Atlantis/Universe)
+- Support automatic ring homing
+      - Support HALL sensor
+      - Support optic sensor
+
+# Secondary objectives
+
+- Should be easy to configure
+      - Easily import or export (json file)
+- Should have a mode to test all sensors, motors, light etc.. without restriction for debugging purpose.
+- Debug console, accessible from TCP/IP or UART.
+
+# Wish objectives
+
+- Support automatic OTA check and download. Including all assets (audio/web/etc..)
