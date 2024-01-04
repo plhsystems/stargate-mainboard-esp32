@@ -20,7 +20,7 @@ These are all functions we would like to support.
    - Could support only 8, 7 or 1 moving chevron, can be configured by the user. 
 - Support spinning the ring to dial an address
 - Integrated audio amplifier for sound effects
-- Support for SDCard, to increase the available storage space.
+- Support for SD Card, to increase the available storage space.
 - Support the wormhole effect, may support more than one effect or wormhole type.
 - Support OTA (not necessarily fully automatic) 
 - Connection to other existing Stargate on the network
@@ -29,11 +29,9 @@ These are all functions we would like to support.
 - Support automatic ring homing
    - Support for HALL sensor
    - Support for optical sensor
-
-# Secondary objectives
-
+   - Should be able to calibrate itself automatically (tick count per rotation, speed etc. ) 
 - Should be easy to configure
-   - Easily import or export (json file)
+   - Easily import or export a configuration (json file)
 - Should have a mode to test all sensors, motors, light etc.. without restriction for debugging purpose.
 - Debug console, accessible from TCP/IP or UART.
 
@@ -41,3 +39,4 @@ These are all functions we would like to support.
 
 - Support automatic OTA check and download. Including all assets (audio/web/etc..)
 - Have a failsafe mode? (factory reset) 
+- Nice looking page to dial or get the current gate status
