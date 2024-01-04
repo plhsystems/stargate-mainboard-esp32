@@ -18,6 +18,7 @@ These are all functions we would like to support.
 - Control 9 chevrons lightning (optionally just 7)
 - Control 9 all chevrons up/down movement
    - Could support only 8, 7 or 1 moving chevron, can be configured by the user. 
+- Support ramp lightning (could be used for other leds if no ramp lighting is used) 
 - Support spinning the ring to dial an address
 - Integrated audio amplifier for sound effects
 - Support for SD Card, to increase the available storage space.
