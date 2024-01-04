@@ -12,4 +12,4 @@ Recommended formula to give a perceived linear effect to human eyes (sorry Thor)
 Input between [0-1]
 Output between [0-1]
 
-output=(10^input)/9 
+$$ out=(10^(input))/9 $$
