@@ -4,9 +4,10 @@ The project goal is to make a fully functional Stargate (designed by Kristian) b
 
 ## Why? 
 
-The ESP32 is cheap when compared to a raspberry pi and more accessible. Everything the raspberry pi does to control the Stargate can be done with cheaper hardware.
+The ESP32 is cheap compared to a raspberry pi and easier to get (there are recurrent shortage). 
+Everything the raspberry pi does to control the Stargate can be done with cheaper hardware.
 Also the mainboard will integrate all the necessary drivers, IC, regulator, etc. in a single PCB.
-The current iteration of the Stargate using the raspberry pi needs a lot of external breakout to works. It increase the cost and make the electronic more difficult to master for people who are less skilled with electronic.
+The current iteration of the Stargate using the raspberry pi needs a lot of external breakout to works. It increase the cost and make the electronic more difficult to master especially for people whom are less skilled with electronic.
 
 # Objectives
 
@@ -24,15 +25,15 @@ These are all functions we would like to support.
 - Support OTA (not necessarily fully automatic) 
 - Connection to other existing Stargate on the network
 - Wi-Fi support (Station + SoftAP)
-- Support three type of Stargate (Movie/SG1/Atlantis/Universe)
+- Support all types of Stargate (Movie/SG1/Atlantis/Universe)
 - Support automatic ring homing
-      - Support HALL sensor
-      - Support optic sensor
+   - Support for HALL sensor
+   - Support for optical sensor
 
 # Secondary objectives
 
 - Should be easy to configure
-      - Easily import or export (json file)
+   - Easily import or export (json file)
 - Should have a mode to test all sensors, motors, light etc.. without restriction for debugging purpose.
 - Debug console, accessible from TCP/IP or UART.
 
