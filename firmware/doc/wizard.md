@@ -8,10 +8,21 @@ For now we only support the 'Movie' gate mode.
 
 ## Stargate type (mandatory)
 
+| Name | Value |
+|---|---|
+| Stargate type | Movie, SG1, Atlantis, Universe |
+| Chevron count | 7, 8 or 9 |
+
 This step is mandatory, because it change how some input/output will react. 
 The wizard will also be different based on this configuration.
 
 ## Setup Wi-Fi Station (optional) 
+
+| Name | Value |
+|---|---|
+| Is active? | Is active |
+| SSID | Wi-Fi SSID |
+| Password | Password |
 
 The user can setup the Wi-Fi station configuration.
 Indicate the connected/disconnected status and IP address on the network.
@@ -20,11 +31,21 @@ Allows to check if a new software upgrade is available.
 
 ## Ring rotation (mandatory) 
 
+The user must provide some parameters
+
+| Name | Value |
+|---|---|
+| Home sensor type | Optical or hall |
+
 The stepper motor will spin, the user must confirm it is spinning in the right direction.
 
 The system will also attempts to do an homing sequence. It will detect how many steps are required to do a complete rotation. It will also ensure the speed is correct and the homing system works correctly.
 
 ## Glyphs alignment (mandatory) 
+
+| Name | Value |
+|---|---|
+| Correction offset | Correction relative to the home position |
 
 It will ensure glyph are aligned correctly. Each gate could be slightly mechanically different, so some manual adjustments can be required.
 
@@ -42,6 +63,10 @@ Will also provide a volume adjustment knob on the page.
 
 ## Test the wormhole 
 
+| Name | Value |
+|---|---|
+| Wormhole type | Kristian, Tazou, PinkyMaxou |
+
 Ask to the user what kind of wormhole is used. 
 
 Provide a way to do some setup if required and a test button.
@@ -53,6 +78,12 @@ Will display the DHD keypress status.
 Troubleshoot informations will be given to help the user.
 
 ## Sub-space network (optional)
+
+| Name | Value |
+|---|---|
+| Gate address | Reserved gate address |
+| Public Key | Wireguard public key |
+| VPN | VPN Address |
 
 - Allows to configure the sub-space network, to contact other existing gates. 
 - The user can setup the specific gate address and wireguard.
