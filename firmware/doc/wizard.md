@@ -39,7 +39,7 @@ The user must provide some parameters
 
 The stepper motor will spin, the user must confirm it is spinning in the right direction.
 
-The system will also attempts to do an homing sequence. It will detect how many steps are required to do a complete rotation. It will also ensure the speed is correct and the homing system works correctly.
+The system will also attempts to do an homing sequence. It will detect how many steps are required to do a complete rotation. It will also ensure the speed is correct and the homing system works.
 
 ## Glyphs alignment (mandatory) 
 
@@ -47,19 +47,19 @@ The system will also attempts to do an homing sequence. It will detect how many 
 |---|---|
 | Correction offset | Correction relative to the home position |
 
-It will ensure glyph are aligned correctly. Each gate could be slightly mechanically different, so some manual adjustments can be required.
+It will ensure the glyph are aligned correctly. Each gate could be slightly mechanically different, so some manual adjustments can be required.
 
-The ring will spin until a designed glyphs is aligned with the master chevron, then the user will have a slicer to apply a correction.
+The ring will spin until a designed glyphs is aligned with the master chevron, then the user will have a slider to apply a correction.
 
 ## Chevron locking (mandatory) 
 
-Every chevron will be tested one by one to ensure it move properly. If it move the wrong way it will ask the user to revert motor polarity. 
+Every chevron will be tested one by one to ensure it move properly. If it moves the wrong way it will ask the user to revert motor polarity. 
 It will also test the chevrons lights in this step.
 
 ## Audio test (optional) 
 
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
-Will also provide a volume adjustment knob on the page.
+It will also provide a volume adjustment slider on the page.
 
 ## Test the wormhole 
 
