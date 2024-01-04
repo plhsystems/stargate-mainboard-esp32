@@ -99,6 +99,8 @@ A button to test the animations will be provided.
 | Public Key | Wireguard public key |
 | VPN | VPN Address |
 
+--- TODO: SOME PARAMETERS ARE MISSING ---
+
 - Allows to configure the sub-space network, to contact other existing gates. 
 - The user can setup the specific gate address and wireguard.
 - Test contacting another gate
