@@ -95,9 +95,11 @@ A button to test the animations will be provided.
 
 | Name | Value |
 |---|---|
-| Gate address | Reserved gate address |
-| Public Key | Wireguard public key |
-| VPN | VPN Address |
+| Public Key | Wireguard public key, ex: c7kncOGnNxT0aFN5qaSdPQvBrbSW6fuwBgcjL5U9rz8= |
+| AllowedIPs | ex: 172.30.0.0/16 |
+| Endpoint | ex: subspace.thestargateproject.com:51821 |
+| PersistentKeepalive | ex: 25 |
+
 
 --- TODO: SOME PARAMETERS ARE MISSING ---
 
