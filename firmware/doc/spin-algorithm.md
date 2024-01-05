@@ -33,12 +33,16 @@ To find how many step are necessary to move from one glyph to another :
 | currPos | Current absolute position in step |
 | distPos1 | First path distance |
 | distPos2 | Second path distance |
+| glyphNum | Glyph number [1-39] |
+| glyphCount | Glyph count (39 or 36) |
 
 Positive number move the gate counter-clockwise.
 
-Glypth position is one based.
+Assumptiond:
+- Glypth number is one based.
+- TargetPos 0 means the center of the glyph 1 is under the master chevron.
 
-$$ targetPos={(glyphPos-1)/glyphCnt}*stepPerRot $$
+$$ targetPos={(glyphNum-1) \over glyphCnt}*stepPerRot $$
 
 
 -- TODO WRONG CALC --
