@@ -26,8 +26,27 @@ To find how many step are necessary to move from one glyph to another :
 
 ### Movie/SG1/Atlantis
 
+| Variable | Description |
+|---|---|
+| stepPerRot | How many step per full ring rotation |
+| targetPos| Target absolute position in step |
+| currPos | Current absolute position in step |
+| distPos1 | First path distance |
+| distPos2 | Second path distance |
+
+Positive number move the gate counter-clockwise.
+
+Glypth position is one based.
+
+$$ targetPos={(glyphPos-1)/glyphCnt}*stepPerRot $$
+
+
+-- TODO WRONG CALC --
+
 $$ distpos1={posNext-posCurr} $$
 
-$$ distpos2={posCurr+(39-posNext)} $$
+$$ distpos2={posCurr+(stepPerRot -posNext)} $$
+
+
 
 
