@@ -20,3 +20,14 @@ Each Stargate type have their own different glyphs, including glyph count.
 | Atlantis | 36 | Equally spaced |
 | Universe | 36 | Not equally spaced |
 
+## Calculation
+
+To find how many step are necessary to move from one glyph to another :
+
+### Movie/SG1/Atlantis
+
+$$ distpos1={posNext-posCurr} $$
+
+$$ distpos2={posCurr+(39-posNext)} $$
+
+
