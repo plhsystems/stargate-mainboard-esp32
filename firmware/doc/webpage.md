@@ -29,7 +29,7 @@ It will communicate with the microcontroller using a REST/API or websocket.
 - Status page
      - Dial
      - Display errors and general status
-- System/OTA page
+- OTA page
      - Upload a new firmware
      - Upload audio assets
 
@@ -39,7 +39,7 @@ It will communicate with the microcontroller using a REST/API or websocket.
   Default page, until the wizard is successfully completed.
 - Diagnostic page
   If an error preventing the system from working is detected. Any detectable hardware error or missing configuration.
-- System/OTA page
+- OTA page
   If assets are missing, like the audio files.
 - Status page
   If the gate is configured correctly
