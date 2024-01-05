@@ -26,7 +26,7 @@ It will communicate with the microcontroller using a REST/API or websocket.
 - Configuration page
      - Change user configurations.
      - Import/Export configuration into a JSON file.
-- Status page
+- Control page
      - Dial
      - Display errors and general status
 - OTA page
@@ -41,6 +41,6 @@ It will communicate with the microcontroller using a REST/API or websocket.
   If an error preventing the system from working is detected. Any detectable hardware error or missing configuration.
 - OTA page
   If assets are missing, like the audio files.
-- Status page
+- Control page
   If the gate is configured correctly
 
