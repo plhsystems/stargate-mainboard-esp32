@@ -27,3 +27,14 @@ As long as it could spin it is considered functional.
 | Wi-Fi station | Warning | Cannot connect to the Wi-Fi AP |
 | Subspace network | Warning | Cannot connect to the subspace network Wireguard VPN |
 | Wizard not completed | Warning | The configuration wizard process is not finished |
+
+# System informations 
+
+Display any useful system information
+- IP address
+- RAM usage
+- Firmware SHA256
+- SD CARD present
+- File system usage
+
+
