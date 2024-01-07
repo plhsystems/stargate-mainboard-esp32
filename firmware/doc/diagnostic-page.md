@@ -1,9 +1,11 @@
 # Diagnostic page
 
 This page should display any fatal/error/warning preventing the Stargate from working correctly.
-As long as it could spin it is considered functional. 
+As long as it could spin it is considered functional.
 
-## Level 
+This page may be replaced by an overlay on top of the page. Not yet decided.
+
+## Level
 
 | Level | Description |
 |---|---|
@@ -28,7 +30,7 @@ As long as it could spin it is considered functional.
 | Subspace network | Warning | Cannot connect to the subspace network Wireguard VPN |
 | Wizard not completed | Warning | The configuration wizard process is not finished |
 
-# System informations 
+# System informations
 
 Display any useful system information
 - IP address

@@ -4,9 +4,9 @@ The stepper needs to move the ring at the right location based on the current ri
 
 ## Distance
 
-There are two distance to calculate, because the ring can spin clockwise or counter-clockwise to reach the right glyph. 
+There are two distance to calculate, because the ring can spin clockwise or counter-clockwise to reach the right glyph.
 We use the shortest path and spin the ring accordingly.
-But it's not the only way to do it, we can imagine an algorithm defining a minimum spin distance just for dramatic purpose. 
+But it's not the only way to do it, we can imagine an algorithm defining a minimum spin distance just for dramatic purpose.
 
 --- TODO: DIAGRAM ---
 

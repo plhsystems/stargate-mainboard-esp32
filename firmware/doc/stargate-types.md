@@ -1,31 +1,40 @@
 # Stargate types
 
-There are 4 types of Stargate supported by the mainboard.
+There are 3 types of Stargate supported by the mainboard.
 
-## Movie
+## Movie/SG1
+
+The stargate in the Movie and SG1 are the same, except the dial sequence changed a bit and lights were added on each chevron in the SG1 version.
+
+![](./assets/stargate-diagram-SG1.png)
+
+Source: https://stargate.fandom.com/wiki/Glyph
+
+### Movie
 
 In the movie, every single chevrons move to lock a glyph.
-The ring spin until it get aligned with a chevron, then it move to lock it, then the light turn on.
+The ring spin until it get aligned with a chevron, then it move to lock it.
 
-There is no chevron light effect in the movie, only in the serie. But the lightning effect is there anyway on the Kristian Gate. 
+There are no chevron light effect in the movie, only in the serie.
+But the lightning effect is there anyway on the Kristian Gate.
 
--- ADD A DIAGRAM HERE --
+### SG1
 
-## SG1
-
-The SG1 gate is similar to the the movie version, except only the top-most master chevron move.
-To dial, every glyph will get locked using the master chevron. Then every chevron light-up in sequence, starting with the one right of the master one, going clockwise. 
-
--- ADD A DIAGRAM HERE -- 
+To dial, every glyph will get locked using the master chevron. Then every chevron light-up in sequence, starting with the one right of the master one, going clockwise.
 
 ## Atlantis
 
 There are no physical spinning ring, every glyph location where the ring would normally be are screen, able to display any glyph.
 
--- ADD A DIAGRAM HERE --
+![](./assets/stargate-diagram-SGA.png)
+
+Source: https://stargate.fandom.com/wiki/Glyph
 
 ## Universe
 
 Instead of having a ring, the entire gate spin above the base. All chevrons are always lit but the glyph light up on the gate when it get locked.
 
--- ADD A DIAGRAM HERE --
+![](./assets/stargate-diagram-SGU.png)
+
+Source: https://stargate.fandom.com/wiki/Glyph
+

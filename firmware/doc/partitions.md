@@ -1,9 +1,9 @@
-# Partitions 
+# Partitions
 
-The current ESP32-S3 comes with 16 MB of flash memory. 
-It's not yet defined if it's possible to include all audio assets within 10 MB. 
+The current ESP32-S3 comes with 16 MB of flash memory.
+It's not yet defined if it's possible to include all audio assets within 10 MB.
 
-So we are likely to use the SD-Card to store all audio assets. 
+So we are likely to use the SD-Card to store all audio assets.
 
 Other pages related assets will comes with the firmware binary to make the system easier to manage.
 
@@ -19,7 +19,8 @@ Other pages related assets will comes with the firmware binary to make the syste
 
 The smallest micro-sd is big enough for the system to works.
 
-- Audio assets are stored there. 
-- System logs? 
+- Audio assets are stored there.
+- System logs?
+
 
 

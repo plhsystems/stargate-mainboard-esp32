@@ -9,7 +9,7 @@ The system can validate the binary file by itself to avoid corrupting the system
 A button to upload a new firmware.
 
 It will also display the upload progression and error if there is any.
-It will display the current version and firmware SHA256. 
+It will display the current version and firmware SHA256.
 
 ## Upload audio assets
 
