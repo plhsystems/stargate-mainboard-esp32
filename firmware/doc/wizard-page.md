@@ -13,10 +13,10 @@ For now we only support the 'Movie' gate mode.
 | Stargate type | Movie, SG1, Atlantis, Universe |
 | Chevron count | 7, 8 or 9 |
 
-This step is mandatory, because it change how some input/output will react. 
+This step is mandatory, because it change how some input/output will react.
 The wizard will also be different based on this configuration.
 
-## Setup Wi-Fi Station (optional) 
+## Setup Wi-Fi Station (optional)
 
 | Name | Value |
 |---|---|
@@ -29,7 +29,7 @@ Indicate the connected/disconnected status and IP address on the network.
 
 Allows to check if a new software upgrade is available.
 
-## Ring rotation (mandatory) 
+## Ring rotation (mandatory)
 
 The user must provide some parameters
 
@@ -41,22 +41,22 @@ The stepper motor will spin, the user must confirm it is spinning in the right d
 
 The system will also attempts to do an homing sequence. It will detect how many steps are required to do a complete rotation. It will also ensure the speed is correct and the homing system works.
 
-## Glyphs alignment (mandatory) 
+## Symbols alignment (mandatory)
 
 | Name | Value |
 |---|---|
 | Correction offset | Correction relative to the home position |
 
-It will ensure the glyph are aligned correctly. Each gate could be slightly mechanically different, so some manual adjustments can be required.
+It will ensure the symbol are aligned correctly. Each gate could be slightly mechanically different, so some manual adjustments can be required.
 
-The ring will spin until a designed glyphs is aligned with the master chevron, then the user will have a slider to apply a correction.
+The ring will spin until a designed symbols is aligned with the master chevron, then the user will have a slider to apply a correction.
 
-## Chevron locking (mandatory) 
+## Chevron locking (mandatory)
 
-Every chevron will be tested one by one to ensure it move properly. If it moves the wrong way it will ask the user to revert motor polarity. 
+Every chevron will be tested one by one to ensure it move properly. If it moves the wrong way it will ask the user to revert motor polarity.
 It will also test the chevrons lights in this step.
 
-## Audio test (optional) 
+## Audio test (optional)
 
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
 It will also provide a volume adjustment slider on the page.
@@ -67,7 +67,7 @@ It will also provide a volume adjustment slider on the page.
 |---|---|
 | Wormhole type | Kristian, Tazou, PinkyMaxou |
 
-Ask to the user what kind of wormhole is used. 
+Ask to the user what kind of wormhole is used.
 
 Provide a way to do some setup if required and a test button.
 
@@ -89,7 +89,7 @@ Troubleshoot informations will be given to help the user.
 Ramp lightning is an optional feature.
 The output is a generic one, it could be potentially used for other purpose.
 
-A button to test the animations will be provided. 
+A button to test the animations will be provided.
 
 ## Sub-space network (optional)
 
@@ -103,7 +103,7 @@ A button to test the animations will be provided.
 
 --- TODO: SOME PARAMETERS ARE MISSING ---
 
-- Allows to configure the sub-space network, to contact other existing gates. 
+- Allows to configure the sub-space network, to contact other existing gates.
 - The user can setup the specific gate address and wireguard.
 - Test contacting another gate
-  
+

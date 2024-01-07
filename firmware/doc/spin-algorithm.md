@@ -4,7 +4,7 @@ The stepper needs to move the ring at the right location based on the current ri
 
 ## Distance
 
-There are two distance to calculate, because the ring can spin clockwise or counter-clockwise to reach the right glyph.
+There are two distance to calculate, because the ring can spin clockwise or counter-clockwise to reach the right symbol.
 We use the shortest path and spin the ring accordingly.
 But it's not the only way to do it, we can imagine an algorithm defining a minimum spin distance just for dramatic purpose.
 
@@ -12,9 +12,9 @@ But it's not the only way to do it, we can imagine an algorithm defining a minim
 
 ## Parameters
 
-Each Stargate type have their own different glyphs, including glyph count.
+Each Stargate type have their own different symbols, including symbol count.
 
-| Type | Glyph count | Spacing |
+| Type | Symbol count | Spacing |
 |---|---|---|
 | Movie/SG1 | 39 | Equally spaced |
 | Atlantis | 36 | Equally spaced |
@@ -22,7 +22,7 @@ Each Stargate type have their own different glyphs, including glyph count.
 
 ## Calculation
 
-To find how many step are necessary to move from one glyph to another :
+To find how many step are necessary to move from one symbol to another :
 
 ### Movie/SG1/Atlantis
 
@@ -33,16 +33,16 @@ To find how many step are necessary to move from one glyph to another :
 | currPos | Current absolute position in step |
 | distPos1 | First path distance |
 | distPos2 | Second path distance |
-| glyphNum | Glyph number [1-39] |
-| glyphCount | Glyph count (39 or 36) |
+| symbolNum | Symbol number [1-39] |
+| symbolCount | Symbol count (39 or 36) |
 
 Positive number move the gate counter-clockwise.
 
 Assumptiond:
 - Glypth number is one based.
-- TargetPos 0 means the center of the glyph 1 is under the master chevron.
+- TargetPos 0 means the center of the symbol 1 is under the master chevron.
 
-$$ targetPos={(glyphNum-1) \over glyphCnt}*stepPerRot $$
+$$ targetPos={(symbolNum-1) \over symbolCnt}*stepPerRot $$
 
 
 -- TODO WRONG CALC --

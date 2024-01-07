@@ -16,7 +16,7 @@ We may use an API to download the address book from the "build the stargate" web
 
 ## Dialer
 
-The user can type any glyph one by one, the gate will spin and lock each chevrons.
+The user can type any symbol one by one, the gate will spin and lock each chevrons.
 If it points to an existing fan gate, it will attempt to connect to it.
 
 Not sure yet if it should buffer the keypresses.
