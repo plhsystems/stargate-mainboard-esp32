@@ -33,23 +33,54 @@ To find how many step are necessary to move from one symbol to another :
 | currPos | Current absolute position in step |
 | distPos1 | First path distance |
 | distPos2 | Second path distance |
+| distPos3 | 3th path distance |
 | symbolNum | Symbol number [1-39] |
-| symbolCount | Symbol count (39 or 36) |
+| symbolCnt | Symbol count (39 or 36) |
+| stepPerSymbolWidth | Step count to point to another symbol |
 
 Positive number move the gate counter-clockwise.
 
-Assumptiond:
-- Glypth number is one based.
+Assumptions:
+- Symbol number is one based.
 - TargetPos 0 means the center of the symbol 1 is under the master chevron.
 
-$$ targetPos={(symbolNum-1) \over symbolCnt}*stepPerRot $$
+![](./assets/stargate-position-diagram.png)
 
+```C
+const int32_t stepPerRot = 7000; // Abritrary value
+const int32_t symbolCnt = 39;
+const int32_t stepPerSymbolWidth = stepPerRot / symbolCnt
 
--- TODO WRONG CALC --
+uint8_t symbols[] = { 12, 37, 24, 1, 32, 10, 1 };
 
-$$ distpos1={posNext-posCurr} $$
+posCurr = 0;
+MoveStepperAbs(posCurr); //Move to 0.
 
-$$ distpos2={posCurr+(stepPerRot -posNext)} $$
+for(int i = 0; i < psDialArg->u8SymbolCount; i++)
+{
+    const uint8_t symbolNum = symbols[i];
+
+    // Absolute position on the ring.
+    const int32_t targetPos=((symbolNum-1) * stepPerSymbolWidth);
+
+    const int32_t distpos1=(targetPos-posCurr);
+    const int32_t distpos2=(-1 * (posCurr+(stepPerRot - targetPos)));
+    const int32_t distpos3=(targetPos+(stepPerRot - posCurr));
+
+    int32_t relDistPos = distpos1;
+    if ( abs(distpos2) < abs(relDistPos) ) {
+        relDistPos = distpos2
+    }
+    if ( abs(distpos3) < abs(relDistPos) ) {
+        relDistPos = distpos3
+    }
+
+    // Move the stepper by 'relDistPos' position
+    MoveStepperRelative(relDistPos);
+
+    posCurr = targetPos;
+}
+```
 
 
 

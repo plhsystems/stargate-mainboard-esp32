@@ -34,6 +34,7 @@ This page may be replaced by an overlay on top of the page. Not yet decided.
 
 Display any useful system information
 - IP address
+- MAC Addresses
 - RAM usage
 - Firmware SHA256
 - SD CARD present
