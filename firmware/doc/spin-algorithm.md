@@ -8,8 +8,6 @@ There are two distance to calculate, because the ring can spin clockwise or coun
 We use the shortest path and spin the ring accordingly.
 But it's not the only way to do it, we can imagine an algorithm defining a minimum spin distance just for dramatic purpose.
 
---- TODO: DIAGRAM ---
-
 ## Parameters
 
 Each Stargate type have their own different symbols, including symbol count.
@@ -49,14 +47,14 @@ Assumptions:
 ```C
 const int32_t stepPerRot = 7000; // Abritrary value
 const int32_t symbolCnt = 39;
-const int32_t stepPerSymbolWidth = stepPerRot / symbolCnt
+const int32_t stepPerSymbolWidth = stepPerRot / symbolCnt;
 
-uint8_t symbols[] = { 12, 37, 24, 1, 32, 10, 1 };
+const uint8_t symbols[] = { 12, 37, 24, 1, 32, 10, 1 };
 
 posCurr = 0;
 MoveStepperAbs(posCurr); //Move to 0.
 
-for(int i = 0; i < psDialArg->u8SymbolCount; i++)
+for(int i = 0; i < sizeof(symbols)/sizeof(symbols[0]); i++)
 {
     const uint8_t symbolNum = symbols[i];
 
@@ -76,11 +74,23 @@ for(int i = 0; i < psDialArg->u8SymbolCount; i++)
     }
 
     // Move the stepper by 'relDistPos' position
-    MoveStepperRelative(relDistPos);
+    MoveStepperRel(relDistPos);
 
     posCurr = targetPos;
 }
 ```
+
+Example:
+
+stepPerSymbolWidth = 179.48
+
+| From sym | Target sym | D1 | D2 | D3 |
+|---|---|---|---|---|
+| 2 (179.48) | 4 (538.44) | 358.96 | -6641.04 | 7538.44 |
+| 5 (717.92) | 3 (358.96) | -358.96 | -7358.96 | 6641.04 |
+| 4 (538.44) | 38 (6640.76) | 6102.32 | -897.68 | 13102.32 |
+| 38 (6640.76) | 4 (538.44) | -6102.32 | -13102.32 | 897.68 |
+
 
 
 
