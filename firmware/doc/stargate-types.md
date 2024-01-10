@@ -1,31 +1,40 @@
 # Stargate types
 
-There are 4 types of Stargate supported by the mainboard.
+There are 3 types of Stargate supported by the mainboard.
 
-## Movie
+## Movie/SG1
 
-In the movie, every single chevrons move to lock a glyph.
-The ring spin until it get aligned with a chevron, then it move to lock it, then the light turn on.
+The stargate in the Movie and SG1 are the same, except the dial sequence changed a bit and lights were added on each chevron in the SG1 version.
 
-There is no chevron light effect in the movie, only in the serie. But the lightning effect is there anyway on the Kristian Gate. 
+![](./assets/stargate-diagram-SG1.png)
 
--- ADD A DIAGRAM HERE --
+Source: https://stargate.fandom.com/wiki/Glyph
 
-## SG1
+### Movie
 
-The SG1 gate is similar to the the movie version, except only the top-most master chevron move.
-To dial, every glyph will get locked using the master chevron. Then every chevron light-up in sequence, starting with the one right of the master one, going clockwise. 
+In the movie, every single chevrons move to lock a symbol.
+The ring spin until it get aligned with a chevron, then it move to lock it.
 
--- ADD A DIAGRAM HERE -- 
+There are no chevron light effect in the movie, only in the serie.
+But the lightning effect is there anyway on the Kristian Gate.
+
+### SG1
+
+To dial, every symbol will get locked using the master chevron. Then every chevron light-up in sequence, starting with the one right of the master one, going clockwise.
 
 ## Atlantis
 
-There are no physical spinning ring, every glyph location where the ring would normally be are screen, able to display any glyph.
+There are no physical spinning ring, every symbol location where the ring would normally be are screen, able to display any symbol.
 
--- ADD A DIAGRAM HERE --
+![](./assets/stargate-diagram-SGA.png)
+
+Source: https://stargate.fandom.com/wiki/Glyph
 
 ## Universe
 
-Instead of having a ring, the entire gate spin above the base. All chevrons are always lit but the glyph light up on the gate when it get locked.
+Instead of having a ring, the entire gate spin above the base. All chevrons are always lit but the symbol light up on the gate when it get locked.
 
--- ADD A DIAGRAM HERE --
+![](./assets/stargate-diagram-SGU.png)
+
+Source: https://stargate.fandom.com/wiki/Glyph
+
