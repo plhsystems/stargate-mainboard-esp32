@@ -56,6 +56,14 @@ The ring will spin until a designed symbols is aligned with the master chevron, 
 Every chevron will be tested one by one to ensure it move properly. If it moves the wrong way it will ask the user to revert motor polarity.
 It will also test the chevrons lights in this step.
 
+| Name | Value |
+|---|---|
+| Active? | Ramp lighting is activated? |
+| Max PWM | 100 |
+| Animation off-on time | 750 |
+| Animation pause time  | 1000 |
+| Animation on-off time | 750 |
+
 ## Audio test (optional)
 
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
