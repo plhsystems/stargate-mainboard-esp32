@@ -1,2 +1,2 @@
-idf_component_register(SRCS "MainApp.c"
-                    INCLUDE_DIRS ".")
+idf_component_register(SRCS "MainApp.cpp" "GateControl.cpp" "GateSymbols.cpp" "GateType.cpp"
+    INCLUDE_DIRS ".")
