@@ -6,16 +6,23 @@
 #include <string>
 #include "Gate/BaseGate.hpp"
 #include "Gate/GateFactory.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
 
 class GateControl
 {
     enum class ECmd
     {
-        Idle,
+        Idle = 0,
+
+        Abort,
+
         GoHome,
-        Aborted,
-        Dial,
         AutoCalibrate,
+
+        DialSymbol,
+        DialAddress,
 
         ManualWormhole,
     };
@@ -30,7 +37,11 @@ class GateControl
 
     // Actions
     void QueueAction();
+    void AbortAction();
 
     private:
-    static void TaskRunning(GateControl* pc);
+    static void TaskRunning(void* pArg);
+
+    TaskHandle_t m_sGateControlHandle;
+    volatile bool m_bIsCancelAction;
 };

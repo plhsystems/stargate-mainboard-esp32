@@ -49,7 +49,6 @@ class BaseGate
 
     virtual void MoveToSymbol(uint8_t u8Symbol, Chevron eChevron);
 
-    virtual void RunWormhole();
     virtual void ShutdownGate();
 
     virtual void UnlockGate();

@@ -43,11 +43,6 @@ void BaseGate::MoveToSymbol(uint8_t u8Symbol, Chevron eChevron)
 
 }
 
-void BaseGate::RunWormhole()
-{
-
-}
-
 void BaseGate::ShutdownGate()
 {
 
