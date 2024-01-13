@@ -6,6 +6,7 @@
 #include <string>
 #include "Gate/BaseGate.hpp"
 #include "Gate/GateFactory.hpp"
+#include "Common/Chevron.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -21,9 +22,10 @@ class GateControl
         GoHome,
         AutoCalibrate,
 
-        DialSymbol,
-        DialAddress,
+        KeyPressSymbol,
+        KeyPressCommit,
 
+        DialAddress,
         ManualWormhole,
     };
 

@@ -42,31 +42,44 @@ void GateControl::TaskRunning(void* pArg)
 
     Wormhole wormhole(Wormhole::EType::NormalSG1);
 
+    // Do homing on startup
+    baseGate.UnlockGate(); //Only apply on universe
+    baseGate.GoHome();
+    baseGate.LockGate(); //Only apply on universe
+
     // Dialing
     while(true)
     {
-        m_bIsCancelAction = false;
+        gc->m_bIsCancelAction = false;
 
         baseGate.UnlockGate(); //Only apply on universe
-
         baseGate.GoHome();
 
-        BaseGate::Chevron currentChevron = BaseGate::Chevron::Chevron1;
-        baseGate.MoveToSymbol(20, currentChevron);
-        // Chevrons
-        baseGate.LockChevron();
-        vTaskDelay(pdMS_TO_TICKS(500));
-        baseGate.UnlockChevron();
+        const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master };
+        const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
 
-        baseGate.LightUpSymbol(20, true); //Only apply on universe
-        vTaskDelay(pdMS_TO_TICKS(500));
-        baseGate.LightUpChevron(currentChevron, true);
+        for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+        {
+            const uint8_t symbol = symbols[i];
+            const Chevron currentChevron = chevrons[i];
 
-        // &m_bIsCancelAction
+            baseGate.MoveToSymbol(symbol, currentChevron);
+            // Chevrons
+            baseGate.LockChevron();
+            vTaskDelay(pdMS_TO_TICKS(500));
+            baseGate.UnlockChevron();
+
+            baseGate.LightUpSymbol(20, true); //Only apply on universe
+            vTaskDelay(pdMS_TO_TICKS(500));
+            baseGate.LightUpChevron(currentChevron, true);
+        }
+
+        // Run wormhole animations
         wormhole.OpenAnimation();
         wormhole.Run(&gc->m_bIsCancelAction);
         wormhole.CloseAnimation();
 
+        // Shutdown lightning and all
         baseGate.ShutdownGate();
 
         baseGate.GoHome();
