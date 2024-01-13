@@ -4,7 +4,8 @@
 #include <array>
 #include <vector>
 #include <string>
-#include "GateType.hpp"
+#include "Gate/BaseGate.hpp"
+#include "Gate/GateFactory.hpp"
 
 class GateControl
 {
@@ -29,4 +30,7 @@ class GateControl
 
     // Actions
     void QueueAction();
+
+    private:
+    static void TaskRunning(GateControl* pc);
 };
