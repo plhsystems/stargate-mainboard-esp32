@@ -1,7 +1,5 @@
 #include "WebServer.hpp"
-//#include "HelperMacro.h"
 #include "esp_log.h"
-//#include "esp_vfs.h"
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/unistd.h>
@@ -9,11 +7,7 @@
 #include <dirent.h>
 #include "esp_ota_ops.h"
 #include "cJSON.h"
-//#include "Settings.h"
 #include "../FWConfig.hpp"
-//#include "Main.h"
-//#include "ApiURL.h"
-#include "WebAPI.hpp"
 #include "../FWConfig.hpp"
 
 #define TAG "webserver"
