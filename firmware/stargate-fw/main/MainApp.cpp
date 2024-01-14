@@ -3,6 +3,7 @@
 #include "HW/BoardHW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "WifiMgr.hpp"
+#include "Settings.hpp"
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -23,15 +24,25 @@ void app_main(void)
       ret = nvs_flash_init();
     }
 
+    ESP_LOGI(TAG, "Initialize gate control");
     BoardHW::Init();
+    ESP_LOGI(TAG, "Initialize settings");
+    Settings::getI().Init();
+    ESP_LOGI(TAG, "Initialize WiFi Manager");
     WifiMgr::getI().Init();
+    ESP_LOGI(TAG, "Initialize web server");
     WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
     m_gc.Init();
-    ESP_LOGI(TAG, "Starting gatecontrol task");
+    ESP_LOGI(TAG, "Loading settings");
+    Settings::getI().Load();
+
+    ESP_LOGI(TAG, "Starting Wi-Fi");
+    WifiMgr::getI().Start();
+    ESP_LOGI(TAG, "Starting gate control");
     m_gc.StartTask();
 
-    WifiMgr::getI().Start();
+    ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     // Die.
 }

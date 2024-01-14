@@ -1,5 +1,6 @@
 #include "WifiMgr.hpp"
 #include "FWConfig.hpp"
+#include "Settings.hpp"
 #include "esp_sntp.h"
 
 const char *TAG = "wifi";
@@ -50,7 +51,7 @@ void WifiMgr::Init()
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    const bool isWiFiSTA = SETTINGS_EENTRY_WSTAIsActive == 1;
+    const bool isWiFiSTA = Settings::getI().GetValueInt32(Settings::Entry::WSTAIsActive) == 1;
     if (isWiFiSTA)
     {
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
@@ -132,8 +133,10 @@ void WifiMgr::Init()
         wifi_configSTA.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;
         wifi_configSTA.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
 
-        strcpy((char*)wifi_configSTA.sta.ssid, SETTINGS_EENTRY_WSTASSID);
-        strcpy((char*)wifi_configSTA.sta.password, SETTINGS_EENTRY_WSTAPass);
+        size_t staSSIDLength = 32;
+        Settings::getI().GetValueString(Settings::Entry::WSTASSID, (char*)wifi_configSTA.sta.ssid, &staSSIDLength);
+        size_t staPassLength = 64;
+        Settings::getI().GetValueString(Settings::Entry::WSTAPass, (char*)wifi_configSTA.sta.password, &staPassLength);
 
         ESP_LOGI(TAG, "STA mode is active, attempt to connect to ssid: %s", wifi_configSTA.sta.ssid);
 
