@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "GateControl.hpp"
 #include "HW/BoardHW.hpp"
+#include "WebServer/WebServer.hpp"
 #include "WifiMgr.hpp"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -24,11 +25,13 @@ void app_main(void)
 
     BoardHW::Init();
     WifiMgr::getI().Init();
+    WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
     m_gc.Init();
-    WifiMgr::getI().Start();
     ESP_LOGI(TAG, "Starting gatecontrol task");
     m_gc.StartTask();
 
+    WifiMgr::getI().Start();
+    WebServer::getI().Start();
     // Die.
 }

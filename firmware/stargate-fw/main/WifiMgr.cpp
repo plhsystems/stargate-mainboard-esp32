@@ -32,6 +32,7 @@ void WifiMgr::wifistation_event_handler(void* arg, esp_event_base_t event_base, 
         ESP_LOGI(TAG, "Connected to the AP");
         esp_netif_create_ip6_linklocal(getI().m_pWifiSTA);
      } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        //TODO add a timer
         esp_wifi_connect();
         ESP_LOGI(TAG, "connect to the AP faile, retry to connect to the AP");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
