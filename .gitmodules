@@ -1,0 +1,3 @@
+[submodule "firmware/esp32-components"]
+	path = firmware/esp32-components
+	url = https://github.com/pinkymaxou/esp32-components.git

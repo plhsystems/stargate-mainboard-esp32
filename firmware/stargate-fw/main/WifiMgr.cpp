@@ -1,5 +1,7 @@
 #include "WifiMgr.hpp"
 #include "FWConfig.hpp"
+#include "Settings.hpp"
+#include "esp_sntp.h"
 
 const char *TAG = "wifi";
 
@@ -49,7 +51,7 @@ void WifiMgr::Init()
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    const bool isWiFiSTA = SETTINGS_EENTRY_WSTAIsActive == 1;
+    const bool isWiFiSTA = Settings::getI().GetValueInt32(Settings::Entry::WSTAIsActive) == 1;
     if (isWiFiSTA)
     {
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
@@ -131,17 +133,42 @@ void WifiMgr::Init()
         wifi_configSTA.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;
         wifi_configSTA.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
 
-        strcpy((char*)wifi_configSTA.sta.ssid, SETTINGS_EENTRY_WSTASSID);
-        strcpy((char*)wifi_configSTA.sta.password, SETTINGS_EENTRY_WSTAPass);
+        size_t staSSIDLength = 32;
+        Settings::getI().GetValueString(Settings::Entry::WSTASSID, (char*)wifi_configSTA.sta.ssid, &staSSIDLength);
+        size_t staPassLength = 64;
+        Settings::getI().GetValueString(Settings::Entry::WSTAPass, (char*)wifi_configSTA.sta.password, &staPassLength);
 
         ESP_LOGI(TAG, "STA mode is active, attempt to connect to ssid: %s", wifi_configSTA.sta.ssid);
 
         ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_configSTA) );
     }
+
+    // SNTP
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    ESP_LOGI(TAG, "Initializing SNTP");
+    esp_sntp_init();
 }
 
 void WifiMgr::Start()
 {
     // Start AP + STA
     ESP_ERROR_CHECK(esp_wifi_start() );
+}
+
+void WifiMgr::time_sync_notification_cb(struct timeval* tv)
+{
+    // settimeofday(tv, NULL);
+    ESP_LOGI(TAG, "Notification of a time synchronization event, sec: %d", (int)tv->tv_sec);
+
+    // Set timezone to Eastern Standard Time and print local time
+    time_t now = 0;
+    struct tm timeinfo;
+    memset(&timeinfo, 0, sizeof(struct tm));
+    setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
+    tzset();
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in New York is: %2d:%2d:%2d", (int)timeinfo.tm_hour, (int)timeinfo.tm_min, (int)timeinfo.tm_sec);
 }

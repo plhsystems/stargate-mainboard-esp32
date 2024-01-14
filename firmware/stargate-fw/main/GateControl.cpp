@@ -85,5 +85,7 @@ void GateControl::TaskRunning(void* pArg)
         baseGate.GoHome();
 
         baseGate.LockGate(); //Only apply on universe
+
+        vTaskDelay(pdMS_TO_TICKS(60000));
     }
 }
