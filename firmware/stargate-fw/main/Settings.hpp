@@ -10,11 +10,13 @@ class Settings
     {
         ClampLockedPWM = 0,
         ClampReleasedPWM,
-        RingHomeOffset,
         RingSymbolBrightness,
 
+        // Ring rotation calibration
         StepPerRotation,
         TimePerRotationMS,
+        RingHomeOffset,
+        // Wormhole timeout
         GateOpenedTimeout,
 
         RampOnPercent,
@@ -66,11 +68,12 @@ class Settings
     {
         [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITINT32_RNG("Clamp.LockedPWM", "Servo motor locked PWM",             1250, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",      -55, -500,    500, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingSymbolBrightness] =    NVSJSON_INITINT32_RNG("Ring.SymBright",  "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::StepPerRotation] =         NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  64000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::TimePerRotationMS] =       NVSJSON_INITINT32_RNG("TimePerRot",      "Time to do a rotation",                 0,    0, 120000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",      -55, -500,    500, NVSJSON_EFLAGS_None),
+
         [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",   300,   10,  42*60, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::RampOnPercent] =           NVSJSON_INITINT32_RNG("Ramp.LightOn",    "Ramp illumination ON (percent)",       30,    0,    100, NVSJSON_EFLAGS_None),
