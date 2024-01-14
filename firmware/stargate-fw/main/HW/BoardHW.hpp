@@ -15,7 +15,6 @@ class BoardHW final
     static void Init();
 
     static void SetChevronLight(Chevron eChevron, bool bState);
-
     static void SetRampLight(double dPerc);
 
     static bool GetIsHomeSensorActive();
@@ -31,10 +30,10 @@ class BoardHW final
     static void PowerDownServo();
 
     // Wormhole related
-    static int32_t WHGetPixelCount();
-    static void WHSetPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue);
-    static void WHClearAllPixels();
-    static void WHRefreshPixels();
+    static int32_t GetWHPixelCount();
+    static void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue);
+    static void ClearAllWHPixels();
+    static void RefreshWHPixels();
 
     private:
     static led_strip_handle_t led_strip;

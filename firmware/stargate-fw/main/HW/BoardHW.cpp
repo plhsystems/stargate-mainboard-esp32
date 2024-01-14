@@ -56,22 +56,22 @@ void BoardHW::PowerDownServo()
     // TODO: Fill
 }
 
-int32_t BoardHW::WHGetPixelCount()
+int32_t BoardHW::GetWHPixelCount()
 {
     return 0; // TODO: Fill
 }
 
-void BoardHW::WHSetPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
+void BoardHW::SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
 {
     // TODO: Fill
 }
 
-void BoardHW::WHClearAllPixels()
+void BoardHW::ClearAllWHPixels()
 {
     // TODO: Fill
 }
 
-void BoardHW::WHRefreshPixels()
+void BoardHW::RefreshWHPixels()
 {
     // TODO: Fill
 }
