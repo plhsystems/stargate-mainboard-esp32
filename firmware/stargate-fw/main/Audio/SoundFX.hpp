@@ -1,5 +1,5 @@
-#ifndef _SOUNDFX_H
-#define _SOUNDFX_H
+#ifndef _SOUNDFX_H_
+#define _SOUNDFX_H_
 
 class SoundFX
 {

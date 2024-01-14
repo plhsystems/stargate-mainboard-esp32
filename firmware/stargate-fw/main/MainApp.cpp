@@ -2,6 +2,7 @@
 #include "GateControl.hpp"
 #include "HW/BoardHW.hpp"
 #include "WebServer/WebServer.hpp"
+#include "Audio/SoundFX.hpp"
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
 #include "esp_log.h"
@@ -28,6 +29,8 @@ void app_main(void)
     BoardHW::Init();
     ESP_LOGI(TAG, "Initialize settings");
     Settings::getI().Init();
+    ESP_LOGI(TAG, "Loading sound FX");
+    SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
     WifiMgr::getI().Init();
     ESP_LOGI(TAG, "Initialize web server");
@@ -39,6 +42,8 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
+    ESP_LOGI(TAG, "Starting sound FX");
+    SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
     m_gc.StartTask();
 
