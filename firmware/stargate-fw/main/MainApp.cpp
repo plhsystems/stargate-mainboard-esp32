@@ -3,6 +3,7 @@
 #include "HW/BoardHW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
+#include "Ring/RingComm.hpp"
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
 #include "esp_log.h"
@@ -37,11 +38,15 @@ void app_main(void)
     WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
     m_gc.Init();
+    ESP_LOGI(TAG, "Loading ring communication");
+    RingComm::getI().Init();
     ESP_LOGI(TAG, "Loading settings");
     Settings::getI().Load();
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
+    ESP_LOGI(TAG, "Starting ring communication");
+    RingComm::getI().Start();
     ESP_LOGI(TAG, "Starting sound FX");
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
