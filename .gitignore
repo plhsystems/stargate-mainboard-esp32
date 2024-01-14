@@ -1,2 +1,3 @@
 /firmware/stargate-fw/build
 /firmware/stargate-fw/sdkconfig.old
+/firmware/stargate-fw/managed_components
