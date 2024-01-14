@@ -28,6 +28,8 @@ class RingComm
     void Init();
     void Start();
 
+    static void TaskRunning(RingComm* pRC);
+
     void SendKeepAlive();
     void SendPowerOff();
     void SendLightUpSymbol(uint8_t u8Symbol);
