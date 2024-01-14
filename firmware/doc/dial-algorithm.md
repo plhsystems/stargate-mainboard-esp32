@@ -1,4 +1,6 @@
-# Spinning ring algorithm
+# Dial algorithm
+
+# Ring moving
 
 The stepper needs to move the ring at the right location based on the current ring position and which chevron to use.
 
@@ -59,6 +61,7 @@ for(int i = 0; i < sizeof(symbols)/sizeof(symbols[0]); i++)
     const uint8_t symbolNum = symbols[i];
 
     // Absolute position on the ring.
+    // Notice, the algorithm is different for the universe gate. Symbols aren't equally spaced.
     const int32_t targetPos=((symbolNum-1) * stepPerSymbolWidth);
 
     const int32_t distpos1=(targetPos-posCurr);
@@ -90,8 +93,3 @@ stepPerSymbolWidth = 179.48
 | 5 (717.92) | 3 (358.96) | -358.96 | -7358.96 | 6641.04 |
 | 4 (538.44) | 38 (6640.76) | 6102.32 | -897.68 | 13102.32 |
 | 38 (6640.76) | 4 (538.44) | -6102.32 | -13102.32 | 897.68 |
-
-
-
-
-
