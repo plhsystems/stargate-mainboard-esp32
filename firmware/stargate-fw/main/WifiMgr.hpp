@@ -36,6 +36,7 @@ class WifiMgr
     private:
     static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     static void wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    static void time_sync_notification_cb(struct timeval* tv);
 
     esp_netif_t* m_pWifiSTA;
 };

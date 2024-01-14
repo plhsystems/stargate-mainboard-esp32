@@ -1,5 +1,6 @@
 #include "WifiMgr.hpp"
 #include "FWConfig.hpp"
+#include "esp_sntp.h"
 
 const char *TAG = "wifi";
 
@@ -138,10 +139,33 @@ void WifiMgr::Init()
 
         ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_configSTA) );
     }
+
+    // SNTP
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    ESP_LOGI(TAG, "Initializing SNTP");
+    esp_sntp_init();
 }
 
 void WifiMgr::Start()
 {
     // Start AP + STA
     ESP_ERROR_CHECK(esp_wifi_start() );
+}
+
+void WifiMgr::time_sync_notification_cb(struct timeval* tv)
+{
+    // settimeofday(tv, NULL);
+    ESP_LOGI(TAG, "Notification of a time synchronization event, sec: %d", (int)tv->tv_sec);
+
+    // Set timezone to Eastern Standard Time and print local time
+    time_t now = 0;
+    struct tm timeinfo;
+    memset(&timeinfo, 0, sizeof(struct tm));
+    setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
+    tzset();
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in New York is: %2d:%2d:%2d", (int)timeinfo.tm_hour, (int)timeinfo.tm_min, (int)timeinfo.tm_sec);
 }
