@@ -82,6 +82,10 @@ try:
         fp.write("#ifndef _EMBEDDEDFILES_H_\n")
         fp.write("#define _EMBEDDEDFILES_H_\n")
         fp.write("\n")
+        fp.write("#ifdef __cplusplus\n")
+        fp.write("extern \"C\" {\n")
+        fp.write("#endif\n")
+        fp.write("\n")
         fp.write("#include <stdint.h>\n")
         fp.write("\n")
         fp.write("typedef enum\n")
@@ -111,6 +115,10 @@ try:
         fp.write("extern const EF_SFile EF_g_sFiles[EF_EFILE_COUNT];\n")
         fp.write("extern const uint8_t EF_g_u8Blobs[];\n")
         fp.write("\n")
+        fp.write("#ifdef __cplusplus\n")
+        fp.write("}\n")
+        fp.write("#endif\n")
+        fp.write("\n")       
         fp.write("#endif\n")
 
     fileC = diOutputCodePath / "EmbeddedFiles.c"
