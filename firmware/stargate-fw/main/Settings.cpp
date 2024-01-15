@@ -8,7 +8,8 @@ Settings::Settings()
 
 void Settings::Init()
 {
-    NVSJSON_Init(&m_sSettingHandle, &m_sSettingConfig);
+    const NVSJSON_ESETRET ret = NVSJSON_Init(&m_sSettingHandle, &m_sSettingConfig);
+    assert(NVSJSON_ESETRET_OK == ret);
 }
 
 void Settings::Load()

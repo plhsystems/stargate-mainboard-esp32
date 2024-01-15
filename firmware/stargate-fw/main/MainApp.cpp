@@ -26,6 +26,9 @@ void app_main(void)
       ret = nvs_flash_init();
     }
 
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    
     ESP_LOGI(TAG, "Initialize gate control");
     BoardHW::Init();
     ESP_LOGI(TAG, "Initialize settings");
