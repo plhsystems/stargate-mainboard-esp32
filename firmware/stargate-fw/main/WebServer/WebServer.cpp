@@ -44,7 +44,7 @@ void WebServer::Start()
     if (httpd_start(&m_server, &m_config) == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
-        // return server;
+        httpd_register_uri_handler(m_server, &m_sHttpUI);
     }
 }
 

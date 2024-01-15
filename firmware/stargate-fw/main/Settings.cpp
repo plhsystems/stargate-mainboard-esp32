@@ -37,7 +37,7 @@ void Settings::GetValueString(Settings::Entry eEntry, char* out_value, size_t* l
     NVSJSON_GetValueString(&m_sSettingHandle, (uint16_t)eEntry, out_value, length);
 }
 
-NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun, char* szValue)
+NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue)
 {
     return NVSJSON_SetValueString(&m_sSettingHandle, (uint16_t)eEntry, bIsDryRun, szValue);
 }

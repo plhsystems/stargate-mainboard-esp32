@@ -54,7 +54,7 @@ class Settings
     NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, bool bIsDryRun, int32_t s32NewValue);
 
     void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
-    NVSJSON_ESETRET SetValueString(Settings::Entry eEntry, bool bIsDryRun, char* szValue);
+    NVSJSON_ESETRET SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue);
 
     // Instance
     static Settings& getI()
