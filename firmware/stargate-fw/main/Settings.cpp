@@ -8,7 +8,8 @@ Settings::Settings()
 
 void Settings::Init()
 {
-    NVSJSON_Init(&m_sSettingHandle, &m_sSettingConfig);
+    const NVSJSON_ESETRET ret = NVSJSON_Init(&m_sSettingHandle, &m_sSettingConfig);
+    assert(NVSJSON_ESETRET_OK == ret);
 }
 
 void Settings::Load()
@@ -36,9 +37,19 @@ void Settings::GetValueString(Settings::Entry eEntry, char* out_value, size_t* l
     NVSJSON_GetValueString(&m_sSettingHandle, (uint16_t)eEntry, out_value, length);
 }
 
-NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun, char* szValue)
+NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue)
 {
     return NVSJSON_SetValueString(&m_sSettingHandle, (uint16_t)eEntry, bIsDryRun, szValue);
+}
+
+char* Settings::ExportJSON()
+{
+    return NVSJSON_ExportJSON(&m_sSettingHandle);
+}
+
+bool Settings::ImportJSON(const char* szJSON)
+{
+    return NVSJSON_ImportJSON(&m_sSettingHandle, szJSON);
 }
 
 bool Settings::ValidateWifiPassword(const NVSJSON_SSettingEntry* pSettingEntry, const char* szValue)

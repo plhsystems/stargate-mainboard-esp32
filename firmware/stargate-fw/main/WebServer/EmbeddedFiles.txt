@@ -1,0 +1,6 @@
+favicon.ico
+index.html
+css/content.css
+img/home.svg
+js/app.js
+js/vue.min.js

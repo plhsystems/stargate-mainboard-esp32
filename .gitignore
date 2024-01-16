@@ -1,3 +1,5 @@
 /firmware/stargate-fw/build
 /firmware/stargate-fw/sdkconfig.old
 /firmware/stargate-fw/managed_components
+/firmware/stargate-fw/main/WebServer/EmbeddedFiles.bin
+/firmware/stargate-fw/main/WebServer/EmbeddedFiles.c

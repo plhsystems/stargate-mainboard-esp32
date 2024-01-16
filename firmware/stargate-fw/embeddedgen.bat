@@ -1,0 +1,1 @@
+python ..\tools\embeddedgen.py -i ".\webserver-assets" -o ".\main\webserver"

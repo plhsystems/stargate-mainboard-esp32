@@ -8,6 +8,8 @@
 #include "Settings.hpp"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 extern "C" {
     void app_main(void);
@@ -26,10 +28,17 @@ void app_main(void)
       ret = nvs_flash_init();
     }
 
-    ESP_LOGI(TAG, "Initialize gate control");
-    BoardHW::Init();
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     ESP_LOGI(TAG, "Initialize settings");
     Settings::getI().Init();
+    ESP_LOGI(TAG, "Loading settings");
+    Settings::getI().Load();
+
+    // Initialize all modules
+    ESP_LOGI(TAG, "Initialize gate control");
+    BoardHW::Init();
     ESP_LOGI(TAG, "Loading sound FX");
     SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
@@ -40,8 +49,6 @@ void app_main(void)
     m_gc.Init();
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
-    ESP_LOGI(TAG, "Loading settings");
-    Settings::getI().Load();
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
@@ -55,4 +62,9 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     // Die.
+    // For debug purpose ...
+    char* szAllTask = (char*)malloc(4096);
+    vTaskList(szAllTask);
+    ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
+    free(szAllTask);
 }
