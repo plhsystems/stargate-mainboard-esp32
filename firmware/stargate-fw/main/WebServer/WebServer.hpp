@@ -33,6 +33,10 @@ class WebServer
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
 
+    static char* GetSysInfo();
+
+    static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
+
     static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
 
     static const EF_SFile* GetFile(const char* strFilename);
