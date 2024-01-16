@@ -26,6 +26,21 @@ WebServer::WebServer()
         /* Let's pass response string in user
         * context to demonstrate it's usage */
     m_sHttpUI.user_ctx  = nullptr;
+
+    // API
+    m_sHttpGetAPI.uri       = "/api/*";
+    m_sHttpGetAPI.method    = HTTP_GET;
+    m_sHttpGetAPI.handler   = WebAPIGetHandler;
+    /* Let's pass response string in user
+     * context to demonstrate it's usage */
+    m_sHttpGetAPI.user_ctx  = nullptr;
+
+    m_sHttpPostAPI.uri       = "/api/*";
+    m_sHttpPostAPI.method    = HTTP_POST;
+    m_sHttpPostAPI.handler   = WebAPIPostHandler;
+    /* Let's pass response string in user
+     * context to demonstrate it's usage */
+    m_sHttpPostAPI.user_ctx = nullptr;
 }
 
 void WebServer::Init()
@@ -44,6 +59,8 @@ void WebServer::Start()
     if (httpd_start(&m_server, &m_config) == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
+        httpd_register_uri_handler(m_server, &m_sHttpPostAPI);
+        httpd_register_uri_handler(m_server, &m_sHttpGetAPI);
         httpd_register_uri_handler(m_server, &m_sHttpUI);
     }
 }

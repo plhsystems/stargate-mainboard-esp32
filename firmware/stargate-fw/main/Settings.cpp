@@ -42,6 +42,16 @@ NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun,
     return NVSJSON_SetValueString(&m_sSettingHandle, (uint16_t)eEntry, bIsDryRun, szValue);
 }
 
+char* Settings::ExportJSON()
+{
+    return NVSJSON_ExportJSON(&m_sSettingHandle);
+}
+
+bool Settings::ImportJSON(const char* szJSON)
+{
+    return NVSJSON_ImportJSON(&m_sSettingHandle, szJSON);
+}
+
 bool Settings::ValidateWifiPassword(const NVSJSON_SSettingEntry* pSettingEntry, const char* szValue)
 {
     const size_t n = strlen(szValue);

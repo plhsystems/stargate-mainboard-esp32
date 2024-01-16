@@ -56,6 +56,9 @@ class Settings
     void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
     NVSJSON_ESETRET SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue);
 
+    bool ImportJSON(const char* szJSON);
+    char* ExportJSON();
+
     // Instance
     static Settings& getI()
     {
