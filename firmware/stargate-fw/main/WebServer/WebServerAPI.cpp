@@ -6,7 +6,10 @@
 #include "esp_ota_ops.h"
 #include "nvsjson.h"
 #include "../Settings.hpp"
+#include "WifiMgr.hpp"
 #include "cJSON.h"
+#include "esp_netif_types.h"
+#include "../HelperMacro.h"
 
 #define TAG "WebAPI"
 
@@ -18,57 +21,46 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     esp_err_t err = ESP_OK;
     char* pExportJSON = NULL;
 
-    if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0)
-    {
+    if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
+
     }
-    else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0)
-    {
+    else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
         pExportJSON = GetSysInfo();
-        if (pExportJSON == NULL || httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK)
-        {
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
-            goto ERROR;
-        }
     }
-    else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0)
-    {
+    else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
-        if (pExportJSON == NULL || httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK)
-        {
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
-            goto ERROR;
-        }
     }
-    else if (strcmp(req->uri, APIURL_GET_FREERTOSDBGINFO_URI) == 0)
-    {
+    else if (strcmp(req->uri, APIURL_GET_FREERTOSDBGINFO_URI) == 0) {
         // According to the documentation, put a big buffer.
-        char* pExportJSON = (char*)malloc(4096);
-        if (pExportJSON == NULL)
-        {
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Not enough memory");
-            goto ERROR;
-        }
+        pExportJSON = (char*)malloc(4096);
         vTaskList(pExportJSON);
-        if (httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK)
-        {
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
-            goto ERROR;
-        }
     }
-    else
-    {
+    else {
         ESP_LOGE(TAG, "api_get_handler, url: %s", req->uri);
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
+        goto ERROR;
+    }
+
+    // Allocation error
+    if (pExportJSON == NULL) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Not enough memory");
+        goto ERROR;
+    }
+
+    // Chunk file transfer
+    if (httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
         goto ERROR;
     }
     goto END;
     ERROR:
     err = ESP_FAIL;
     END:
-    if (pExportJSON != NULL)
-        free(pExportJSON);
     httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_send_chunk(req, NULL, 0);
+    if (pExportJSON != NULL) {
+        free(pExportJSON);
+        httpd_resp_send_chunk(req, NULL, 0);
+    }
     return err;
 }
 
@@ -120,6 +112,7 @@ char* WebServer::GetSysInfo()
     cJSON* pRoot = NULL;
     {
         char buff[100];
+        uint8_t u8Macs[6];
         pRoot = cJSON_CreateObject();
         if (pRoot == NULL)
         {
@@ -154,30 +147,65 @@ char* WebServer::GetSysInfo()
         cJSON_AddItemToObject(pEntryJSON4, "value", cJSON_CreateString(esp_app_desc.idf_ver));
         cJSON_AddItemToArray(pEntries, pEntryJSON4);
 
-        // WiFi-AP
-        cJSON* pEntryJSON5 = cJSON_CreateObject();
-        uint8_t u8Macs[6];
-        cJSON_AddItemToObject(pEntryJSON5, "name", cJSON_CreateString("WiFi.AP"));
-        esp_read_mac(u8Macs, ESP_MAC_WIFI_SOFTAP);
+        // Bluetooth (BT)
+        cJSON* pEntryJSON7 = cJSON_CreateObject();
+        cJSON_AddItemToObject(pEntryJSON7, "name", cJSON_CreateString("Mac (BT)"));
+        esp_read_mac(u8Macs, ESP_MAC_BT);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
-        cJSON_AddItemToObject(pEntryJSON5, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON5);
+        cJSON_AddItemToObject(pEntryJSON7, "value", cJSON_CreateString(buff));
+        cJSON_AddItemToArray(pEntries, pEntryJSON7);
 
+        // Station mode
         // WiFi-STA
         cJSON* pEntryJSON6 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON6, "name", cJSON_CreateString("WiFi.STA"));
+        cJSON_AddItemToObject(pEntryJSON6, "name", cJSON_CreateString("Mac (STA ipv4)"));
         esp_read_mac(u8Macs, ESP_MAC_WIFI_STA);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
         cJSON_AddItemToObject(pEntryJSON6, "value", cJSON_CreateString(buff));
         cJSON_AddItemToArray(pEntries, pEntryJSON6);
 
-        // WiFi-BT
-        cJSON* pEntryJSON7 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON7, "name", cJSON_CreateString("WiFi.BT"));
-        esp_read_mac(u8Macs, ESP_MAC_BT);
+        // WiFi-station (IP address)
+        cJSON* pEntryJSON9 = cJSON_CreateObject();
+        cJSON_AddItemToObject(pEntryJSON9, "name", cJSON_CreateString("WiFi (STA ipv4)"));
+        esp_netif_ip_info_t wifiIpSta;
+        memset(&wifiIpSta, 0, sizeof(wifiIpSta));
+        WifiMgr::getI().GetWiFiSTAIP(wifiIpSta);
+        sprintf(buff, IPSTR, IP2STR(&wifiIpSta.ip));
+        cJSON_AddItemToObject(pEntryJSON9, "value", cJSON_CreateString(buff));
+        cJSON_AddItemToArray(pEntries, pEntryJSON9);
+
+        esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES];
+        memset(&if_ip6[0], 0, sizeof(if_ip6));
+        const int32_t s32IPv6Count = WifiMgr::getI().GetWiFiSTAIPv6(if_ip6);
+        for(int i = 0; i < HELPERMACRO_MIN(s32IPv6Count, 2); i++)
+        {
+            char ipv6String[45+1] = {0,};
+            snprintf(ipv6String, sizeof(ipv6String)-1, IPV6STR, IPV62STR(if_ip6[i]));
+
+            cJSON* pEntryJSONIPv6 = cJSON_CreateObject();
+            cJSON_AddItemToObject(pEntryJSONIPv6, "name", cJSON_CreateString("WiFi (STA IPv6)"));
+            cJSON_AddItemToObject(pEntryJSONIPv6, "value", cJSON_CreateString(ipv6String));
+            cJSON_AddItemToArray(pEntries, pEntryJSONIPv6);
+        }
+
+        // Soft Access point
+        // WiFi-AP
+        cJSON* pEntryJSON5 = cJSON_CreateObject();
+        cJSON_AddItemToObject(pEntryJSON5, "name", cJSON_CreateString("Mac (Soft-AP)"));
+        esp_read_mac(u8Macs, ESP_MAC_WIFI_SOFTAP);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
-        cJSON_AddItemToObject(pEntryJSON7, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON7);
+        cJSON_AddItemToObject(pEntryJSON5, "value", cJSON_CreateString(buff));
+        cJSON_AddItemToArray(pEntries, pEntryJSON5);
+
+        // WiFi-Soft AP (IP address)
+        cJSON* pEntryJSON10 = cJSON_CreateObject();
+        cJSON_AddItemToObject(pEntryJSON10, "name", cJSON_CreateString("WiFi (Soft-AP)"));
+        esp_netif_ip_info_t wifiIpSoftAP;
+        memset(&wifiIpSoftAP, 0, sizeof(wifiIpSoftAP));
+        WifiMgr::getI().GetWiFiSoftAPIP(wifiIpSoftAP);
+        sprintf(buff, IPSTR, IP2STR(&wifiIpSoftAP.ip));
+        cJSON_AddItemToObject(pEntryJSON10, "value", cJSON_CreateString(buff));
+        cJSON_AddItemToArray(pEntries, pEntryJSON10);
 
         // Memory
         cJSON* pEntryJSON8 = cJSON_CreateObject();
@@ -185,41 +213,10 @@ char* WebServer::GetSysInfo()
         const int freeSize = heap_caps_get_free_size(MALLOC_CAP_8BIT);
         const int totalSize = heap_caps_get_total_size(MALLOC_CAP_8BIT);
 
-        sprintf(buff, "%d / %d", /*0*/freeSize, /*1*/totalSize);
+        sprintf(buff, "%d / %d", /*0*/(totalSize - freeSize), /*1*/totalSize);
         cJSON_AddItemToObject(pEntryJSON8, "value", cJSON_CreateString(buff));
         cJSON_AddItemToArray(pEntries, pEntryJSON8);
 
-        // WiFi-station (IP address)
-        /* cJSON* pEntryJSON9 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON9, "name", cJSON_CreateString("WiFi (STA)"));
-        esp_netif_ip_info_t wifiIpSta = {0};
-        MAIN_GetWiFiSTAIP(&wifiIpSta);
-        sprintf(buff, IPSTR, IP2STR(&wifiIpSta.ip));
-        cJSON_AddItemToObject(pEntryJSON9, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON9);
-
-        esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES] = {0};
-        const int32_t s32IPv6Count = MAIN_GetWiFiSTAIPv6(if_ip6);
-        for(int i = 0; i < HELPERMACRO_MIN(s32IPv6Count, 2); i++)
-        {
-            char ipv6String[45+1] = {0,};
-            snprintf(ipv6String, sizeof(ipv6String)-1, IPV6STR, IPV62STR(if_ip6[i]));
-
-            cJSON* pEntryJSONIPv6 = cJSON_CreateObject();
-            cJSON_AddItemToObject(pEntryJSONIPv6, "name", cJSON_CreateString("WiFi (STA) IPv6"));
-            cJSON_AddItemToObject(pEntryJSONIPv6, "value", cJSON_CreateString(ipv6String));
-            cJSON_AddItemToArray(pEntries, pEntryJSONIPv6);
-        }
-
-        // WiFi-Soft AP (IP address)
-        cJSON* pEntryJSON10 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON10, "name", cJSON_CreateString("WiFi (Soft-AP)"));
-        esp_netif_ip_info_t wifiIpSoftAP = {0};
-        MAIN_GetWiFiSoftAPIP(&wifiIpSoftAP);
-        sprintf(buff, IPSTR, IP2STR(&wifiIpSoftAP.ip));
-        cJSON_AddItemToObject(pEntryJSON10, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON10);
- */
         char* pStr =  cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;

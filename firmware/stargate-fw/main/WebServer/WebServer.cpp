@@ -8,13 +8,11 @@
 #include "esp_ota_ops.h"
 #include "cJSON.h"
 #include "../FWConfig.hpp"
+#include "../HelperMacro.h"
 
 #define TAG "webserver"
 
 #define DEFAULT_RELATIVE_URI "/index.html"
-
-#define HELPERMACRO_MIN(a,b) (((a)<(b))?(a):(b))
-#define HELPERMACRO_MAX(a,b) (((a)>(b))?(a):(b))
 
 WebServer::WebServer()
     : m_server(nullptr)
