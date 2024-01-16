@@ -8,6 +8,8 @@
 #include "Settings.hpp"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 extern "C" {
     void app_main(void);
@@ -60,4 +62,9 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     // Die.
+    // For debug purpose ...
+    char* szAllTask = (char*)malloc(4096);
+    vTaskList(szAllTask);
+    ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
+    free(szAllTask);
 }
