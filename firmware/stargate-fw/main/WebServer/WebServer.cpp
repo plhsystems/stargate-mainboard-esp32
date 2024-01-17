@@ -8,13 +8,11 @@
 #include "esp_ota_ops.h"
 #include "cJSON.h"
 #include "../FWConfig.hpp"
+#include "misc-macro.h"
 
 #define TAG "webserver"
 
 #define DEFAULT_RELATIVE_URI "/index.html"
-
-#define HELPERMACRO_MIN(a,b) (((a)<(b))?(a):(b))
-#define HELPERMACRO_MAX(a,b) (((a)>(b))?(a):(b))
 
 WebServer::WebServer()
     : m_server(nullptr)
@@ -41,6 +39,14 @@ WebServer::WebServer()
     /* Let's pass response string in user
      * context to demonstrate it's usage */
     m_sHttpPostAPI.user_ctx = nullptr;
+
+    // OTA
+    m_sHttpOTAUploadPost.uri       = APIURL_POST_OTAUPLOAD_URI;
+    m_sHttpOTAUploadPost.method    = HTTP_POST;
+    m_sHttpOTAUploadPost.handler   = OTAUploadPostHandler;
+    /* Let's pass response string in user
+     * context to demonstrate it's usage */
+    m_sHttpOTAUploadPost.user_ctx  = nullptr;
 }
 
 void WebServer::Init()
@@ -59,6 +65,7 @@ void WebServer::Start()
     if (httpd_start(&m_server, &m_config) == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
+        httpd_register_uri_handler(m_server, &m_sHttpOTAUploadPost);
         httpd_register_uri_handler(m_server, &m_sHttpPostAPI);
         httpd_register_uri_handler(m_server, &m_sHttpGetAPI);
         httpd_register_uri_handler(m_server, &m_sHttpUI);
@@ -140,7 +147,7 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
 
     while(u32Index < pFile->u32Length)
     {
-        const uint32_t n = HELPERMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
+        const uint32_t n = MISCMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
 
         if (n > 0) {
             /* Send the buffer contents as HTTP response m_u8Buffers */

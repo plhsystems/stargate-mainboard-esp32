@@ -2,6 +2,7 @@
 #include "FWConfig.hpp"
 #include "Settings.hpp"
 #include "esp_sntp.h"
+#include "misc-macro.h"
 
 const char *TAG = "wifi";
 
@@ -28,12 +29,15 @@ void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t
 void WifiMgr::wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        getI().m_eWiFiSTAState = EState::Connecting;
         esp_wifi_connect();
      }
      else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED ) {
         ESP_LOGI(TAG, "Connected to the AP");
         esp_netif_create_ip6_linklocal(getI().m_pWifiSTA);
+        getI().m_eWiFiSTAState = EState::Connected;
      } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        getI().m_eWiFiSTAState = EState::Connecting;
         //TODO add a timer
         esp_wifi_connect();
         ESP_LOGI(TAG, "connect to the AP faile, retry to connect to the AP");
@@ -62,15 +66,15 @@ void WifiMgr::Init()
     }
 
     // Access point mode
-    esp_netif_t* pWifiSoftAP = esp_netif_create_default_wifi_ap();
+    m_pWifiSoftAP = esp_netif_create_default_wifi_ap();
 
     esp_netif_ip_info_t ipInfo;
     IP4_ADDR(&ipInfo.ip, 192, 168, 4, 1);
 	IP4_ADDR(&ipInfo.gw, 192, 168, 4, 1);
 	IP4_ADDR(&ipInfo.netmask, 255, 255, 255, 0);
-	esp_netif_dhcps_stop(pWifiSoftAP);
-	esp_netif_set_ip_info(pWifiSoftAP, &ipInfo);
-	esp_netif_dhcps_start(pWifiSoftAP);
+	esp_netif_dhcps_stop(m_pWifiSoftAP);
+	esp_netif_set_ip_info(m_pWifiSoftAP, &ipInfo);
+	esp_netif_dhcps_start(m_pWifiSoftAP);
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
@@ -155,6 +159,32 @@ void WifiMgr::Start()
 {
     // Start AP + STA
     ESP_ERROR_CHECK(esp_wifi_start() );
+}
+
+bool WifiMgr::GetWiFiSTAIP(esp_netif_ip_info_t& outIP)
+{
+    if (m_pWifiSTA != NULL) {
+        esp_netif_get_ip_info(m_pWifiSTA, &outIP);
+        return true;
+    }
+    return false;
+}
+
+bool WifiMgr::GetWiFiSoftAPIP(esp_netif_ip_info_t& outIP)
+{
+    if (m_pWifiSoftAP != NULL) {
+        esp_netif_get_ip_info(m_pWifiSoftAP, &outIP);
+        return true;
+    }
+    return false;
+}
+
+int32_t WifiMgr::GetWiFiSTAIPv6(esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES])
+{
+    if (m_pWifiSTA != NULL) {
+        return esp_netif_get_all_ip6(m_pWifiSTA, if_ip6);
+    }
+    return 0;
 }
 
 void WifiMgr::time_sync_notification_cb(struct timeval* tv)

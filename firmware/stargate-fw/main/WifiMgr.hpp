@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
+#include "esp_netif_ip_addr.h"
 #include "nvs_flash.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -15,6 +16,17 @@
 
 class WifiMgr
 {
+    public:
+    enum class EState
+    {
+        Deactivated = 0,
+        Connecting = 1,
+        Connected = 2,
+        Failed = 3,
+
+        Count
+    };
+
     private:
     WifiMgr();
 
@@ -28,6 +40,12 @@ class WifiMgr
 
     void Start();
 
+    bool GetWiFiSTAIP(esp_netif_ip_info_t& outIP);
+    bool GetWiFiSoftAPIP(esp_netif_ip_info_t& outIP);
+    int32_t GetWiFiSTAIPv6(esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES]);
+
+    inline EState GetWifiSTAState() const { return m_eWiFiSTAState; }
+
     static WifiMgr& getI()
     {
         static WifiMgr instance;
@@ -39,6 +57,9 @@ class WifiMgr
     static void time_sync_notification_cb(struct timeval* tv);
 
     esp_netif_t* m_pWifiSTA;
+    esp_netif_t* m_pWifiSoftAP;
+
+    EState m_eWiFiSTAState = EState::Deactivated;
 };
 
 #endif

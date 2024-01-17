@@ -1,10 +1,10 @@
 idf_component_register(SRCS "MainApp.cpp" "GateControl.cpp" "WiFiMgr.cpp" "Settings.cpp"
     "Audio/SoundFX.cpp"
     "Ring/RingComm.cpp"
-    "WebServer/WebServer.cpp" "WebServer/WebServerAPI.cpp" "WebServer/EmbeddedFiles.c"
+    "WebServer/WebServer.cpp" "WebServer/SystemAPI.cpp" "WebServer/OTA_API.cpp" "WebServer/EmbeddedFiles.c"
     "Gate/BaseGate.cpp" "Gate/KristianGate.cpp" "Gate/AtlantisGate.cpp" "Gate/UniverseGate.cpp"
     "Gate/GateFactory.cpp"
     "Wormhole/Wormhole.cpp"
     "HW/BoardHW.cpp"
     INCLUDE_DIRS "."
-    REQUIRES nvsjson driver led_strip esp_rom lwip nvs_flash json esp_http_server esp_wifi app_update fatfs esp_rom esp_timer esp_hw_support esp_common log)
+    REQUIRES nvsjson misc-formula driver led_strip esp_rom lwip nvs_flash json esp_http_server esp_wifi app_update fatfs esp_rom esp_timer esp_hw_support esp_common log)

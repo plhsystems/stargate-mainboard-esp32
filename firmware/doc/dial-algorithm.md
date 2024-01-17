@@ -6,9 +6,9 @@ The stepper needs to move the ring at the right location based on the current ri
 
 ## Distance
 
-There are two distance to calculate, because the ring can spin clockwise or counter-clockwise to reach the right symbol.
-We use the shortest path and spin the ring accordingly.
-But it's not the only way to do it, we can imagine an algorithm defining a minimum spin distance just for dramatic purpose.
+Every symbol are part of a ring, it need to calculate the minimum distance between two symbols.
+
+Example, on a 39 symbols gate, the symbol 1 and 39 are not 38 symbols appart but are one only one symbol appart.
 
 ## Parameters
 
@@ -31,9 +31,7 @@ To find how many step are necessary to move from one symbol to another :
 | stepPerRot | How many step per full ring rotation |
 | targetPos| Target absolute position in step |
 | currPos | Current absolute position in step |
-| distPos1 | First path distance |
-| distPos2 | Second path distance |
-| distPos3 | 3th path distance |
+| relDistPos | Shortest distance between two symbols |
 | symbolNum | Symbol number [1-39] |
 | symbolCnt | Symbol count (39 or 36) |
 | stepPerSymbolWidth | Step count to point to another symbol |
@@ -64,32 +62,17 @@ for(int i = 0; i < sizeof(symbols)/sizeof(symbols[0]); i++)
     // Notice, the algorithm is different for the universe gate. Symbols aren't equally spaced.
     const int32_t targetPos=((symbolNum-1) * stepPerSymbolWidth);
 
-    const int32_t distpos1=(targetPos-posCurr);
-    const int32_t distpos2=(-1 * (posCurr+(stepPerRot - targetPos)));
-    const int32_t distpos3=(targetPos+(stepPerRot - posCurr));
-
-    int32_t relDistPos = distpos1;
-    if ( abs(distpos2) < abs(relDistPos) ) {
-        relDistPos = distpos2
-    }
-    if ( abs(distpos3) < abs(relDistPos) ) {
-        relDistPos = distpos3
-    }
+    const int32_t relDistPos = MISCFA_CircleDiff(posCurr, targetPos, stepPerRot);
 
     // Move the stepper by 'relDistPos' position
     MoveStepperRel(relDistPos);
 
-    posCurr = targetPos;
+    lastPosition = targetPos;
+}
+
+double MISCFA_CircleDiff(double a, double b, double rotation)
+{
+    const double halfRotation = rotation / 2;
+    return fmod((a - b + rotation + halfRotation), rotation) - halfRotation;
 }
 ```
-
-Example:
-
-stepPerSymbolWidth = 179.48
-
-| From sym | Target sym | D1 | D2 | D3 |
-|---|---|---|---|---|
-| 2 (179.48) | 4 (538.44) | 358.96 | -6641.04 | 7538.44 |
-| 5 (717.92) | 3 (358.96) | -358.96 | -7358.96 | 6641.04 |
-| 4 (538.44) | 38 (6640.76) | 6102.32 | -897.68 | 13102.32 |
-| 38 (6640.76) | 4 (538.44) | -6102.32 | -13102.32 | 897.68 |
