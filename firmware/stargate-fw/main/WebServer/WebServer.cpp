@@ -39,6 +39,14 @@ WebServer::WebServer()
     /* Let's pass response string in user
      * context to demonstrate it's usage */
     m_sHttpPostAPI.user_ctx = nullptr;
+
+    // OTA
+    m_sHttpOTAUploadPost.uri       = APIURL_POST_OTAUPLOAD_URI;
+    m_sHttpOTAUploadPost.method    = HTTP_POST;
+    m_sHttpOTAUploadPost.handler   = OTAUploadPostHandler;
+    /* Let's pass response string in user
+     * context to demonstrate it's usage */
+    m_sHttpOTAUploadPost.user_ctx  = nullptr;
 }
 
 void WebServer::Init()
@@ -57,6 +65,7 @@ void WebServer::Start()
     if (httpd_start(&m_server, &m_config) == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
+        httpd_register_uri_handler(m_server, &m_sHttpOTAUploadPost);
         httpd_register_uri_handler(m_server, &m_sHttpPostAPI);
         httpd_register_uri_handler(m_server, &m_sHttpGetAPI);
         httpd_register_uri_handler(m_server, &m_sHttpUI);

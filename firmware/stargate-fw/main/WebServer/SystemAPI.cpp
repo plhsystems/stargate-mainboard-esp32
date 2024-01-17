@@ -27,6 +27,9 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
         pExportJSON = GetSysInfo();
     }
+    else if (strcmp(req->uri, APIURL_GETSOUNDFXLIST_URI) == 0) {
+        pExportJSON = GetAllSoundLists();
+    }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
     }
@@ -69,6 +72,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     esp_err_t err = ESP_OK;
     WebServer& ws = WebServer::getI();
 
+    // Get datas
     int n = 0;
     while(1)
     {
@@ -158,7 +162,7 @@ char* WebServer::GetSysInfo()
         // Station mode
         // WiFi-STA
         cJSON* pEntryJSON6 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON6, "name", cJSON_CreateString("Mac (STA ipv4)"));
+        cJSON_AddItemToObject(pEntryJSON6, "name", cJSON_CreateString("Mac (STA)"));
         esp_read_mac(u8Macs, ESP_MAC_WIFI_STA);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
         cJSON_AddItemToObject(pEntryJSON6, "value", cJSON_CreateString(buff));
@@ -218,6 +222,35 @@ char* WebServer::GetSysInfo()
         cJSON_AddItemToArray(pEntries, pEntryJSON8);
 
         char* pStr =  cJSON_PrintUnformatted(pRoot);
+        cJSON_Delete(pRoot);
+        return pStr;
+    }
+    ERROR:
+    cJSON_Delete(pRoot);
+    return NULL;
+}
+
+char* WebServer::GetAllSoundLists()
+{
+    cJSON* pRoot = NULL;
+    {
+        pRoot = cJSON_CreateObject();
+        if (pRoot == NULL)
+            goto ERROR;
+
+        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "files");
+        /* TODO: Reactivate this later
+        for(int i = 0; i < 10; i++)
+        {
+            const SOUNDFX_SFile* pFile = SOUNDFX_GetFile((SOUNDFX_EFILE)i);
+
+            cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->szName));
+            cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->szDesc));
+            cJSON_AddItemToArray(pEntries, pNewFile);
+        }*/
+
+        char* pStr = cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;
     }

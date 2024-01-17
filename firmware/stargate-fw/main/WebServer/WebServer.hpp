@@ -30,10 +30,13 @@ class WebServer
     }
     private:
     static esp_err_t file_get_handler(httpd_req_t *req);
+    static esp_err_t OTAUploadPostHandler(httpd_req_t *req);
+
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
 
     static char* GetSysInfo();
+    static char* GetAllSoundLists();
 
     static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
 
@@ -50,6 +53,8 @@ class WebServer
     httpd_uri_t m_sHttpUI;
     httpd_uri_t m_sHttpGetAPI;
     httpd_uri_t m_sHttpPostAPI;
+
+    httpd_uri_t m_sHttpOTAUploadPost;
 };
 
 #endif

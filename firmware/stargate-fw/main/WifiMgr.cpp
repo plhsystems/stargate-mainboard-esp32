@@ -29,12 +29,15 @@ void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t
 void WifiMgr::wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        getI().m_eWiFiSTAState = EState::Connecting;
         esp_wifi_connect();
      }
      else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED ) {
         ESP_LOGI(TAG, "Connected to the AP");
         esp_netif_create_ip6_linklocal(getI().m_pWifiSTA);
+        getI().m_eWiFiSTAState = EState::Connected;
      } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        getI().m_eWiFiSTAState = EState::Connecting;
         //TODO add a timer
         esp_wifi_connect();
         ESP_LOGI(TAG, "connect to the AP faile, retry to connect to the AP");
