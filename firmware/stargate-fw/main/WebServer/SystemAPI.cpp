@@ -9,7 +9,7 @@
 #include "WifiMgr.hpp"
 #include "cJSON.h"
 #include "esp_netif_types.h"
-#include "../HelperMacro.h"
+#include "misc-macro.h"
 
 #define TAG "WebAPI"
 
@@ -181,7 +181,7 @@ char* WebServer::GetSysInfo()
         esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES];
         memset(&if_ip6[0], 0, sizeof(if_ip6));
         const int32_t s32IPv6Count = WifiMgr::getI().GetWiFiSTAIPv6(if_ip6);
-        for(int i = 0; i < HELPERMACRO_MIN(s32IPv6Count, 2); i++)
+        for(int i = 0; i < MISCMACRO_MIN(s32IPv6Count, 2); i++)
         {
             char ipv6String[45+1] = {0,};
             snprintf(ipv6String, sizeof(ipv6String)-1, IPV6STR, IPV62STR(if_ip6[i]));

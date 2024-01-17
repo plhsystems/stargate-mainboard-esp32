@@ -8,7 +8,7 @@
 #include "esp_ota_ops.h"
 #include "cJSON.h"
 #include "../FWConfig.hpp"
-#include "../HelperMacro.h"
+#include "misc-macro.h"
 
 #define TAG "webserver"
 
@@ -147,7 +147,7 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
 
     while(u32Index < pFile->u32Length)
     {
-        const uint32_t n = HELPERMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
+        const uint32_t n = MISCMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
 
         if (n > 0) {
             /* Send the buffer contents as HTTP response m_u8Buffers */

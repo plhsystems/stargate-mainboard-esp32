@@ -2,7 +2,7 @@
 #include "FWConfig.hpp"
 #include "Settings.hpp"
 #include "esp_sntp.h"
-#include "HelperMacro.h"
+#include "misc-macro.h"
 
 const char *TAG = "wifi";
 
