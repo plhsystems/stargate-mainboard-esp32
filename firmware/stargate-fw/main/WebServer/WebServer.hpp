@@ -35,6 +35,7 @@ class WebServer
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
 
+    static char* GetStatus();
     static char* GetSysInfo();
     static char* GetAllSoundLists();
 

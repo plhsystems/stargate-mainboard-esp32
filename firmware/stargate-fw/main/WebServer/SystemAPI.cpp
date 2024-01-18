@@ -22,7 +22,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     char* pExportJSON = NULL;
 
     if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
-
+        pExportJSON = GetStatus();
     }
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
         pExportJSON = GetSysInfo();
@@ -109,6 +109,26 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Connection", "close");
     httpd_resp_send_chunk(req, NULL, 0);
     return err;
+}
+
+char* WebServer::GetStatus()
+{
+    cJSON* pRoot = NULL;
+    {
+        pRoot = cJSON_CreateObject();
+        if (pRoot == NULL)
+        {
+            goto ERROR;
+        }
+        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "state");
+
+        char* pStr =  cJSON_PrintUnformatted(pRoot);
+        cJSON_Delete(pRoot);
+        return pStr;
+    }
+    ERROR:
+    cJSON_Delete(pRoot);
+    return NULL;
 }
 
 char* WebServer::GetSysInfo()

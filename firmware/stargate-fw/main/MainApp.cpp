@@ -6,6 +6,7 @@
 #include "Ring/RingComm.hpp"
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
+#include "HttpClient.hpp"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
@@ -49,6 +50,8 @@ void app_main(void)
     m_gc.Init();
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
+    ESP_LOGI(TAG, "HTTP Client for external calls");
+    HttpClient::getI().Init();
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
@@ -58,9 +61,11 @@ void app_main(void)
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
     m_gc.StartTask();
-
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
+    ESP_LOGI(TAG, "Starting HTTP Client");
+    HttpClient::getI().Start();
+
     // Die.
     // For debug purpose ...
     char* szAllTask = (char*)malloc(4096);

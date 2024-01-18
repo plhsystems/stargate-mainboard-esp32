@@ -12,7 +12,7 @@
 
 #define TAG "webserver"
 
-#define DEFAULT_RELATIVE_URI "/index.html"
+#define DEFAULT_RELATIVE_URI "/setup/index.html"
 
 WebServer::WebServer()
     : m_server(nullptr)
