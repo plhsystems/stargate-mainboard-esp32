@@ -24,8 +24,8 @@ typedef struct
 typedef enum
 {
     EF_EFILE_FAVICON_ICO = 0,    /*!< @brief File: favicon.ico (size: 7 KB) */
-    EF_EFILE_INDEX_HTML = 1,    /*!< @brief File: index.html (size: 606  B) */
-    EF_EFILE_CSS_CONTENT_CSS = 2,    /*!< @brief File: css/content.css (size: 69  B) */
+    EF_EFILE_COMMON_CSS_CONTENT_CSS = 1,    /*!< @brief File: common/css/content.css (size: 69  B) */
+    EF_EFILE_COMMON_JS_VUE_MIN_JS = 2,    /*!< @brief File: common/js/vue.min.js (size: 92 KB) */
     EF_EFILE_GALAXIES_MILKYWAY_GLYPHS_001_SVG = 3,    /*!< @brief File: galaxies/milkyway/glyphs/001.svg (size: 1 KB) */
     EF_EFILE_GALAXIES_MILKYWAY_GLYPHS_002_SVG = 4,    /*!< @brief File: galaxies/milkyway/glyphs/002.svg (size: 1 KB) */
     EF_EFILE_GALAXIES_MILKYWAY_GLYPHS_003_SVG = 5,    /*!< @brief File: galaxies/milkyway/glyphs/003.svg (size: 2 KB) */
@@ -137,11 +137,10 @@ typedef enum
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_G34_SVG = 111,    /*!< @brief File: galaxies/universe/glyphs/G34.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_G35_SVG = 112,    /*!< @brief File: galaxies/universe/glyphs/G35.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_G36_SVG = 113,    /*!< @brief File: galaxies/universe/glyphs/G36.svg (size: 2 KB) */
-    EF_EFILE_IMG_HOME_SVG = 114,    /*!< @brief File: img/home.svg (size: 1 KB) */
-    EF_EFILE_JS_APP_JS = 115,    /*!< @brief File: js/app.js (size: 1 KB) */
-    EF_EFILE_JS_VUE_MIN_JS = 116,    /*!< @brief File: js/vue.min.js (size: 92 KB) */
-    EF_EFILE_MILKYWAY_G18_SVG = 117,    /*!< @brief File: milkyway/g18.svg (size: 1 KB) */
-    EF_EFILE_COUNT = 118
+    EF_EFILE_MILKYWAY_G18_SVG = 114,    /*!< @brief File: milkyway/g18.svg (size: 1 KB) */
+    EF_EFILE_SETUP_INDEX_HTML = 115,    /*!< @brief File: setup/index.html (size: 626  B) */
+    EF_EFILE_SETUP_JS_APP_JS = 116,    /*!< @brief File: setup/js/app.js (size: 1 KB) */
+    EF_EFILE_COUNT = 117
 } EF_EFILE;
 
 /*! @brief Check if compressed flag is active */
