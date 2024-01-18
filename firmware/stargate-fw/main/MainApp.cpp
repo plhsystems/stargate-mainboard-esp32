@@ -64,7 +64,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     ESP_LOGI(TAG, "Starting HTTP Client");
-    // HttpClient::getI().Start();
+    HttpClient::getI().Start();
 
     // Die.
     // For debug purpose ...

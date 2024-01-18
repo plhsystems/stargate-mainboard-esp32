@@ -31,20 +31,22 @@ void HttpClient::Start()
 void HttpClient::TaskRunning(void* pArg)
 {
     esp_http_client_handle_t h = NULL;
+    int32_t s32FastAttempt = FWCONFIG_HTTPCLIENT_FASTATTEMPT_COUNT;
 
-    for(int i = 0; i < 30; i++)
+    while(true)
     {
+        bool error = false;
         {
             const char* szURL = "https://api.thestargateproject.com/get_fan_gates.php";
 
-            ESP_LOGI(TAG, "Testing URL #%d: '%s'", i, szURL);
+            ESP_LOGI(TAG, "Opening url '%s'", szURL);
 
             const esp_http_client_config_t config =
             {
                 .url = szURL,
                 .auth_type = HTTP_AUTH_TYPE_NONE,
                 .method = HTTP_METHOD_GET,
-                .timeout_ms = 60000,
+                .timeout_ms = 10000,
 
                 .disable_auto_redirect = false,
 
@@ -78,31 +80,42 @@ void HttpClient::TaskRunning(void* pArg)
 
             const int len = esp_http_client_get_content_length(h);
 
-            auto m_u8Buffers = make_shared<char[]>(len+1);
+            auto sptrBuffer = make_shared<uint8_t[]>(len+1);
+            uint8_t* u8Buffers = sptrBuffer.get();
 
             int offset = 0;
             while(offset < len)
             {
-                int n = esp_http_client_read(h, (char*)m_u8Buffers.get() + offset, len);
+                int n = esp_http_client_read(h, (char*)u8Buffers + offset, len);
                 if (n < 0) { // If we didn't receive correct byte count we call it an error
                     ESP_LOGE(TAG, "HTTP Read error, it returned: %d", statusCode);
                     goto ERROR;
                 }
                 offset += n;
             }
-            m_u8Buffers.get()[offset] = 0;
+            u8Buffers[offset] = 0;
             ESP_LOGI(TAG, "URL: %s, size: %d / %d", szURL, offset, len);
             goto END;
         }
         ERROR:
+        error = true;
         END:
         if (h != NULL) {
             esp_http_client_close(h);
             esp_http_client_cleanup(h);
         }
 
-        // Wait 60s
-        vTaskDelay(pdMS_TO_TICKS(30000));
+        // Fast retry (30s)
+        if (error && s32FastAttempt-- >= 0) {
+            ESP_LOGI(TAG, "Fast attempt in 30 s");
+            vTaskDelay(pdMS_TO_TICKS(30*1000));
+        }
+        // Wait 10 minutes
+        else {
+            s32FastAttempt = FWCONFIG_HTTPCLIENT_FASTATTEMPT_COUNT;
+            ESP_LOGI(TAG, "Next refresh in 10 min");
+            vTaskDelay(pdMS_TO_TICKS(10*60*1000));
+        }
     }
     getI().m_sTaskHTTPClientHandle = NULL;
     vTaskDelete(NULL);
