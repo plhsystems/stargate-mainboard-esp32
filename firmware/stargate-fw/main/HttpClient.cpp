@@ -3,6 +3,10 @@
 #include "esp_tls_errors.h"
 #include "esp_crt_bundle.h"
 #include "FWConfig.hpp"
+#include "misc-macro.h"
+#include <memory>
+
+using namespace std;
 
 #define TAG "HttpClient"
 
@@ -28,7 +32,7 @@ void HttpClient::TaskRunning(void* pArg)
 {
     esp_http_client_handle_t h = NULL;
 
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 30; i++)
     {
         {
             const char* szURL = "https://api.thestargateproject.com/get_fan_gates.php";
@@ -44,7 +48,7 @@ void HttpClient::TaskRunning(void* pArg)
 
                 .disable_auto_redirect = false,
 
-                .event_handler = client_event_get_handler,
+               // .event_handler = client_event_get_handler,
 
                 .transport_type = HTTP_TRANSPORT_OVER_SSL,
                 // CRT bundle.
@@ -74,25 +78,20 @@ void HttpClient::TaskRunning(void* pArg)
 
             const int len = esp_http_client_get_content_length(h);
 
+            auto m_u8Buffers = make_shared<char[]>(len+1);
+
             int offset = 0;
-            TickType_t tt = xTaskGetTickCount();
             while(offset < len)
             {
-                int n = esp_http_client_read(h, (char*)getI().m_u8Buffers + offset, sizeof(getI().m_u8Buffers) - offset - 1);
+                int n = esp_http_client_read(h, (char*)m_u8Buffers.get() + offset, len);
                 if (n < 0) { // If we didn't receive correct byte count we call it an error
                     ESP_LOGE(TAG, "HTTP Read error, it returned: %d", statusCode);
                     goto ERROR;
                 }
                 offset += n;
-
-                // Don't report progress too often.
-                if ( pdTICKS_TO_MS(xTaskGetTickCount() - tt) > 500 ) {
-                    tt = xTaskGetTickCount();
-                    const double ofOne = ((double)offset/(double)len);
-                    ESP_LOGI(TAG, "http read, offset: %d, len: %d, percent: %.2f %%", offset, len, ofOne * 100.0d );
-                }
             }
-            getI().m_u8Buffers[offset] = 0;
+            m_u8Buffers.get()[offset] = 0;
+            ESP_LOGI(TAG, "URL: %s, size: %d / %d", szURL, offset, len);
             goto END;
         }
         ERROR:
@@ -102,7 +101,7 @@ void HttpClient::TaskRunning(void* pArg)
             esp_http_client_cleanup(h);
         }
 
-        // Wait 30s
+        // Wait 60s
         vTaskDelay(pdMS_TO_TICKS(30000));
     }
     getI().m_sTaskHTTPClientHandle = NULL;

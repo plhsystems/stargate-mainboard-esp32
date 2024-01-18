@@ -32,7 +32,6 @@ class HttpClient
     }
     private:
     TaskHandle_t m_sTaskHTTPClientHandle;
-    uint8_t m_u8Buffers[1024*10];
 };
 
 #endif
