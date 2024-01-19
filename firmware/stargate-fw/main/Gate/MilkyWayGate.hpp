@@ -3,10 +3,10 @@
 #include <stdint.h>
 #include "BaseGate.hpp"
 
-class AtlantisGate : public BaseGate
+class MilkyWayGate : public BaseGate
 {
     public:
-    AtlantisGate();
+    MilkyWayGate();
 };
 
 

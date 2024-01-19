@@ -8,8 +8,8 @@ class BaseGate
     public:
     enum class Type
     {
-        Kristian = 0,
-        Atlantis = 1,
+        MilkyWay = 0,
+        Pegasus = 1,
         Universe = 2,
 
         Count

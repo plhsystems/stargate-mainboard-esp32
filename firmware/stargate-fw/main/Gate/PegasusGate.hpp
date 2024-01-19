@@ -3,10 +3,10 @@
 #include <stdint.h>
 #include "BaseGate.hpp"
 
-class KristianGate : public BaseGate
+class PegasusGate : public BaseGate
 {
     public:
-    KristianGate();
+    PegasusGate();
 };
 
 

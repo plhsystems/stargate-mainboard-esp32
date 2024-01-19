@@ -284,3 +284,4 @@ void WebServer::ToHexString(char dstHexString[], const uint8_t* data, uint8_t le
     for (uint32_t i = 0; i < len; i++)
         sprintf(dstHexString + (i * 2), "%02X", data[i]);
 }
+

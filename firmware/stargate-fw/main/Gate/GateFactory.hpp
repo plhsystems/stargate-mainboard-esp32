@@ -1,5 +1,7 @@
 #include "BaseGate.hpp"
-#include "KristianGate.hpp"
+#include "MilkyWayGate.hpp"
+#include "PegasusGate.hpp"
+#include "UniverseGate.hpp"
 
 class GateFactory
 {
