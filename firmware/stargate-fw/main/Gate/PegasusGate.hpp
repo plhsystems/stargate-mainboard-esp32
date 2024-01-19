@@ -10,22 +10,22 @@ class PegasusGate : public BaseGate
     private:
     static const int32_t m_s32SymbolCount = 36;
 
-    const GateSymbol& GetSymbol(uint8_t u8SymbolNum) override
+    inline const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const override
     {
         if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
             return BaseGate::InvalidSymbol;
         return m_symbols[u8SymbolNum-1];
     }
 
-    inline int32_t GetSymbolCount() override { return m_s32SymbolCount; };
+    inline int32_t GetSymbolCount() const override { return m_s32SymbolCount; };
 
-    const GateAddress& GetAddress(uint32_t u32Index) override
+    inline const GateAddress& GetAddress(uint32_t u32Index) const override
     {
         if (u32Index >= GetAddressCount())
             return BaseGate::InvalidGateAddress;
         return m_gateAddresses[u32Index];
     }
-    int32_t GetAddressCount() override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
+    inline int32_t GetAddressCount() const override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
     // TODO: Add https://stargate.fandom.com to the thanks list
     static inline const GateAddress m_gateAddresses[] =

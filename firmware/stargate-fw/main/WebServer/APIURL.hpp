@@ -8,8 +8,8 @@
 #define APIURL_GETPOST_SETTINGSJSON_URI "/api/settingsjson"
 #define APIURL_GET_FREERTOSDBGINFO_URI "/api/getfreertosdbginfo"
 
-#define APIURL_GETSYMBOLS_MILKYWAY_URI "/api/getsymbols/milkyway"
-#define APIURL_GETSYMBOLS_PEGASUS_URI "/api/getsymbols/pegasus"
-#define APIURL_GETSYMBOLS_UNIVERSE_URI "/api/getsymbols/universe"
+#define APIURL_GETGALAXYINFO_MILKYWAY_URI "/api/getgalaxyinfo/milkyway"
+#define APIURL_GETGALAXYINFO_PEGASUS_URI "/api/getgalaxyinfo/pegasus"
+#define APIURL_GETGALAXYINFO_UNIVERSE_URI "/api/getgalaxyinfo/universe"
 
 #define APIURL_POST_OTAUPLOAD_URI "/ota/upload"

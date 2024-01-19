@@ -22,11 +22,11 @@ class BaseGate
     public:
     const GateGalaxy eGateGalaxy;
 
-    virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) = 0;
-    virtual int32_t GetSymbolCount() = 0;
+    virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const = 0;
+    virtual int32_t GetSymbolCount() const = 0;
 
-    virtual const GateAddress& GetAddress(uint32_t u32Index) { return InvalidGateAddress; }
-    virtual int32_t GetAddressCount() { return 0; }
+    virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
+    virtual int32_t GetAddressCount() const { return 0; }
 
     virtual void LockChevron();
     virtual void UnlockChevron();

@@ -41,7 +41,7 @@ class WebServer
     static char* GetSysInfo();
     static char* GetAllSoundLists();
 
-    static char* GetSymbolsJSON(GateGalaxy gateGalaxy);
+    static char* GetGalaxyInfoJSON(GateGalaxy gateGalaxy);
 
     static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
 
