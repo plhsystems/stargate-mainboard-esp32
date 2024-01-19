@@ -10,20 +10,20 @@ class PegasusGate : public BaseGate
     private:
     static const int32_t m_s32SymbolCount = 36;
 
-    const GateSymbol& GetSymbol(uint8_t u8SymbolNum)
+    const GateSymbol& GetSymbol(uint8_t u8SymbolNum) override
     {
         if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
             return BaseGate::InvalidSymbol;
         return m_symbols[u8SymbolNum-1];
     }
 
-    inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
+    inline int32_t GetSymbolCount() override { return m_s32SymbolCount; };
 
-    const GateAddress& GetAddress(int32_t s32Index) override
+    const GateAddress& GetAddress(uint32_t u32Index) override
     {
-        if (s32Index >= GetAddressCount())
+        if (u32Index >= GetAddressCount())
             return BaseGate::InvalidGateAddress;
-        return m_gateAddresses[s32Index];
+        return m_gateAddresses[u32Index];
     }
     int32_t GetAddressCount() override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
