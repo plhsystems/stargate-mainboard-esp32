@@ -302,7 +302,7 @@ char* WebServer::GetSymbolsJSON(GateGalaxy eGateGalaxy)
         // TODO: Add a cache expiration value
         for(int i = 1; i <= bg.GetSymbolCount(); i++)
         {
-            const Symbol& sym = bg.GetSymbol(i);
+            const GateSymbol& sym = bg.GetSymbol(i);
 
             cJSON* pNewFile = cJSON_CreateObject();
             cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber((int)sym.u8Number));

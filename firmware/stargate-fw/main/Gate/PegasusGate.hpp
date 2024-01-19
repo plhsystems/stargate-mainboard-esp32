@@ -10,7 +10,7 @@ class PegasusGate : public BaseGate
     private:
     static const int32_t m_s32SymbolCount = 36;
 
-    const Symbol& GetSymbol(uint8_t u8SymbolNum)
+    const GateSymbol& GetSymbol(uint8_t u8SymbolNum)
     {
         if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
             return BaseGate::InvalidSymbol;
@@ -19,7 +19,20 @@ class PegasusGate : public BaseGate
 
     inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
 
-    static inline const Symbol m_symbols[36]
+    virtual const GateAddress& GetAddress(int32_t s32Index)
+    {
+        if (s32Index >= GetAddressCount())
+            return BaseGate::InvalidGateAddress;
+        return m_gateAddresses[s32Index];
+    }
+    virtual int32_t GetAddressCount() { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
+
+    static inline const GateAddress m_gateAddresses[] =
+    {
+
+    };
+
+    static inline const GateSymbol m_symbols[36]
     {
         { 1, "Subido" },
         { 2, "Bydo" },

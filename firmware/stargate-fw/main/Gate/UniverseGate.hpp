@@ -10,7 +10,7 @@ class UniverseGate : public BaseGate
     private:
     static const int32_t m_s32SymbolCount = 36;
 
-    const Symbol& GetSymbol(uint8_t u8SymbolNum)
+    const GateSymbol& GetSymbol(uint8_t u8SymbolNum)
     {
         if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
             return BaseGate::InvalidSymbol;
@@ -19,7 +19,7 @@ class UniverseGate : public BaseGate
 
     inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
 
-    static inline const Symbol m_symbols[36]
+    static inline const GateSymbol m_symbols[36]
     {
         // Universe symbols aren't named
         { 1, "1" },
