@@ -19,6 +19,30 @@ class UniverseGate : public BaseGate
 
     inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
 
+    const GateAddress& GetAddress(int32_t s32Index) override
+    {
+        if (s32Index >= GetAddressCount())
+            return BaseGate::InvalidGateAddress;
+        return m_gateAddresses[s32Index];
+    }
+    int32_t GetAddressCount() override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
+
+    static inline const GateAddress m_gateAddresses[] =
+    {
+        { "Earth", 10, 15, 20, 26, 28, 13, 18, 32, 30 },
+        { "Jungle Planet", 3, 34, 12, 7, 19, 6, 29 },
+        { "Desert Planet", 7, 8, 14, 17, 32, 23, 33 },
+        { "Hoth", 15, 35, 8, 30, 31, 29, 33 },
+        { "Grave Pit Planet", 1, 34, 12, 7, 25, 32, 33 },
+        { "Ruins Planet", 10, 12, 14, 23, 32, 23, 33 },
+        { "Foggy Planet", 4, 20, 23, 28, 6, 11, 33 },
+        { "Deportation Planet", 4, 17, 23, 32, 35, 8, 33 },
+        { "Cloverdale Planet", 3, 13, 17, 19, 1, 35, 33 },
+        { "Malice Planet",2, 14, 18, 23, 30, 5, 33 },
+        { "Novus Colony Planet",5, 17, 23, 25, 1, 28, 33 },
+        { "Last Planet", 6, 26, 28, 10, 31, 12, 33 },
+    };
+
     static inline const GateSymbol m_symbols[36]
     {
         // Universe symbols aren't named

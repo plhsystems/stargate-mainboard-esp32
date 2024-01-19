@@ -19,13 +19,13 @@ class PegasusGate : public BaseGate
 
     inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
 
-    virtual const GateAddress& GetAddress(int32_t s32Index)
+    const GateAddress& GetAddress(int32_t s32Index) override
     {
         if (s32Index >= GetAddressCount())
             return BaseGate::InvalidGateAddress;
         return m_gateAddresses[s32Index];
     }
-    virtual int32_t GetAddressCount() { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
+    int32_t GetAddressCount() override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
     static inline const GateAddress m_gateAddresses[] =
     {
