@@ -9,7 +9,13 @@ class MilkyWayGate : public BaseGate
     MilkyWayGate();
     static const int32_t m_s32SymbolCount = 39;
 
-    const Symbol& GetSymbol(uint8_t u8SymbolNum) { return m_symbols[u8SymbolNum-1]; }
+    const Symbol& GetSymbol(uint8_t u8SymbolNum)
+    {
+        if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
+            return BaseGate::InvalidSymbol;
+        return m_symbols[u8SymbolNum-1];
+    }
+
     inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
 
     static inline const Symbol m_symbols[m_s32SymbolCount] =

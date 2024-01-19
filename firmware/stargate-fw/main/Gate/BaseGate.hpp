@@ -52,6 +52,8 @@ class BaseGate
 
     virtual void UnlockGate();
     virtual void LockGate();
+
+    static inline const Symbol InvalidSymbol{0, "Invalid"};
 };
 
 

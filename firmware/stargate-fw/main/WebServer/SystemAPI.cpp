@@ -290,23 +290,16 @@ char* WebServer::GetAllSoundLists()
     return NULL;
 }
 
-void WebServer::ToHexString(char dstHexString[], const uint8_t* data, uint8_t len)
-{
-    for (uint32_t i = 0; i < len; i++)
-        sprintf(dstHexString + (i * 2), "%02X", data[i]);
-}
-
 char* WebServer::GetSymbolsJSON(GateGalaxy eGateGalaxy)
 {
     cJSON* pRoot = NULL;
     {
-        pRoot = cJSON_CreateObject();
+        pRoot = cJSON_CreateArray();
         if (pRoot == NULL)
             goto ERROR;
 
         BaseGate& bg = GateFactory::Get(eGateGalaxy);
-
-        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "symbols");
+        // TODO: Add a cache expiration value
         for(int i = 1; i <= bg.GetSymbolCount(); i++)
         {
             const Symbol& sym = bg.GetSymbol(i);
@@ -314,7 +307,7 @@ char* WebServer::GetSymbolsJSON(GateGalaxy eGateGalaxy)
             cJSON* pNewFile = cJSON_CreateObject();
             cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber((int)sym.u8Number));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(sym.szName));
-            cJSON_AddItemToArray(pEntries, pNewFile);
+            cJSON_AddItemToArray(pRoot, pNewFile);
         }
         char* pStr = cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
@@ -323,4 +316,10 @@ char* WebServer::GetSymbolsJSON(GateGalaxy eGateGalaxy)
     ERROR:
     cJSON_Delete(pRoot);
     return NULL;
+}
+
+void WebServer::ToHexString(char dstHexString[], const uint8_t* data, uint8_t len)
+{
+    for (uint32_t i = 0; i < len; i++)
+        sprintf(dstHexString + (i * 2), "%02X", data[i]);
 }
