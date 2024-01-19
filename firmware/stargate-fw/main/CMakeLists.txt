@@ -3,7 +3,7 @@ idf_component_register(
     "Audio/SoundFX.cpp"
     "Ring/RingComm.cpp"
     "WebServer/WebServer.cpp" "WebServer/SystemAPI.cpp" "WebServer/OTA_API.cpp" "WebServer/EmbeddedFiles.c"
-    "Gate/BaseGate.cpp" "Gate/KristianGate.cpp" "Gate/AtlantisGate.cpp" "Gate/UniverseGate.cpp"
+    "Gate/BaseGate.cpp" "Gate/MilkyWayGate.cpp" "Gate/PegasusGate.cpp" "Gate/UniverseGate.cpp"
     "Gate/GateFactory.cpp"
     "Wormhole/Wormhole.cpp"
     "HW/BoardHW.cpp"

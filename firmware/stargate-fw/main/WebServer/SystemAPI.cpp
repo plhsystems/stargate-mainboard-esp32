@@ -10,6 +10,8 @@
 #include "cJSON.h"
 #include "esp_netif_types.h"
 #include "misc-macro.h"
+#include "../Gate/BaseGate.hpp"
+#include "../Gate/GateFactory.hpp"
 
 #define TAG "WebAPI"
 
@@ -37,6 +39,15 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
         // According to the documentation, put a big buffer.
         pExportJSON = (char*)malloc(4096);
         vTaskList(pExportJSON);
+    }
+    else if (strcmp(req->uri, APIURL_GETSYMBOLS_MILKYWAY_URI) == 0) {
+        pExportJSON = GetSymbolsJSON(GateGalaxy::MilkyWay);
+    }
+    else if (strcmp(req->uri, APIURL_GETSYMBOLS_PEGASUS_URI) == 0) {
+        pExportJSON = GetSymbolsJSON(GateGalaxy::Pegasus);
+    }
+    else if (strcmp(req->uri, APIURL_GETSYMBOLS_UNIVERSE_URI) == 0) {
+        pExportJSON = GetSymbolsJSON(GateGalaxy::Universe);
     }
     else {
         ESP_LOGE(TAG, "api_get_handler, url: %s", req->uri);
@@ -270,6 +281,34 @@ char* WebServer::GetAllSoundLists()
             cJSON_AddItemToArray(pEntries, pNewFile);
         }*/
 
+        char* pStr = cJSON_PrintUnformatted(pRoot);
+        cJSON_Delete(pRoot);
+        return pStr;
+    }
+    ERROR:
+    cJSON_Delete(pRoot);
+    return NULL;
+}
+
+char* WebServer::GetSymbolsJSON(GateGalaxy eGateGalaxy)
+{
+    cJSON* pRoot = NULL;
+    {
+        pRoot = cJSON_CreateArray();
+        if (pRoot == NULL)
+            goto ERROR;
+
+        BaseGate& bg = GateFactory::Get(eGateGalaxy);
+        // TODO: Add a cache expiration value
+        for(int i = 1; i <= bg.GetSymbolCount(); i++)
+        {
+            const Symbol& sym = bg.GetSymbol(i);
+
+            cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber((int)sym.u8Number));
+            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(sym.szName));
+            cJSON_AddItemToArray(pRoot, pNewFile);
+        }
         char* pStr = cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;

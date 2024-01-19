@@ -38,7 +38,7 @@ void GateControl::TaskRunning(void* pArg)
     GateControl* gc = (GateControl*)pArg;
 
     // Get a stargate instance based on parameters
-    BaseGate baseGate = GateFactory::Get(BaseGate::Type::Kristian);
+    BaseGate& baseGate = GateFactory::Get(GateGalaxy::MilkyWay);
 
     Wormhole wormhole(Wormhole::EType::NormalSG1);
 
