@@ -1,6 +1,6 @@
 #include "UniverseGate.hpp"
 
-UniverseGate::UniverseGate() : BaseGate(BaseGate::Type::Universe, 1, 36)
+UniverseGate::UniverseGate() : BaseGate(BaseGate::Type::Universe, 36)
 {
 
 }

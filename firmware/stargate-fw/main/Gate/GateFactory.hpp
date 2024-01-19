@@ -5,6 +5,14 @@
 
 class GateFactory
 {
+    private:
+    GateFactory() = delete;
+
     public:
-    static const BaseGate Get(BaseGate::Type type);
+    static BaseGate& Get(BaseGate::Type type);
+
+    private:
+    static inline MilkyWayGate m_milkyWayGate;
+    static inline PegasusGate m_pegasusGate;
+    static inline UniverseGate m_universeGate;
 };
