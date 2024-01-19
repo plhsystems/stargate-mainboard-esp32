@@ -8,7 +8,11 @@ class UniverseGate : public BaseGate
     public:
     UniverseGate();
     private:
+    static const int32_t m_s32SymbolCount = 36;
+
     const Symbol& GetSymbol(uint8_t u8SymbolNum) { return m_symbols[u8SymbolNum-1]; }
+    inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
+
     static inline const Symbol m_symbols[36]
     {
         // Universe symbols aren't named

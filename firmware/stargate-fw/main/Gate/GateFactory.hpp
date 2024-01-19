@@ -9,7 +9,7 @@ class GateFactory
     GateFactory() = delete;
 
     public:
-    static BaseGate& Get(BaseGate::Type type);
+    static BaseGate& Get(GateGalaxy eGateGalaxy);
 
     private:
     static inline MilkyWayGate m_milkyWayGate;

@@ -7,9 +7,12 @@ class MilkyWayGate : public BaseGate
 {
     public:
     MilkyWayGate();
+    static const int32_t m_s32SymbolCount = 39;
 
     const Symbol& GetSymbol(uint8_t u8SymbolNum) { return m_symbols[u8SymbolNum-1]; }
-    static inline const Symbol m_symbols[39] =
+    inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
+
+    static inline const Symbol m_symbols[m_s32SymbolCount] =
     {
         { 1, "Point of origin (Giza)" },
         { 2, "Crater" },

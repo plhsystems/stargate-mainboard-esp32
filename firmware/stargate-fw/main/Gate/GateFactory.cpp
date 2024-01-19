@@ -1,15 +1,15 @@
 #include "GateFactory.hpp"
 
-BaseGate& GateFactory::Get(BaseGate::Type type)
+BaseGate& GateFactory::Get(GateGalaxy eGateGalaxy)
 {
-    switch(type)
+    switch(eGateGalaxy)
     {
-        case BaseGate::Type::Pegasus:
+        case GateGalaxy::Pegasus:
             return m_pegasusGate;
-        case BaseGate::Type::Universe:
+        case GateGalaxy::Universe:
             return m_universeGate;
         default:
-        case BaseGate::Type::MilkyWay:
+        case GateGalaxy::MilkyWay:
             return m_milkyWayGate;
     }
 }

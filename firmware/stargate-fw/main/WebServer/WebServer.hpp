@@ -4,6 +4,7 @@
 #include "esp_http_server.h"
 #include "EmbeddedFiles.h"
 #include "APIURL.hpp"
+#include "./Gate/BaseGate.hpp"
 
 class WebServer
 {
@@ -35,9 +36,12 @@ class WebServer
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
 
+    // Get API
     static char* GetStatus();
     static char* GetSysInfo();
     static char* GetAllSoundLists();
+
+    static char* GetSymbolsJSON(GateGalaxy gateGalaxy);
 
     static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
 

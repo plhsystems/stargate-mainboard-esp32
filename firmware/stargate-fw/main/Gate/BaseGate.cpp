@@ -1,9 +1,8 @@
 #include "BaseGate.hpp"
 #include "../HW/BoardHW.hpp"
 
-BaseGate::BaseGate(Type eType, uint8_t u8Maximum) :
-    eType(eType),
-    u8Maximum(u8Maximum)
+BaseGate::BaseGate(GateGalaxy eGateGalaxy) :
+    eGateGalaxy(eGateGalaxy)
 {
 
 }

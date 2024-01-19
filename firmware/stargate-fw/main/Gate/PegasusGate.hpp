@@ -8,10 +8,14 @@ class PegasusGate : public BaseGate
     public:
     PegasusGate();
     private:
+    static const int32_t m_s32SymbolCount = 36;
+
     const Symbol& GetSymbol(uint8_t u8SymbolNum) { return m_symbols[u8SymbolNum-1]; }
+    inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
+
     static inline const Symbol m_symbols[36]
     {
-        { 1, "	Subido" },
+        { 1, "Subido" },
         { 2, "Bydo" },
         { 3, "Robandus" },
         { 4, "Sibbron" },
