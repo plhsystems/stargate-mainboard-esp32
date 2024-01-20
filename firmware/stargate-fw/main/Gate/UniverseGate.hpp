@@ -29,6 +29,7 @@ class UniverseGate : public BaseGate
 
     static inline const GateAddress m_gateAddresses[] =
     {
+        // No point of origin in Universe
         { "Earth", 10, 15, 20, 26, 28, 13, 18, 32, 30 },
         { "Jungle Planet", 3, 34, 12, 7, 19, 6, 29 },
         { "Desert Planet", 7, 8, 14, 17, 32, 23, 33 },
