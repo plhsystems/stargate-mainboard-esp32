@@ -5,10 +5,10 @@
 #include "HWConfig.hpp"
 #include "HWBase.hpp"
 
-class BoardHWBase
+class SGHW_HAL
 {
     public:
-    BoardHWBase();
+    SGHW_HAL();
 
     public:
     virtual void Init();
@@ -38,4 +38,7 @@ class BoardHWBase
     virtual void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue);
     virtual void ClearAllWHPixels();
     virtual void RefreshWHPixels();
+
+    // Change the sanity LED status
+    virtual void SetSanityLED(bool bState);
 };

@@ -1,6 +1,6 @@
 #include "HWConfig.hpp"
-#include "BoardHWBase.hpp"
-#include "PinkyBoardHW.hpp"
+#include "SGHW_HAL.hpp"
+#include "PinkySGHW.hpp"
 
 class HW
 {
@@ -8,14 +8,14 @@ class HW
     HW( const HW& ); // non construction-copyable
     HW& operator=( const HW& ); // non copyable
 
-    static BoardHWBase* getI()
+    static SGHW_HAL* getI()
     {
         return &m_instance;
     }
 
     #if HWCONFIG_BOARD_CURRENT == HWCONFIG_BOARD_PINKYBOARD
-    inline static PinkyBoardHW m_instance;
+    inline static PinkySGHW m_instance;
     #else
-    inline static BoardHWBase m_instance;
+    inline static SGHW_HAL m_instance;
     #endif
 };
