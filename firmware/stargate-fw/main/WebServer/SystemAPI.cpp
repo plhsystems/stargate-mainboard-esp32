@@ -252,11 +252,16 @@ char* WebServer::GetSysInfo()
         cJSON_AddItemToObject(pEntryMemoryJSON, "value", cJSON_CreateString(buff));
         cJSON_AddItemToArray(pEntries, pEntryMemoryJSON);
 
+        // Current time
+        cJSON* pEntryCurrTimeJSON = cJSON_CreateObject();
+        cJSON_AddItemToObject(pEntryCurrTimeJSON, "name", cJSON_CreateString("Time"));
+        cJSON_AddItemToObject(pEntryCurrTimeJSON, "value", cJSON_CreateString(esp_log_system_timestamp()));
+        cJSON_AddItemToArray(pEntries, pEntryCurrTimeJSON);
+
         // Uptime (s)
-        const uint32_t u32UpTimeMS = esp_log_timestamp();
         cJSON* pEntryUpTimeJSON = cJSON_CreateObject();
         cJSON_AddItemToObject(pEntryUpTimeJSON, "name", cJSON_CreateString("Uptime (s)"));
-        cJSON_AddItemToObject(pEntryUpTimeJSON, "value", cJSON_CreateNumber((u32UpTimeMS / 1000)));
+        cJSON_AddItemToObject(pEntryUpTimeJSON, "value", cJSON_CreateNumber(esp_log_timestamp()/1000));
         cJSON_AddItemToArray(pEntries, pEntryUpTimeJSON);
 
         char* pStr =  cJSON_PrintUnformatted(pRoot);

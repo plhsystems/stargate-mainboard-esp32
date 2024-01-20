@@ -8,7 +8,11 @@ class Settings
     public:
     enum class Entry
     {
-        ClampLockedPWM = 0,
+        WSTAIsActive = 0,
+        WSTASSID,
+        WSTAPass,
+
+        ClampLockedPWM,
         ClampReleasedPWM,
         RingSymbolBrightness,
 
@@ -22,10 +26,6 @@ class Settings
         RampOnPercent,
 
         WormholeMaxBrightness,
-
-        WSTAIsActive,
-        WSTASSID,
-        WSTAPass,
 
         AnimPrelockDelayMS,
         AnimPostlockDelayMS,
@@ -69,6 +69,11 @@ class Settings
     static bool ValidateWifiPassword(const NVSJSON_SSettingEntry* pSettingEntry, const char* szValue);
     const NVSJSON_SSettingEntry m_sConfigEntries[(int)Settings::Entry::Count] =
     {
+        // // WiFi Station related
+        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",                        0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",      "Wi-Fi (SSID)",                           "", NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VALIDATOR("WSTA.Pass","Wi-Fi password",                         "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
+
         [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITINT32_RNG("Clamp.LockedPWM", "Servo motor locked PWM",             1250, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingSymbolBrightness] =    NVSJSON_INITINT32_RNG("Ring.SymBright",  "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
@@ -82,11 +87,6 @@ class Settings
         [(int)Settings::Entry::RampOnPercent] =           NVSJSON_INITINT32_RNG("Ramp.LightOn",    "Ramp illumination ON (percent)",       30,    0,    100, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::WormholeMaxBrightness] =   NVSJSON_INITINT32_RNG("WH.MaxBright",    "Maximum brightness for wormhole leds. (Warning: can cause voltage drop)", 200, 0, 255, NVSJSON_EFLAGS_None),
-
-        // // WiFi Station related
-        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",                        0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",      "Wi-Fi (SSID)",                           "", NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VALIDATOR("WSTA.Pass","Wi-Fi password",                         "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
 
         // Animation delay
         [(int)Settings::Entry::AnimPrelockDelayMS] =      NVSJSON_INITINT32_RNG("dial.anim1",      "Delay before locking the chevron (ms)", 1250, 0, 6000, NVSJSON_EFLAGS_None),

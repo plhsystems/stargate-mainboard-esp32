@@ -6,9 +6,7 @@ class SoundFX
     public:
     enum class File
     {
-        Nothing = 0,
-
-        SGU_1_beginroll_mp3,
+        SGU_1_beginroll_mp3 = 0,
         SGU_2_chevlck_wav,
         SGU_3_chevlck2_wav,
         SGU_4_gateclos_mp3,
@@ -18,6 +16,17 @@ class SoundFX
         SGU_10_wormhole_wav,
 
         Count
+    };
+    class SoundFile
+    {
+        public:
+        SoundFile(const char* szName) :
+            m_szName(szName)
+        {
+
+        }
+        private:
+        const char* m_szName;
     };
 
     private:
@@ -41,6 +50,19 @@ class SoundFX
         return instance;
     }
     private:
+
+    static inline const SoundFile m_soundFiles[] =
+    {
+        // TODO: Real data
+        [(int)File::SGU_1_beginroll_mp3] = { "" },
+        [(int)File::SGU_2_chevlck_wav] = { "" },
+        [(int)File::SGU_3_chevlck2_wav] = { "" },
+        [(int)File::SGU_4_gateclos_mp3] = { "" },
+        [(int)File::SGU_5_gateopen_mp3] = { "" },
+        [(int)File::SGU_6_lggroll_mp3] = { "" },
+        [(int)File::SGU_7_lockfail_wav] = { "" },
+        [(int)File::SGU_10_wormhole_wav] = { "" }
+    };
 };
 
 #endif
