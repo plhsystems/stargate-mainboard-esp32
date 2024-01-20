@@ -2,20 +2,8 @@
 
 #include <stdint.h>
 #include "../Common/Chevron.hpp"
-
-class Symbol
-{
-    public:
-    Symbol(uint8_t u8Number, const char* szName) :
-        u8Number(u8Number),
-        szName(szName)
-    {
-
-    }
-    public:
-    const uint8_t u8Number;
-    const char* szName;
-};
+#include "GateAddress.hpp"
+#include "GateSymbol.hpp"
 
 enum class GateGalaxy
 {
@@ -34,8 +22,11 @@ class BaseGate
     public:
     const GateGalaxy eGateGalaxy;
 
-    virtual const Symbol& GetSymbol(uint8_t u8SymbolNum) = 0;
-    virtual int32_t GetSymbolCount() = 0;
+    virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const = 0;
+    virtual int32_t GetSymbolCount() const = 0;
+
+    virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
+    virtual int32_t GetAddressCount() const { return 0; }
 
     virtual void LockChevron();
     virtual void UnlockChevron();
@@ -53,7 +44,8 @@ class BaseGate
     virtual void UnlockGate();
     virtual void LockGate();
 
-    static inline const Symbol InvalidSymbol{0, "Invalid"};
+    static inline const GateSymbol InvalidSymbol{ 0, "Invalid" };
+    static inline const GateAddress InvalidGateAddress { "Invalid" };
 };
 
 

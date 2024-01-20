@@ -10,16 +10,41 @@ class UniverseGate : public BaseGate
     private:
     static const int32_t m_s32SymbolCount = 36;
 
-    const Symbol& GetSymbol(uint8_t u8SymbolNum)
+    inline const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const override
     {
         if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
             return BaseGate::InvalidSymbol;
         return m_symbols[u8SymbolNum-1];
     }
 
-    inline int32_t GetSymbolCount() { return m_s32SymbolCount; };
+    inline int32_t GetSymbolCount() const override { return m_s32SymbolCount; };
 
-    static inline const Symbol m_symbols[36]
+    inline const GateAddress& GetAddress(uint32_t u32Index) const override
+    {
+        if (u32Index >= GetAddressCount())
+            return BaseGate::InvalidGateAddress;
+        return m_gateAddresses[u32Index];
+    }
+    inline int32_t GetAddressCount() const override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
+
+    static inline const GateAddress m_gateAddresses[] =
+    {
+        // No point of origin in Universe
+        { "Earth", 10, 15, 20, 26, 28, 13, 18, 32, 30 },
+        { "Jungle Planet", 3, 34, 12, 7, 19, 6, 29 },
+        { "Desert Planet", 7, 8, 14, 17, 32, 23, 33 },
+        { "Hoth", 15, 35, 8, 30, 31, 29, 33 },
+        { "Grave Pit Planet", 1, 34, 12, 7, 25, 32, 33 },
+        { "Ruins Planet", 10, 12, 14, 23, 32, 23, 33 },
+        { "Foggy Planet", 4, 20, 23, 28, 6, 11, 33 },
+        { "Deportation Planet", 4, 17, 23, 32, 35, 8, 33 },
+        { "Cloverdale Planet", 3, 13, 17, 19, 1, 35, 33 },
+        { "Malice Planet",2, 14, 18, 23, 30, 5, 33 },
+        { "Novus Colony Planet",5, 17, 23, 25, 1, 28, 33 },
+        { "Last Planet", 6, 26, 28, 10, 31, 12, 33 },
+    };
+
+    static inline const GateSymbol m_symbols[36]
     {
         // Universe symbols aren't named
         { 1, "1" },
