@@ -6,32 +6,34 @@
 
 class PinkySGHW : public SGHW_HAL
 {
-    // Motor control
-    #define STEPPER_DIR_PIN GPIO_NUM_33
-    #define STEPPER_STEP_PIN GPIO_NUM_25
-    #define STEPPER_SLP_PIN GPIO_NUM_26
-
-    // Hall sensor to detect home position
-    #define HOMESENSOR_PIN GPIO_NUM_32
-
-    // Servo-motor
-    #define SERVOMOTOR_PIN GPIO_NUM_18
-
-    // Ramp led control
-    #define RAMPLED_PIN GPIO_NUM_23
-
-    // External button (input only)
-    #define UIBUTTON_PIN GPIO_NUM_35
-
-    // Wormhole LEDs
-    #define WORMHOLELEDS_PIN GPIO_NUM_19
-    #define WORMHOLELEDS_RMTCHANNEL RMT_CHANNEL_0
-    #define WORMHOLELEDS_LEDCOUNT 48
-
-    // Sanity led
-    #define SANITY_PIN GPIO_NUM_5
     public:
     PinkySGHW();
+
+    void Init() override;
+
+    // Ramp light
+    void SetRampLight(double dPerc);
+
+    void PowerUpStepper() override;
+    void MoveStepper(int32_t s32StepCount) override;
+    void PowerDownStepper() override;
+
+    void PowerUpServo() override;
+    void SetServo(double dPosition) override;
+    void PowerDownServo() override;
+
+    // Wormhole related
+    int32_t GetWHPixelCount() override;
+    void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue) override;
+    void ClearAllWHPixels() override;
+    void RefreshWHPixels() override;
+
+    void SetSanityLED(bool bState);
+
+    bool GetIsHomeSensorActive() override;
+
     private:
     led_strip_handle_t led_strip;
+
+    double m_dLastServoPosition;
 };
