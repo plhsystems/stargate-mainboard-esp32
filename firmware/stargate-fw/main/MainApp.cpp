@@ -4,6 +4,7 @@
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
 #include "Ring/RingComm.hpp"
+#include "DHD/USB_DHD.hpp"
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
 #include "HttpClient.hpp"
@@ -52,6 +53,8 @@ void app_main(void)
     RingComm::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
     HttpClient::getI().Init();
+    ESP_LOGI(TAG, "USB-DHD for external calls");
+    USB_DHD::getI().Init();
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
@@ -65,6 +68,8 @@ void app_main(void)
     WebServer::getI().Start();
     ESP_LOGI(TAG, "Starting HTTP Client");
     HttpClient::getI().Start();
+    ESP_LOGI(TAG, "Starting USB-DHD");
+    USB_DHD::getI().Start();
 
     // Die.
     // For debug purpose ...

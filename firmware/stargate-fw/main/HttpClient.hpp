@@ -3,6 +3,8 @@
 
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 class HttpClient
 {

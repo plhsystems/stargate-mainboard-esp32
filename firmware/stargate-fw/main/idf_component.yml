@@ -1,5 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/usb_host_cdc_acm: "*"
   espressif/led_strip: "*"
   ## Required IDF version
   idf:
