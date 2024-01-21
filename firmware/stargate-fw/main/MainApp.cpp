@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "GateControl.hpp"
+#include "GateControl/GateControl.hpp"
 #include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
@@ -73,7 +73,7 @@ void app_main(void)
     free(szAllTask);
 
     // Autocalibrate as the default action
-    m_gc.QueueAction(GateControl::ECmd::AutoCalibrate);
+    m_gc.QueueAction(GateControl::ECmd::AutoHome);
 
     bool bSanity = false;
     while(true)

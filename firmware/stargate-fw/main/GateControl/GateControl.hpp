@@ -4,13 +4,13 @@
 #include <array>
 #include <vector>
 #include <string>
-#include "Gate/BaseGate.hpp"
-#include "Gate/GateFactory.hpp"
-#include "Common/Chevron.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "Settings.hpp"
+#include "../Gate/BaseGate.hpp"
+#include "../Gate/GateFactory.hpp"
+#include "../Common/Chevron.hpp"
+#include "../Settings.hpp"
 
 class GateControl
 {
@@ -21,7 +21,7 @@ class GateControl
 
         Abort,
 
-        GoHome,
+        AutoHome,
         AutoCalibrate,
 
         KeyPressSymbol,
@@ -44,7 +44,8 @@ class GateControl
     void AbortAction();
 
     private:
-    bool AutoCalibrate();
+    bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
+    bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
 
     private:
     static void TaskRunning(void* pArg);

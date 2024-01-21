@@ -1,5 +1,6 @@
-idf_component_register( SRCS 
-    "MainApp.cpp" "GateControl.cpp" "WiFiMgr.cpp" "Settings.cpp" "HttpClient.cpp"
+idf_component_register( SRCS
+    "MainApp.cpp" "WiFiMgr.cpp" "Settings.cpp" "HttpClient.cpp"
+    "GateControl/GateControl.cpp"
     "Audio/SoundFX.cpp"
     "Ring/RingComm.cpp"
     "WebServer/WebServer.cpp" "WebServer/SystemAPI.cpp" "WebServer/OTA_API.cpp" "WebServer/GateAPI.cpp" "WebServer/EmbeddedFiles.c"

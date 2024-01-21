@@ -14,7 +14,7 @@ class Settings
 
         ClampLockedPWM,
         ClampReleasedPWM,
-        RingSymbolBrightness,
+        RingSymbolLight,
 
         // Ring rotation calibration
         StepsPerRotation,
@@ -25,13 +25,13 @@ class Settings
 
         RampOnPercent,
 
-        WormholeMaxBrightness,
+        WormholeMaxLight,
 
         AnimPrelockDelayMS,
         AnimPostlockDelayMS,
         AnimPredialDelayMS,
 
-        Mp3PlayerVolume,
+        SoundFXVolume,
 
         Count
     };
@@ -70,30 +70,31 @@ class Settings
     const NVSJSON_SSettingEntry m_sConfigEntries[(int)Settings::Entry::Count] =
     {
         // // WiFi Station related
-        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",                        0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",      "Wi-Fi (SSID)",                           "", NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VALIDATOR("WSTA.Pass","Wi-Fi password",                         "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
+        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",          0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",      "Wi-Fi (SSID)",                         "", NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VALIDATOR("WSTA.Pass","Wi-Fi password",                   "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
 
         [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITINT32_RNG("Clamp.LockedPWM", "Servo motor locked PWM",             1250, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingSymbolBrightness] =    NVSJSON_INITINT32_RNG("Ring.SymBright",  "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
+
+        [(int)Settings::Entry::RingSymbolLight] =         NVSJSON_INITINT32_RNG("SGUR.SymLight",   "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  20000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",      -55,-2000,   2000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",        0,-2000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingHomeGapRange] =        NVSJSON_INITINT32_RNG("Ring.HomeGap",    "Home sensor deadband",                  0,    0,   2000, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",   300,   10,  42*60, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",   300,   10,  38*60, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::RampOnPercent] =           NVSJSON_INITINT32_RNG("Ramp.LightOn",    "Ramp illumination ON (percent)",       30,    0,    100, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::WormholeMaxBrightness] =   NVSJSON_INITINT32_RNG("WH.MaxBright",    "Maximum brightness for wormhole leds. (Warning: can cause voltage drop)", 200, 0, 255, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::WormholeMaxLight] =        NVSJSON_INITINT32_RNG("WH.MaxLight",     "Maximum brightness for wormhole leds. (Warning: can cause voltage drop)", 200, 0, 255, NVSJSON_EFLAGS_None),
 
         // Animation delay
         [(int)Settings::Entry::AnimPrelockDelayMS] =      NVSJSON_INITINT32_RNG("dial.anim1",      "Delay before locking the chevron (ms)", 1250, 0, 6000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::AnimPostlockDelayMS] =     NVSJSON_INITINT32_RNG("dial.anim2",      "Delay after locking the chevron (ms)",  1250, 0, 6000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::AnimPredialDelayMS] =      NVSJSON_INITINT32_RNG("dial.anim3",      "Delay before starting to dial (ms)",    2500, 0, 10000, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::Mp3PlayerVolume] =         NVSJSON_INITINT32_RNG("sound.vol",       "Get Mp3 player volume",                 15,   0, 30, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::SoundFXVolume] =           NVSJSON_INITINT32_RNG("sound.vol",       "Get audio player volume (percent)",     25,   0,   100, NVSJSON_EFLAGS_None),
     };
     NVSJSON_SHandle m_sSettingHandle;
     const NVSJSON_SConfig m_sSettingConfig = { .szPartitionName = "nvs", .pSettingEntries = m_sConfigEntries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
