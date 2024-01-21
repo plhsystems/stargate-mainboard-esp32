@@ -212,73 +212,34 @@ bool GateControl::AutoHome()
         goto ERROR;
     }
 
+    const uint32_t u32Timeout = 40*1000;
+
     // If the ring is already near the home sensor, we just need to move a little bit.
     if (HW::getI()->GetIsHomeSensorActive()) {
         ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-        TickType_t ttStart = xTaskGetTickCount();
-        bool bIsOutsideHome = false;
-        while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-        {
-            if (!HW::getI()->GetIsHomeSensorActive())
-            {
-                bIsOutsideHome = true;
-                ESP_LOGI(TAG, "Outside of the home position");
-                break;
-            }
-            HW::getI()->StepStepperCW();
-            vTaskDelay(1);
-        }
-
-        if (!bIsOutsideHome) {
+        if (!SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout)) {
             ESP_LOGE(TAG, "Cannot complete the auto-home, part #1");
             goto ERROR;
         }
-
-        bool bIsInsideHome = false;
-        ttStart = xTaskGetTickCount();
-        while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-        {
-            if (HW::getI()->GetIsHomeSensorActive())
-            {
-                bIsInsideHome = true;
-                ESP_LOGI(TAG, "Inside of the home position");
-                break;
-            }
-            HW::getI()->StepStepperCCW();
-            vTaskDelay(1);
-        }
-
-        if (!bIsInsideHome) {
+        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout)) {
             ESP_LOGE(TAG, "Cannot complete the auto-home, part #2");
             goto ERROR;
         }
     }
     else {
         ESP_LOGI(TAG, "Homing using the slow algorithm");
-        bool bIsInsideHome = false;
-        TickType_t ttStart = xTaskGetTickCount();
-        while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-        {
-            if (HW::getI()->GetIsHomeSensorActive())
-            {
-                bIsInsideHome = true;
-                ESP_LOGI(TAG, "Inside of the home position");
-                break;
-            }
-            HW::getI()->StepStepperCCW();
-            vTaskDelay(1);
-        }
-
-        if (!bIsInsideHome) {
-            ESP_LOGE(TAG, "Cannot complete the auto-home, part #1");
+        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout)) {
+            ESP_LOGE(TAG, "Cannot complete the auto-home");
             goto ERROR;
         }
     }
 
     // Move by half the deadband offset.
     // this is the real 0 position
-    for(int i = 0; i < s32Gap / 2; i++)
+    const int32_t s32HalfDeadband = s32Gap / 2;
+    ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, s32HalfDeadband);
+    for(int i = 0; i < s32HalfDeadband; i++)
     {
         HW::getI()->StepStepperCCW();
         vTaskDelay(1);
@@ -292,6 +253,38 @@ bool GateControl::AutoHome()
     // Go into the other direction until it get out of the sensor
     HW::getI()->PowerDownStepper();
     return bSucceeded;
+}
+
+bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS)
+{
+    TickType_t ttStart = xTaskGetTickCount();
+    const bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
+
+    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
+    {
+        if (eSpinDirection == ESpinDirection::CCW) {
+            HW::getI()->StepStepperCCW();
+        }
+        if (eSpinDirection == ESpinDirection::CW) {
+            HW::getI()->StepStepperCW();
+        }
+
+        const bool bIsRising = !bOldSensorState && HW::getI()->GetIsHomeSensorActive();
+        const bool bIsFalling = bOldSensorState && !HW::getI()->GetIsHomeSensorActive();
+        if (ETransition::Rising == eTransition && bIsRising)
+        {
+            ESP_LOGI(TAG, "Rising transistion detected");
+            return true;
+        }
+        else if (ETransition::Failing == eTransition && bIsFalling) {
+            ESP_LOGI(TAG, "Failing transistion detected");
+            return true;
+        }
+        vTaskDelay(1);
+    }
+
+    ESP_LOGE(TAG, "Unable to complete the spin operation");
+    return false;
 }
 
 /*

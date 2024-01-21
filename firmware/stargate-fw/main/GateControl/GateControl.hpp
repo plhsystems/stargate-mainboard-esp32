@@ -12,6 +12,18 @@
 #include "../Common/Chevron.hpp"
 #include "../Settings.hpp"
 
+enum class ETransition
+{
+    Rising,
+    Failing
+};
+
+enum class ESpinDirection
+{
+    CCW,
+    CW
+};
+
 class GateControl
 {
     public:
@@ -46,6 +58,8 @@ class GateControl
     private:
     bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
     bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
+
+    bool SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS);
 
     private:
     static void TaskRunning(void* pArg);
