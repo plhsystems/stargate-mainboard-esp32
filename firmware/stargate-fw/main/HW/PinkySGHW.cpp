@@ -128,9 +128,22 @@ void PinkySGHW::PowerUpStepper()
     gpio_set_level(STEPPER_SLP_PIN, true);
 }
 
-void PinkySGHW::MoveStepper(int32_t s32StepCount)
+void PinkySGHW::StepStepperCW()
 {
-    // TODO: FILL IT
+    gpio_set_level(STEPPER_DIR_PIN, true);
+    gpio_set_level(STEPPER_STEP_PIN, true);
+    esp_rom_delay_us(10);
+    gpio_set_level(STEPPER_STEP_PIN, false);
+    esp_rom_delay_us(10);
+}
+
+void PinkySGHW::StepStepperCCW()
+{
+    gpio_set_level(STEPPER_DIR_PIN, false);
+    gpio_set_level(STEPPER_STEP_PIN, true);
+    esp_rom_delay_us(10);
+    gpio_set_level(STEPPER_STEP_PIN, false);
+    esp_rom_delay_us(10);
 }
 
 void PinkySGHW::PowerDownStepper()

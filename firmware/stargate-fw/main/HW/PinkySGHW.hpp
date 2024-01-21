@@ -15,7 +15,8 @@ class PinkySGHW : public SGHW_HAL
     void SetRampLight(double dPerc);
 
     void PowerUpStepper() override;
-    void MoveStepper(int32_t s32StepCount) override;
+    void StepStepperCW() override;
+    void StepStepperCCW() override;
     void PowerDownStepper() override;
 
     void PowerUpServo() override;
