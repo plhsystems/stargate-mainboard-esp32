@@ -59,7 +59,9 @@ void GateControl::TaskRunning(void* pArg)
                     ESP_LOGE(TAG, "Autocalibration failed.");
                 }
                 else {
+                    // Will move it at it's home position, it should go very fast.
                     ESP_LOGI(TAG, "Autocalibrate succeeded.");
+                    gc->AutoHome();
                 }
                 break;
             }
@@ -89,52 +91,30 @@ bool GateControl::AutoCalibrate()
 {
     bool bSucceeded = false;
     {
-    const uint32_t u32Timeout = 40*1000;
+    const uint32_t u32Timeout = 50*1000;
 
     // We need two transitions from LOW to HIGH.
     // we give it 40s maximum to find the home.
     TickType_t ttStart = xTaskGetTickCount();
 
     bool bOldHome = HW::getI()->GetIsHomeSensorActive();
-    int32_t s32TickCount = 0;
-    bool bIsFound = false;
 
     HW::getI()->PowerUpStepper();
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    int32_t s32NewStepsPerRotation = 0;
-
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-    {
-        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
-
-        // Transition from LOW to HIGH.
-        if (!bOldHome && bCurrentHome)
-        {
-            if (bIsFound) {
-                // Second stage done.
-                s32NewStepsPerRotation = s32TickCount;
-                break;
-            }
-            else {
-                ttStart = xTaskGetTickCount(); // Reset the timer.
-                s32TickCount = 0;
-                bIsFound = true;
-                ESP_LOGI(TAG, "Home has been found once.");
-            }
-        }
-
-        bOldHome = bCurrentHome;
-        s32TickCount++;
-        HW::getI()->StepStepperCCW();
-        vTaskDelay(1);
-    }
-
-    // Save this information
-    if (s32NewStepsPerRotation == 0) {
-        ESP_LOGE(TAG, "Timeout condition during auto-calibrate");
+    ESP_LOGI(TAG, "Finding home in progress");
+    if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
+        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, rotation steps part #1");
         goto ERROR;
     }
+    ESP_LOGI(TAG, "Home has been found once");
+    int32_t s32NewStepsPerRotation = 0;
+    if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation)) {
+        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, rotation steps part #2");
+        goto ERROR;
+    }
+
+    ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, s32NewStepsPerRotation);
 
     // Find the gap.
     // Continue to move until it get out of the home range.
@@ -228,10 +208,12 @@ bool GateControl::AutoHome()
 bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
 {
     TickType_t ttStart = xTaskGetTickCount();
-    const bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
+    bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
 
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
     {
+        const bool bNewHomeSensorState = HW::getI()->GetIsHomeSensorActive();
+
         if (eSpinDirection == ESpinDirection::CCW) {
             HW::getI()->StepStepperCCW();
             if (ps32refTickCount != nullptr) {
@@ -245,8 +227,8 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
             }
         }
 
-        const bool bIsRising = !bOldSensorState && HW::getI()->GetIsHomeSensorActive();
-        const bool bIsFalling = bOldSensorState && !HW::getI()->GetIsHomeSensorActive();
+        const bool bIsRising = !bOldSensorState && bNewHomeSensorState;
+        const bool bIsFalling = bOldSensorState && !bNewHomeSensorState;
         if (ETransition::Rising == eTransition && bIsRising)
         {
             ESP_LOGI(TAG, "Rising transistion detected");
@@ -256,6 +238,8 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
             ESP_LOGI(TAG, "Failing transistion detected");
             return true;
         }
+
+        bOldSensorState = bNewHomeSensorState;
         vTaskDelay(1);
     }
 
