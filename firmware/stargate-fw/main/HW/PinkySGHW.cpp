@@ -132,18 +132,18 @@ void PinkySGHW::StepStepperCW()
 {
     gpio_set_level(STEPPER_DIR_PIN, true);
     gpio_set_level(STEPPER_STEP_PIN, true);
-    esp_rom_delay_us(10);
+    esp_rom_delay_us(4);
     gpio_set_level(STEPPER_STEP_PIN, false);
-    esp_rom_delay_us(10);
+    esp_rom_delay_us(4);
 }
 
 void PinkySGHW::StepStepperCCW()
 {
     gpio_set_level(STEPPER_DIR_PIN, false);
     gpio_set_level(STEPPER_STEP_PIN, true);
-    esp_rom_delay_us(10);
+    esp_rom_delay_us(4);
     gpio_set_level(STEPPER_STEP_PIN, false);
-    esp_rom_delay_us(10);
+    esp_rom_delay_us(4);
 }
 
 void PinkySGHW::PowerDownStepper()
