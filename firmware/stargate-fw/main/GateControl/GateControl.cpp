@@ -89,6 +89,8 @@ bool GateControl::AutoCalibrate()
 {
     bool bSucceeded = false;
     {
+    const uint32_t u32Timeout = 40*1000;
+
     // We need two transitions from LOW to HIGH.
     // we give it 40s maximum to find the home.
     TickType_t ttStart = xTaskGetTickCount();
@@ -137,46 +139,14 @@ bool GateControl::AutoCalibrate()
     // Find the gap.
     // Continue to move until it get out of the home range.
     int32_t s32Gap = 0;
-    ttStart = xTaskGetTickCount();
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-    {
-        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
-        if (bOldHome && !bCurrentHome)
-        {
-            ESP_LOGI(TAG, "Moved out of range");
-            break;
-        }
-        HW::getI()->StepStepperCCW();
-        s32Gap++;
-        bOldHome = bCurrentHome;
-        vTaskDelay(10);
-    }
 
-    if (s32Gap == 0) {
-        ESP_LOGE(TAG, "Timeout condition during find gap phase #1");
+    if (!SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap)) {
+        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, deadband part #1");
         goto ERROR;
     }
 
-    // Invert rotation until it reach the home range again.
-    ttStart = xTaskGetTickCount();
-    bool bIsGapFound = false;
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
-    {
-        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
-        if (!bOldHome && bCurrentHome)
-        {
-            ESP_LOGI(TAG, "With-in range");
-            bIsGapFound = true;
-            break;
-        }
-        HW::getI()->StepStepperCW();
-        s32Gap--;
-        bOldHome = bCurrentHome;
-        vTaskDelay(10);
-    }
-
-    if (!bIsGapFound) {
-        ESP_LOGE(TAG, "Timeout condition during find gap phase #2");
+    if (!SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap)) {
+        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, deadband part #2");
         goto ERROR;
     }
 
@@ -218,18 +188,18 @@ bool GateControl::AutoHome()
     if (HW::getI()->GetIsHomeSensorActive()) {
         ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-        if (!SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout)) {
+        if (!SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr)) {
             ESP_LOGE(TAG, "Cannot complete the auto-home, part #1");
             goto ERROR;
         }
-        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout)) {
+        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
             ESP_LOGE(TAG, "Cannot complete the auto-home, part #2");
             goto ERROR;
         }
     }
     else {
         ESP_LOGI(TAG, "Homing using the slow algorithm");
-        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout)) {
+        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
             ESP_LOGE(TAG, "Cannot complete the auto-home");
             goto ERROR;
         }
@@ -255,7 +225,7 @@ bool GateControl::AutoHome()
     return bSucceeded;
 }
 
-bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS)
+bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
 {
     TickType_t ttStart = xTaskGetTickCount();
     const bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
@@ -264,9 +234,15 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
     {
         if (eSpinDirection == ESpinDirection::CCW) {
             HW::getI()->StepStepperCCW();
+            if (ps32refTickCount != nullptr) {
+                (*ps32refTickCount)++;
+            }
         }
         if (eSpinDirection == ESpinDirection::CW) {
             HW::getI()->StepStepperCW();
+            if (ps32refTickCount != nullptr) {
+                (*ps32refTickCount)--;
+            }
         }
 
         const bool bIsRising = !bOldSensorState && HW::getI()->GetIsHomeSensorActive();

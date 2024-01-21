@@ -73,7 +73,7 @@ void app_main(void)
     free(szAllTask);
 
     // Autocalibrate as the default action
-    m_gc.QueueAction(GateControl::ECmd::AutoHome);
+    m_gc.QueueAction(GateControl::ECmd::AutoCalibrate);
 
     bool bSanity = false;
     while(true)
