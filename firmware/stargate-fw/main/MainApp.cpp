@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "GateControl.hpp"
-#include "HW/BoardHW.hpp"
+#include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
 #include "Ring/RingComm.hpp"
@@ -39,7 +39,7 @@ void app_main(void)
 
     // Initialize all modules
     ESP_LOGI(TAG, "Initialize gate control");
-    BoardHW::Init();
+    HW::getI()->Init();
     ESP_LOGI(TAG, "Loading sound FX");
     SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
@@ -72,4 +72,13 @@ void app_main(void)
     vTaskList(szAllTask);
     ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
     free(szAllTask);
+
+    bool bSanity = false;
+    while(true)
+    {
+      // The least interesting task to ever exist.
+      HW::getI()->SetSanityLED(bSanity);
+      bSanity = !bSanity;
+      vTaskDelay(pdMS_TO_TICKS(250));
+    }
 }

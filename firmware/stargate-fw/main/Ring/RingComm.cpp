@@ -19,11 +19,6 @@ void RingComm::TaskRunning(RingComm* pRC)
     // TODO: Create a task to receive communication datas
 }
 
-void RingComm::SendKeepAlive()
-{
-
-}
-
 void RingComm::SendPowerOff()
 {
 

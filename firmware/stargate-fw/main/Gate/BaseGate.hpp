@@ -28,22 +28,6 @@ class BaseGate
     virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
     virtual int32_t GetAddressCount() const { return 0; }
 
-    virtual void LockChevron();
-    virtual void UnlockChevron();
-
-    virtual void GoHome();
-    virtual void Calibrate();
-
-    virtual void LightUpChevron(Chevron eChevron, bool bIsActive);
-    virtual void LightUpSymbol(uint8_t u8Symbol, bool bIsActive);   // Universe
-
-    virtual void MoveToSymbol(uint8_t u8Symbol, Chevron eChevron);
-
-    virtual void ShutdownGate();
-
-    virtual void UnlockGate();
-    virtual void LockGate();
-
     static inline const GateSymbol InvalidSymbol{ 0, "Invalid" };
     static inline const GateAddress InvalidGateAddress { "Invalid" };
 };
