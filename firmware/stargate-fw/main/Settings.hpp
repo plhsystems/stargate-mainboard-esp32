@@ -19,6 +19,7 @@ class Settings
         // Ring rotation calibration
         StepsPerRotation,
         RingHomeOffset,
+        RingHomeGapRange,
         // Wormhole timeout
         GateOpenedTimeout,
 
@@ -77,8 +78,9 @@ class Settings
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingSymbolBrightness] =    NVSJSON_INITINT32_RNG("Ring.SymBright",  "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  64000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",      -55, -500,    500, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  20000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",      -55,-2000,   2000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeGapRange] =        NVSJSON_INITINT32_RNG("Ring.HomeGap",    "Home sensor deadband",                  0,    0,   2000, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",   300,   10,  42*60, NVSJSON_EFLAGS_None),
 

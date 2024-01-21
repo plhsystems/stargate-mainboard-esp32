@@ -69,13 +69,15 @@ void GateControl::TaskRunning(void* pArg)
                 break;
         }
 
-        // TODO: Will be replaced by an event.
+        // TODO: Will be replaced by a manual event.
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
 bool GateControl::AutoCalibrate()
 {
+    bool bSucceeded = false;
+    {
     // We need two transitions from LOW to HIGH.
     // we give it 40s maximum to find the home.
     TickType_t ttStart = xTaskGetTickCount();
@@ -91,7 +93,7 @@ bool GateControl::AutoCalibrate()
 
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
     {
-        bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
+        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
 
         // Transition from LOW to HIGH.
         if (!bOldHome && bCurrentHome)
@@ -115,20 +117,73 @@ bool GateControl::AutoCalibrate()
         vTaskDelay(1);
     }
 
-    HW::getI()->PowerDownStepper();
-
     // Save this information
     if (s32NewStepsPerRotation == 0) {
         ESP_LOGE(TAG, "Timeout condition during auto-calibrate");
-        return false;
+        goto ERROR;
     }
 
-    ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation", s32NewStepsPerRotation);
+    // Find the gap.
+    // Continue to move until it get out of the home range.
+    int32_t s32Gap = 0;
+    ttStart = xTaskGetTickCount();
+    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
+    {
+        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
+        if (bOldHome && !bCurrentHome)
+        {
+            ESP_LOGI(TAG, "Moved out of range");
+            break;
+        }
+        HW::getI()->StepStepperCCW();
+        s32Gap++;
+        bOldHome = bCurrentHome;
+        vTaskDelay(10);
+    }
+
+    if (s32Gap == 0) {
+        ESP_LOGE(TAG, "Timeout condition during find gap phase #1");
+        goto ERROR;
+    }
+
+    // Invert rotation until it reach the home range again.
+    ttStart = xTaskGetTickCount();
+    bool bIsGapFound = false;
+    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
+    {
+        const bool bCurrentHome = HW::getI()->GetIsHomeSensorActive();
+        if (!bOldHome && bCurrentHome)
+        {
+            ESP_LOGI(TAG, "With-in range");
+            bIsGapFound = true;
+            break;
+        }
+        HW::getI()->StepStepperCW();
+        s32Gap--;
+        bOldHome = bCurrentHome;
+        vTaskDelay(10);
+    }
+
+    if (!bIsGapFound) {
+        ESP_LOGE(TAG, "Timeout condition during find gap phase #2");
+        goto ERROR;
+    }
+
+    ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
 
     // Save the calibration result.
     Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, false, s32NewStepsPerRotation);
+    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, false, s32Gap);
     Settings::getI().Commit();
-    return true;
+    }
+    bSucceeded = true;
+    goto END;
+    ERROR:
+    bSucceeded = false;
+    END:
+    // Go into the other direction until it get out of the sensor
+    HW::getI()->PowerDownStepper();
+    return bSucceeded;
 }
 
 /*
