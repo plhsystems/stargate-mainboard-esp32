@@ -3,6 +3,8 @@
 #include "PegasusGate.hpp"
 #include "UniverseGate.hpp"
 
+#pragma once
+
 class GateFactory
 {
     private:

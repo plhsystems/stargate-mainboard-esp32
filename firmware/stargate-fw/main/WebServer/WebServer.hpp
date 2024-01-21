@@ -35,6 +35,7 @@ class WebServer
 
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
+    static esp_err_t GateControlAPIPostHandler(httpd_req_t *req);
 
     // Get API
     static char* GetStatus();
@@ -58,6 +59,7 @@ class WebServer
     httpd_uri_t m_sHttpUI;
     httpd_uri_t m_sHttpGetAPI;
     httpd_uri_t m_sHttpPostAPI;
+    // httpd_uri_t m_sGateControlAPIPost;
 
     httpd_uri_t m_sHttpOTAUploadPost;
 };

@@ -12,6 +12,7 @@
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
+#include "../GateControl/GateControl.hpp"
 
 #define TAG "WebAPI"
 
@@ -35,7 +36,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
     }
-    else if (strcmp(req->uri, APIURL_GET_FREERTOSDBGINFO_URI) == 0) {
+    else if (strcmp(req->uri, APIURL_GETFREERTOSDBGINFO_URI) == 0) {
         // According to the documentation, put a big buffer.
         pExportJSON = (char*)malloc(4096);
         vTaskList(pExportJSON);
@@ -85,8 +86,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 
     // Get datas
     int n = 0;
-    while(1)
-    {
+    while(1) {
         int reqN = httpd_req_recv(req, (char*)ws.m_u8Buffers + n, HTTPSERVER_BUFFERSIZE - n - 1);
         if (reqN <= 0)
         {
@@ -98,17 +98,26 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     ws.m_u8Buffers[n] = '\0';
 
     ESP_LOGI(TAG, "api_post_handler, url: %s", req->uri);
-    if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0)
-    {
-        if (!Settings::getI().ImportJSON((const char*)ws.m_u8Buffers))
-        {
+    if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
+        if (!Settings::getI().ImportJSON((const char*)ws.m_u8Buffers)) {
             ESP_LOGE(TAG, "Unable to import JSON");
             httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown request");
             goto ERROR;
         }
     }
-    else
-    {
+    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
+        GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
+    }
+    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
+        GateControl::getI().QueueAction(GateControl::ECmd::AutoCalibrate);
+    }
+    else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
+        GateControl::getI().QueueAction(GateControl::ECmd::DialAddress);
+    }
+    else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
+        GateControl::getI().AbortAction();
+    }
+    else {
         ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
         goto ERROR;

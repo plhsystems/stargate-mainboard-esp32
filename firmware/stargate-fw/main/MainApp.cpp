@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "GateControl.hpp"
+#include "GateControl/GateControl.hpp"
 #include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
@@ -17,8 +17,6 @@ extern "C" {
 }
 
 #define TAG "MainApp"
-
-static GateControl m_gc;
 
 void app_main(void)
 {
@@ -47,7 +45,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initialize web server");
     WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
-    m_gc.Init();
+    GateControl::getI().Init();
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
@@ -60,18 +58,20 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting sound FX");
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
-    m_gc.StartTask();
+    GateControl::getI().StartTask();
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     ESP_LOGI(TAG, "Starting HTTP Client");
     HttpClient::getI().Start();
 
-    // Die.
     // For debug purpose ...
     char* szAllTask = (char*)malloc(4096);
     vTaskList(szAllTask);
     ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
     free(szAllTask);
+
+    // Autocalibrate as the default action
+    GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
 
     bool bSanity = false;
     while(true)
