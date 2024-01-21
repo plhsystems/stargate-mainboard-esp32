@@ -66,12 +66,14 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting HTTP Client");
     HttpClient::getI().Start();
 
-    // Die.
     // For debug purpose ...
     char* szAllTask = (char*)malloc(4096);
     vTaskList(szAllTask);
     ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
     free(szAllTask);
+
+    // Autocalibrate as the default action
+    m_gc.QueueAction(GateControl::ECmd::AutoCalibrate);
 
     bool bSanity = false;
     while(true)
