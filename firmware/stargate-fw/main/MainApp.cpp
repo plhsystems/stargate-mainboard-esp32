@@ -18,8 +18,6 @@ extern "C" {
 
 #define TAG "MainApp"
 
-static GateControl m_gc;
-
 void app_main(void)
 {
     //Initialize NVS
@@ -47,7 +45,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initialize web server");
     WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
-    m_gc.Init();
+    GateControl::getI().Init();
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
@@ -60,7 +58,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting sound FX");
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
-    m_gc.StartTask();
+    GateControl::getI().StartTask();
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     ESP_LOGI(TAG, "Starting HTTP Client");
@@ -73,7 +71,7 @@ void app_main(void)
     free(szAllTask);
 
     // Autocalibrate as the default action
-    m_gc.QueueAction(GateControl::ECmd::AutoHome);
+    GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
 
     bool bSanity = false;
     while(true)

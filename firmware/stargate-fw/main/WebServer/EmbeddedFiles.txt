@@ -1,5 +1,6 @@
 favicon.ico
 common/css/content.css
+common/js/apiurl.js
 common/js/vue.min.js
 galaxies/milkyway/glyphs/001.svg
 galaxies/milkyway/glyphs/002.svg

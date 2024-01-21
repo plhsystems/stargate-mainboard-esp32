@@ -12,11 +12,14 @@
 		<div id="app">
 			<!-- Main part -->
 			<div class="main">
-
+                <button @click="SendAction(apiControlURLs.AutoHome)">Auto home</button>
+                <button @click="SendAction(apiControlURLs.AutoCalibrate)">Auto calibrate</button>
+                <button @click="SendAction(apiControlURLs.Abort)">Abort</button>
 			</div>
 		</div>
         <!-- JS -->
         <script type="text/javascript" src="../common/js/vue.min.js"></script>
+        <script type="text/javascript" src="../common/js/apiurl.js"></script>
         <script type="text/javascript" src="js/app.js"></script>
     </body>
 </html>

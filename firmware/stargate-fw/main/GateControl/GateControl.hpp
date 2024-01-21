@@ -31,21 +31,22 @@ class GateControl
     {
         Idle = 0,
 
-        Abort,
-
         AutoHome,
         AutoCalibrate,
 
-        KeyPressSymbol,
-        KeyPressCommit,
+        KeyPress,
 
         DialAddress,
         ManualWormhole,
     };
 
-    public:
-    // Constructor
+    private:
     GateControl();
+    
+    public:
+    // Singleton pattern
+    GateControl(GateControl const&) = delete;
+    void operator=(GateControl const&) = delete;
 
     void Init();
 
@@ -55,6 +56,11 @@ class GateControl
     void QueueAction(ECmd cmd);
     void AbortAction();
 
+    static GateControl& getI()
+    {
+        static GateControl instance;
+        return instance;
+    }
     private:
     bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
     bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */

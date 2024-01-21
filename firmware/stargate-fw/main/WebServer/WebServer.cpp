@@ -17,14 +17,6 @@
 WebServer::WebServer()
     : m_server(nullptr)
 {
-    // Get web files
-    m_sHttpUI.uri       = "/*";
-    m_sHttpUI.method    = HTTP_GET;
-    m_sHttpUI.handler   = file_get_handler;
-        /* Let's pass response string in user
-        * context to demonstrate it's usage */
-    m_sHttpUI.user_ctx  = nullptr;
-
     // API
     m_sHttpGetAPI.uri       = "/api/*";
     m_sHttpGetAPI.method    = HTTP_GET;
@@ -47,6 +39,14 @@ WebServer::WebServer()
     /* Let's pass response string in user
      * context to demonstrate it's usage */
     m_sHttpOTAUploadPost.user_ctx  = nullptr;
+
+    // Get web files
+    m_sHttpUI.uri       = "/*";
+    m_sHttpUI.method    = HTTP_GET;
+    m_sHttpUI.handler   = file_get_handler;
+        /* Let's pass response string in user
+        * context to demonstrate it's usage */
+    m_sHttpUI.user_ctx  = nullptr;
 }
 
 void WebServer::Init()

@@ -48,9 +48,19 @@ void GateControl::TaskRunning(void* pArg)
     // Dialing
     while(true)
     {
-        gc->m_bIsCancelAction = false;
+        const ECmd eCmd = gc->m_eCmd;
+        if (eCmd == ECmd::Idle)
+        {
+            // TODO: Will be replaced by a manual event.
+            vTaskDelay(pdMS_TO_TICKS(100));
+            continue;
+        }
 
-        switch(gc->m_eCmd)
+        // Reset the receiving ..
+        gc->m_bIsCancelAction = false;
+        gc->m_eCmd = ECmd::Idle;
+
+        switch(eCmd)
         {
             case ECmd::AutoCalibrate:
             {
@@ -76,14 +86,14 @@ void GateControl::TaskRunning(void* pArg)
                 }
                 break;
             }
+            case ECmd::DialAddress:
+            {
+                break;
+            }
             default:
             case ECmd::Idle:
                 break;
         }
-
-        // TODO: Will be replaced by a manual event.
-        gc->m_eCmd = ECmd::Idle;
-        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
