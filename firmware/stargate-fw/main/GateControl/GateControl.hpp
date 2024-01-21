@@ -42,7 +42,7 @@ class GateControl
 
     private:
     GateControl();
-    
+
     public:
     // Singleton pattern
     GateControl(GateControl const&) = delete;

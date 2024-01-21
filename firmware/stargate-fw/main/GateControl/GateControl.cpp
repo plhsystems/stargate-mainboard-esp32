@@ -41,7 +41,7 @@ void GateControl::TaskRunning(void* pArg)
     ESP_LOGI(TAG, "Gatecontrol task started and ready.");
 
     // Get a stargate instance based on parameters
-    BaseGate& baseGate = GateFactory::Get(GateGalaxy::MilkyWay);
+    BaseGate& baseGate = GateFactory::Get(GateGalaxy::Universe);
 
     Wormhole wormhole(Wormhole::EType::NormalSG1);
 
@@ -222,6 +222,11 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
 
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
     {
+        if (m_bIsCancelAction) {
+            ESP_LOGE(TAG, "Unable to complete the spin operation, cancelled by the user");
+            return false;
+        }
+
         const bool bNewHomeSensorState = HW::getI()->GetIsHomeSensorActive();
 
         if (eSpinDirection == ESpinDirection::CCW) {
