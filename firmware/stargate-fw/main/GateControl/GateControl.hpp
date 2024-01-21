@@ -75,4 +75,7 @@ class GateControl
     // Actions
     volatile bool m_bIsCancelAction;
     volatile ECmd m_eCmd;
+
+    int32_t m_bIsHomingDone = false;
+    int32_t m_s32CurrentPositionTicks = 0;
 };

@@ -13,6 +13,8 @@ class GateFactory
     public:
     static BaseGate& Get(GateGalaxy eGateGalaxy);
 
+    static UniverseGate& GetUniverseGate();
+
     private:
     static inline MilkyWayGate m_milkyWayGate;
     static inline PegasusGate m_pegasusGate;

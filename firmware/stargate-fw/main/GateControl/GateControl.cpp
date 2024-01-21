@@ -41,7 +41,7 @@ void GateControl::TaskRunning(void* pArg)
     ESP_LOGI(TAG, "Gatecontrol task started and ready.");
 
     // Get a stargate instance based on parameters
-    BaseGate& baseGate = GateFactory::Get(GateGalaxy::Universe);
+    UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
     Wormhole wormhole(Wormhole::EType::NormalSG1);
 
@@ -88,6 +88,30 @@ void GateControl::TaskRunning(void* pArg)
             }
             case ECmd::DialAddress:
             {
+                const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+
+                // m_bIsHomingDone / m_s32CurrentPositionTicks
+                const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
+                const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
+
+                // Assume we are at 0 position. The homing is mandatory on startup
+                gc->m_s32CurrentPositionTicks = 0;
+
+                for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+                {
+                    const uint8_t u8Symbol = symbols[i];
+                    const Chevron currentChevron = chevrons[i];
+
+                    // Dial sequence ...
+                    const int32_t s32LedIndex = universeGate.SymbolToLedIndex(u8Symbol);
+                    const double dAngle = (universeGate.LEDIndexToDeg(s32LedIndex));
+                    const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
+
+                    ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
+
+                    gc->m_s32CurrentPositionTicks = s32SymbolToTicks;
+                    vTaskDelay(pdMS_TO_TICKS(2000));
+                }
                 break;
             }
             default:
@@ -101,14 +125,10 @@ bool GateControl::AutoCalibrate()
 {
     bool bSucceeded = false;
     {
-    const uint32_t u32Timeout = 50*1000;
+    const uint32_t u32Timeout = 40*1000;
 
     // We need two transitions from LOW to HIGH.
     // we give it 40s maximum to find the home.
-    TickType_t ttStart = xTaskGetTickCount();
-
-    bool bOldHome = HW::getI()->GetIsHomeSensorActive();
-
     HW::getI()->PowerUpStepper();
     vTaskDelay(pdMS_TO_TICKS(100));
 
@@ -204,6 +224,9 @@ bool GateControl::AutoHome()
         HW::getI()->StepStepperCCW();
         vTaskDelay(1);
     }
+
+    m_s32CurrentPositionTicks = 0;
+    m_bIsHomingDone = true;
     bSucceeded = true;
     goto END;
     }

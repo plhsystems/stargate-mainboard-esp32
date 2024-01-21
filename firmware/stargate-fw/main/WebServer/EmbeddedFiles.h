@@ -139,7 +139,7 @@ typedef enum
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_G35_SVG = 113,    /*!< @brief File: galaxies/universe/glyphs/G35.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_G36_SVG = 114,    /*!< @brief File: galaxies/universe/glyphs/G36.svg (size: 2 KB) */
     EF_EFILE_MILKYWAY_G18_SVG = 115,    /*!< @brief File: milkyway/g18.svg (size: 1 KB) */
-    EF_EFILE_SETUP_INDEX_HTML = 116,    /*!< @brief File: setup/index.html (size: 973  B) */
+    EF_EFILE_SETUP_INDEX_HTML = 116,    /*!< @brief File: setup/index.html (size: 1 KB) */
     EF_EFILE_SETUP_JS_APP_JS = 117,    /*!< @brief File: setup/js/app.js (size: 1 KB) */
     EF_EFILE_COUNT = 118
 } EF_EFILE;

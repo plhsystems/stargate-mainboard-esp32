@@ -13,3 +13,8 @@ BaseGate& GateFactory::Get(GateGalaxy eGateGalaxy)
             return m_milkyWayGate;
     }
 }
+
+UniverseGate& GateFactory::GetUniverseGate()
+{
+    return m_universeGate;
+}
