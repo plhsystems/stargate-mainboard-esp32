@@ -18,10 +18,22 @@ void GateControl::Init()
 
 void GateControl::StartTask()
 {
+    // Stepper control timer
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &tmr_signal_callback,
+        .arg = (Stepper*)&this->m_stepper,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "stepper_timer",
+    };
+
 	if (xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_sGateControlHandle, FWCONFIG_GATECONTROL_COREID) != pdPASS )
 	{
 		ESP_ERROR_CHECK(ESP_FAIL);
 	}
+
+    /* Start the timers */
+    this->m_stepper.sTskControlHandle = m_sGateControlHandle;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.sSignalTimerHandle));
 }
 
 void GateControl::QueueAction(ECmd cmd)
@@ -88,30 +100,11 @@ void GateControl::TaskRunning(void* pArg)
             }
             case ECmd::DialAddress:
             {
-                const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-
-                // m_bIsHomingDone / m_s32CurrentPositionTicks
-                const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-                const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
-
-                // Assume we are at 0 position. The homing is mandatory on startup
-                gc->m_s32CurrentPositionTicks = 0;
-
-                for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+                if (gc->DialAddress())
                 {
-                    const uint8_t u8Symbol = symbols[i];
-                    const Chevron currentChevron = chevrons[i];
-
-                    // Dial sequence ...
-                    const int32_t s32LedIndex = universeGate.SymbolToLedIndex(u8Symbol);
-                    const double dAngle = (universeGate.LEDIndexToDeg(s32LedIndex));
-                    const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
-
-                    ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
-
-                    gc->m_s32CurrentPositionTicks = s32SymbolToTicks;
-                    vTaskDelay(pdMS_TO_TICKS(2000));
+                    gc->AutoHome();
                 }
+
                 break;
             }
             default:
@@ -238,6 +231,47 @@ bool GateControl::AutoHome()
     return bSucceeded;
 }
 
+bool GateControl::DialAddress()
+{
+    UniverseGate& universeGate = GateFactory::GetUniverseGate();
+
+    HW::getI()->PowerUpStepper();
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+
+    // m_bIsHomingDone / m_s32CurrentPositionTicks
+    const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
+    const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
+
+    // Assume we are at 0 position. The homing is mandatory on startup
+    m_s32CurrentPositionTicks = 0;
+
+    for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+    {
+        if (m_bIsCancelAction) {
+            ESP_LOGE(TAG, "Unable to complete dialing, cancelled by the user");
+            return false;
+        }
+
+        const uint8_t u8Symbol = symbols[i];
+        const Chevron currentChevron = chevrons[i];
+
+        // Dial sequence ...
+        const int32_t s32LedIndex = universeGate.SymbolToLedIndex(u8Symbol);
+        const double dAngle = (universeGate.LEDIndexToDeg(s32LedIndex));
+        const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
+
+        ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
+        MoveStepperTo(s32SymbolToTicks);
+
+        m_s32CurrentPositionTicks = s32SymbolToTicks;
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+    HW::getI()->PowerDownStepper();
+    return true;
+}
+
 bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
 {
     TickType_t ttStart = xTaskGetTickCount();
@@ -285,38 +319,89 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
     return false;
 }
 
-/*
-    //baseGate.UnlockGate(); //Only apply on universe
-    //baseGate.GoHome();
+bool GateControl::MoveStepperTo(int32_t s32Ticks)
+{
+    this->m_stepper.bPeriodAlternate = false;
+    this->m_stepper.s32Count = 0;
+    this->m_stepper.s32Target = abs(s32Ticks);
 
-    const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master };
-    const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
+    this->m_stepper.s32Period = 1;
 
-    for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+    const bool bIsCCW = s32Ticks > 0;
+    gpio_set_level(GPIO_NUM_33, bIsCCW);
+
+    ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.sSignalTimerHandle, this->m_stepper.s32Period));
+
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 30000 );
+
+    /* Wait to be notified of an interrupt. */
+    uint32_t ulNotifiedValue = 0;
+    const BaseType_t xResult = xTaskNotifyWait(pdFALSE,    /* Don't clear bits on entry. */
+                        ULONG_MAX,        /* Clear all bits on exit. */
+                        &ulNotifiedValue, /* Stores the notified value. */
+                        xMaxBlockTime );
+
+    if( xResult != pdPASS )
     {
-        const uint8_t symbol = symbols[i];
-        const Chevron currentChevron = chevrons[i];
-
-        //baseGate.MoveToSymbol(symbol, currentChevron);
-        // Chevrons
-        //baseGate.LockChevron();
-        vTaskDelay(pdMS_TO_TICKS(500));
-        //baseGate.UnlockChevron();
-
-        //baseGate.LightUpSymbol(20, true); //Only apply on universe
-        vTaskDelay(pdMS_TO_TICKS(500));
-        //baseGate.LightUpChevron(currentChevron, true);
+        ESP_LOGE(TAG, "wait done ...");
+        return false;
     }
 
-    // Run wormhole animations
-    wormhole.OpenAnimation();
-    wormhole.Run(&gc->m_bIsCancelAction);
-    wormhole.CloseAnimation();
+    return true;
+}
 
-    // Shutdown lightning and all
-    //baseGate.ShutdownGate();
+//     int64_t time_since_boot = esp_timer_get_time();
+IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
+{
+    Stepper* step = (Stepper*)arg;
 
-    //baseGate.GoHome();
+    static BaseType_t xHigherPriorityTaskWoken;
+    bool bIsDone = false;
 
-    //baseGate.LockGate(); //Only apply on universe
- */
+    xHigherPriorityTaskWoken = pdFALSE;
+
+    gpio_set_level(GPIO_NUM_25, step->bPeriodAlternate);
+    if (step->bPeriodAlternate)
+    {
+        const int32_t s32 = MISCMACRO_MIN(abs(step->s32Count) , abs(step->s32Target - step->s32Count));
+        /* I just did some tests until I was satisfied */
+        /* #1 (100, 1000), (1400, 300)
+           a = -0.53846153846153846153846153846154
+           b = 1053.84 */
+        /* #2 (100, 700), (1400, 200)
+           a = -0.3846
+           b = 738.44 */
+        const int32_t a = -461;
+        const int32_t b = 946840;
+        step->s32Period = (a * s32 + b)/1000;
+
+        // I hoped it would reduce jitter.
+        step->s32Period = (step->s32Period / 50) * 50;
+
+        if (step->s32Period < 300)
+            step->s32Period = 300;
+        if (step->s32Period > 700)
+            step->s32Period = 700;
+
+        // Count every two
+        step->s32Count++;
+    }
+    else
+    {
+        // Wait until the period go to low before considering it finished
+        if (step->s32Target == step->s32Count)
+        {
+            xTaskNotifyFromISR( step->sTskControlHandle,
+                STEPEND_BIT,
+                eSetBits,
+                &xHigherPriorityTaskWoken );
+            bIsDone = true;
+        }
+    }
+
+    step->bPeriodAlternate = !step->bPeriodAlternate;
+    if (!bIsDone)
+        ESP_ERROR_CHECK(esp_timer_start_once(step->sSignalTimerHandle, step->s32Period));
+
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
