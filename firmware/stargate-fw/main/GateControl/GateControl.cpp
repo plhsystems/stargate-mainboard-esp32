@@ -236,6 +236,9 @@ bool GateControl::DialAddress()
 {
     bool ret = false;
     {
+    HW::getI()->PowerUpStepper();
+    vTaskDelay(pdMS_TO_TICKS(100));
+
     if (!m_bIsHomingDone)
     {
         ESP_LOGE(TAG, "Homing need to be done");
@@ -243,9 +246,6 @@ bool GateControl::DialAddress()
     }
 
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
-
-    HW::getI()->PowerUpStepper();
-    vTaskDelay(pdMS_TO_TICKS(100));
 
     AnimRampLight(true);
 
@@ -339,14 +339,11 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
 
 bool GateControl::MoveStepperTo(int32_t s32Ticks)
 {
-    this->m_stepper.bPeriodAlternate = false;
+    // Setup the parameters
     this->m_stepper.s32Count = 0;
     this->m_stepper.s32Target = abs(s32Ticks);
-
     this->m_stepper.s32Period = 1;
-
-    const bool bIsCCW = s32Ticks > 0;
-    gpio_set_level(GPIO_NUM_33, bIsCCW);
+    this->m_stepper.bIsCCW = s32Ticks > 0;
 
     ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.sSignalTimerHandle, this->m_stepper.s32Period));
 
@@ -361,65 +358,61 @@ bool GateControl::MoveStepperTo(int32_t s32Ticks)
 
     if( xResult != pdPASS )
     {
-        ESP_LOGE(TAG, "wait done ...");
+        esp_timer_stop(this->m_stepper.sSignalTimerHandle);
+        ESP_LOGE(TAG, "Error, cannot reach it's destination with-in time ...");
         return false;
     }
 
     return true;
 }
 
-//     int64_t time_since_boot = esp_timer_get_time();
 IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
 {
     Stepper* step = (Stepper*)arg;
 
     static BaseType_t xHigherPriorityTaskWoken;
-    bool bIsDone = false;
 
     xHigherPriorityTaskWoken = pdFALSE;
 
-    gpio_set_level(GPIO_NUM_25, step->bPeriodAlternate);
-    if (step->bPeriodAlternate)
+    const int32_t s32 = MISCMACRO_MIN(abs(step->s32Count) , abs(step->s32Target - step->s32Count));
+    /* I just did some tests until I was satisfied */
+    /* #1 (100, 1000), (1400, 300)
+        a = -0.53846153846153846153846153846154
+        b = 1053.84 */
+    /* #2 (100, 700), (1400, 200)
+        a = -0.3846
+        b = 738.44 */
+    const int32_t a = -461;
+    const int32_t b = 946840;
+    step->s32Period = (a * s32 + b)/1000;
+
+    // I hoped it would reduce jitter.
+    step->s32Period = (step->s32Period / 50) * 50;
+
+    if (step->s32Period < 600)
+        step->s32Period = 600;
+    if (step->s32Period > 1600)
+        step->s32Period = 1600;
+
+    // Wait until the period go to low before considering it finished
+    if (step->s32Target == step->s32Count)
     {
-        const int32_t s32 = MISCMACRO_MIN(abs(step->s32Count) , abs(step->s32Target - step->s32Count));
-        /* I just did some tests until I was satisfied */
-        /* #1 (100, 1000), (1400, 300)
-           a = -0.53846153846153846153846153846154
-           b = 1053.84 */
-        /* #2 (100, 700), (1400, 200)
-           a = -0.3846
-           b = 738.44 */
-        const int32_t a = -461;
-        const int32_t b = 946840;
-        step->s32Period = (a * s32 + b)/1000;
-
-        // I hoped it would reduce jitter.
-        step->s32Period = (step->s32Period / 50) * 50;
-
-        if (step->s32Period < 300)
-            step->s32Period = 300;
-        if (step->s32Period > 800)
-            step->s32Period = 800;
-
+        xTaskNotifyFromISR( step->sTskControlHandle,
+            STEPEND_BIT,
+            eSetBits,
+            &xHigherPriorityTaskWoken );
+    }
+    else {
         // Count every two
-        step->s32Count++;
-    }
-    else
-    {
-        // Wait until the period go to low before considering it finished
-        if (step->s32Target == step->s32Count)
-        {
-            xTaskNotifyFromISR( step->sTskControlHandle,
-                STEPEND_BIT,
-                eSetBits,
-                &xHigherPriorityTaskWoken );
-            bIsDone = true;
-        }
-    }
+        if (step->bIsCCW)
+            HW::getI()->StepStepperCCW();
+        else
+            HW::getI()->StepStepperCW();
 
-    step->bPeriodAlternate = !step->bPeriodAlternate;
-    if (!bIsDone)
+        step->s32Count++;
+
         ESP_ERROR_CHECK(esp_timer_start_once(step->sSignalTimerHandle, step->s32Period));
+    }
 
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }

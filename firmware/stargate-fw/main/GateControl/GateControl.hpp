@@ -52,9 +52,9 @@ class GateControl
         esp_timer_handle_t sSignalTimerHandle;
         TaskHandle_t sTskControlHandle;
 
-        bool bPeriodAlternate = false;
         int32_t s32Period = 0;
         // Counter
+        bool bIsCCW;
         int32_t s32Count = 0;
         int32_t s32Target = 0;
     };
