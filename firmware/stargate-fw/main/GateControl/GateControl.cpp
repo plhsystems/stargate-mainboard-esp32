@@ -236,6 +236,12 @@ bool GateControl::DialAddress()
 {
     bool ret = false;
     {
+    if (!m_bIsHomingDone)
+    {
+        ESP_LOGE(TAG, "Homing need to be done");
+        goto ERROR;
+    }
+
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
     HW::getI()->PowerUpStepper();
@@ -247,10 +253,8 @@ bool GateControl::DialAddress()
 
     // m_bIsHomingDone / m_s32CurrentPositionTicks
     const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-    const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
-
-    // Assume we are at 0 position. The homing is mandatory on startup
-    m_s32CurrentPositionTicks = 0;
+    //const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
+    const uint8_t symbols[] = { 1, 36, 2, 35, 3, 34, 18 };
 
     for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
     {
@@ -267,8 +271,10 @@ bool GateControl::DialAddress()
         const double dAngle = (universeGate.LEDIndexToDeg(s32LedIndex));
         const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
 
+        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
+
         ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
-        MoveStepperTo(s32SymbolToTicks);
+        MoveStepperTo(s32MoveTicks);
 
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
