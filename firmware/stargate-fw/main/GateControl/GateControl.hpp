@@ -82,8 +82,9 @@ class GateControl
     bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
     bool DialAddress();
 
+    void AnimRampLight(bool bIsActive);
+    // Stepper
     bool SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount);
-
     bool MoveStepperTo(int32_t s32Ticks);
 
     private:

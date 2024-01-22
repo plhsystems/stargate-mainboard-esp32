@@ -2,6 +2,7 @@
 #include "../Wormhole/Wormhole.hpp"
 #include "../FWConfig.hpp"
 #include "../HW/HW.hpp"
+#include "misc-formula.h"
 
 #define TAG "GateControl"
 
@@ -233,10 +234,14 @@ bool GateControl::AutoHome()
 
 bool GateControl::DialAddress()
 {
+    bool ret = false;
+    {
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
     HW::getI()->PowerUpStepper();
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    AnimRampLight(true);
 
     const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
 
@@ -251,7 +256,7 @@ bool GateControl::DialAddress()
     {
         if (m_bIsCancelAction) {
             ESP_LOGE(TAG, "Unable to complete dialing, cancelled by the user");
-            return false;
+            goto ERROR;
         }
 
         const uint8_t u8Symbol = symbols[i];
@@ -268,8 +273,15 @@ bool GateControl::DialAddress()
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+    ret = true;
+    goto END;
+    }
+    ERROR:
+    ret = false;
+    END:
     HW::getI()->PowerDownStepper();
-    return true;
+    AnimRampLight(false);
+    return ret;
 }
 
 bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
@@ -380,8 +392,8 @@ IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
 
         if (step->s32Period < 300)
             step->s32Period = 300;
-        if (step->s32Period > 700)
-            step->s32Period = 700;
+        if (step->s32Period > 800)
+            step->s32Period = 800;
 
         // Count every two
         step->s32Count++;
@@ -404,4 +416,24 @@ IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
         ESP_ERROR_CHECK(esp_timer_start_once(step->sSignalTimerHandle, step->s32Period));
 
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
+void GateControl::AnimRampLight(bool bIsActive)
+{
+    const float fltPWMOn = (float)Settings::getI().GetValueInt32(Settings::Entry::RampOnPercent) / 100.0f;
+    const float fltInc = 0.01f;
+
+    if (bIsActive) {
+        for(float flt = 0.0f; flt <= 1.0f; flt += fltInc) {
+            // Log corrected
+            HW::getI()->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+            vTaskDelay(pdMS_TO_TICKS(5));
+        }
+    }
+    else {
+        for(float flt = 1.0f; flt >= 0.0f; flt -= fltInc) {
+            HW::getI()->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+            vTaskDelay(pdMS_TO_TICKS(5));
+        }
+    }
 }
