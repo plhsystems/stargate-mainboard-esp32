@@ -2,6 +2,7 @@
 #define _RINGU_H_
 
 #include "stdint.h"
+#include "SGUComm.hpp"
 
 class RingComm
 {

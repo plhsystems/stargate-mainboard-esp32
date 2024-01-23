@@ -9,4 +9,4 @@ idf_component_register( SRCS
     "Wormhole/Wormhole.cpp"
     "HW/PinkySGHW.cpp"
     INCLUDE_DIRS "."
-    REQUIRES nvsjson misc-formula esp_http_client esp-tls driver led_strip esp_rom lwip nvs_flash json esp_http_server esp_wifi app_update fatfs esp_rom esp_timer esp_hw_support esp_common log)
+    REQUIRES sgu-ringcomm nvsjson misc-formula esp_http_client esp-tls driver led_strip esp_rom lwip nvs_flash json esp_http_server esp_wifi app_update fatfs esp_rom esp_timer esp_hw_support esp_common log)
