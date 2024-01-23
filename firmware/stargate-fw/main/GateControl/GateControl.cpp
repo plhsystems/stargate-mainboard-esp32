@@ -382,8 +382,8 @@ IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
     /* #2 (100, 700), (1400, 200)
         a = -0.3846
         b = 738.44 */
-    const int32_t a = -461;
-    const int32_t b = 946840;
+    const int32_t a = -400;
+    const int32_t b = 1400000;
     step->s32Period = (a * s32 + b)/1000;
 
     // I hoped it would reduce jitter.
@@ -420,7 +420,7 @@ IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
 void GateControl::AnimRampLight(bool bIsActive)
 {
     const float fltPWMOn = (float)Settings::getI().GetValueInt32(Settings::Entry::RampOnPercent) / 100.0f;
-    const float fltInc = 0.01f;
+    const float fltInc = 0.005f;
 
     if (bIsActive) {
         for(float flt = 0.0f; flt <= 1.0f; flt += fltInc) {
