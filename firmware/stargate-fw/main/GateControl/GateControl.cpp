@@ -321,11 +321,11 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
         const bool bIsFalling = bOldSensorState && !bNewHomeSensorState;
         if (ETransition::Rising == eTransition && bIsRising)
         {
-            ESP_LOGI(TAG, "Rising transistion detected");
+            ESP_LOGI(TAG, "Rising transition detected");
             return true;
         }
         else if (ETransition::Failing == eTransition && bIsFalling) {
-            ESP_LOGI(TAG, "Failing transistion detected");
+            ESP_LOGI(TAG, "Failing transition detected");
             return true;
         }
 

@@ -3,6 +3,8 @@
 
 #include "stdint.h"
 #include "SGUComm.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 class RingComm
 {
@@ -29,7 +31,7 @@ class RingComm
     void Init();
     void Start();
 
-    static void TaskRunning(RingComm* pRC);
+    static void TaskRunning(void* pArg);
 
     void SendKeepAlive();
     void SendPowerOff();
@@ -43,6 +45,8 @@ class RingComm
         return instance;
     }
     private:
+
+    TaskHandle_t m_sRingCommHandle;
 };
 
 #endif
