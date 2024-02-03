@@ -3,6 +3,7 @@
 #include "../FWConfig.hpp"
 #include "../HW/HW.hpp"
 #include "misc-formula.h"
+#include "SGURing.hpp"
 
 #define TAG "GateControl"
 
@@ -267,8 +268,8 @@ bool GateControl::DialAddress()
         const Chevron currentChevron = chevrons[i];
 
         // Dial sequence ...
-        const int32_t s32LedIndex = universeGate.SymbolToLedIndex(u8Symbol);
-        const double dAngle = (universeGate.LEDIndexToDeg(s32LedIndex));
+        const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
+        const double dAngle = (SGURingNS::LEDIndexToDeg(s32LedIndex));
         const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
 
         const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);

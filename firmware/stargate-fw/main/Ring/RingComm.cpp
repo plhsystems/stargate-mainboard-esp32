@@ -30,6 +30,69 @@ void RingComm::Start()
 void RingComm::TaskRunning(void* pArg)
 {
     RingComm* pRC = (RingComm*)pArg;
+    int sock = -1;
+
+    #define HOST_IP_ADDR "192.168.42.250"
+    #define PORT 7827
+
+    struct sockaddr_in dest_addr;
+    dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(PORT);
+
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        goto CLEAN_UP;
+    }
+    ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
+
+    while(true)
+    {
+        const char* payload = "coucou_test";
+        int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        if (err < 0) {
+            ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+            goto CLEAN_UP;
+        }
+        ESP_LOGI(TAG, "Message sent");
+
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+    CLEAN_UP:
+    if (sock != -1) {
+        ESP_LOGE(TAG, "Shutting down socket and restarting...");
+        shutdown(sock, 0);
+        close(sock);
+    }
+    vTaskDelete(NULL);
+}
+
+void RingComm::SendPowerOff()
+{
+
+}
+
+void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
+{
+
+}
+
+void RingComm::SendGateAnimation(GateAnimation animation)
+{
+
+}
+
+void RingComm::SendGotoFactory()
+{
+
+}
+
+/*
+
+void RingComm::TaskRunning(void* pArg)
+{
+    RingComm* pRC = (RingComm*)pArg;
 
     #define KEEPALIVE_IDLE (5)
     #define KEEPALIVE_INTERVAL (5)
@@ -115,23 +178,4 @@ void RingComm::TaskRunning(void* pArg)
     CLEAN_UP:
     vTaskDelete(NULL);
 }
-
-void RingComm::SendPowerOff()
-{
-
-}
-
-void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
-{
-
-}
-
-void RingComm::SendGateAnimation(GateAnimation animation)
-{
-
-}
-
-void RingComm::SendGotoFactory()
-{
-
-}
+*/
