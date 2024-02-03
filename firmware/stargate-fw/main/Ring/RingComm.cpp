@@ -7,7 +7,6 @@
 #include "../FWConfig.hpp"
 
 static const char *TAG = "RingComm";
-static const char *payload = "Message from ESP32 ";
 
 RingComm::RingComm()
 {
@@ -31,80 +30,89 @@ void RingComm::Start()
 void RingComm::TaskRunning(void* pArg)
 {
     RingComm* pRC = (RingComm*)pArg;
-    int sock = -1;
-    {
-    char rx_buffer[128];
-    char host_ip[] = "192.168.5.100";
-    uint16_t u16Port = 5000;
 
-    struct sockaddr_in dest_addr_ip4;
-    dest_addr_ip4.sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4.sin_family = AF_INET;
-    dest_addr_ip4.sin_port = htons(u16Port);
+    #define KEEPALIVE_IDLE (5)
+    #define KEEPALIVE_INTERVAL (5)
+    #define KEEPALIVE_COUNT (5)
 
-    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock < 0) {
+    int keepAlive = 1;
+    int keepIdle = KEEPALIVE_IDLE;
+    int keepInterval = KEEPALIVE_INTERVAL;
+    int keepCount = KEEPALIVE_COUNT;
+    uint16_t u16Port = 8888;
+
+    struct sockaddr_storage dest_addr;
+    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+    dest_addr_ip4->sin_family = AF_INET;
+    dest_addr_ip4->sin_port = htons(u16Port);
+
+    int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if (listen_sock < 0) {
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-        goto ERROR;
+        vTaskDelete(NULL);
+        return;
     }
-    ESP_LOGI(TAG, "Socket created, %s:%d", host_ip, u16Port);
-    int err = bind(sock, (struct sockaddr *)&dest_addr_ip4, sizeof(dest_addr_ip4));
-    if (err < 0) {
+    int opt = 1;
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    ESP_LOGI(TAG, "Socket created");
+
+    int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    if (err != 0) {
         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        goto ERROR;
+        ESP_LOGE(TAG, "IPPROTO: %d", IPPROTO_IP);
+        goto CLEAN_UP;
     }
-    ESP_LOGI(TAG, "Socket bound, port %d", (int)u16Port);
+    ESP_LOGI(TAG, "Socket bound, port %d", u16Port);
 
-    while (1) {
+    err = listen(listen_sock, 1);
+    if (err != 0) {
+        ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+        goto CLEAN_UP;
+    }
 
-        ESP_LOGI(TAG, "sendto");
-        /*
-        int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr_ip4, sizeof(dest_addr_ip4));
-        if (err < 0) {
-            ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-            goto ERROR;
-        }
-        ESP_LOGI(TAG, "Message sent");
-        */
+    while(true)
+    {
         struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-        socklen_t socklen = sizeof(source_addr);
-
-        ESP_LOGI(TAG, "recvfrom");
-
-        struct timeval read_timeout;
-        read_timeout.tv_sec = 0;
-        read_timeout.tv_usec = 10;
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof(read_timeout));
-
-        int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-        ESP_LOGI(TAG, "recvfrom done");
-
-        // Error occurred during receiving
-        if (len < 0) {
-            ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-            goto ERROR;
+        socklen_t addr_len = sizeof(source_addr);
+        int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+        if (sock < 0) {
+            ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
+            break;
         }
-        // Data received
-        else {
-            rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, host_ip);
-            ESP_LOGI(TAG, "%s", rx_buffer);
-            if (strncmp(rx_buffer, "OK: ", 4) == 0) {
-                ESP_LOGI(TAG, "Received expected message, reconnecting");
-                break;
+
+        // Set tcp keepalive option
+        setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+        setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
+        // Convert ip address to string
+        char addr_str[24];
+        if (source_addr.ss_family == PF_INET) {
+            inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
+        }
+        ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
+
+        char rx_buffer[128];
+        int len = 0;
+        do {
+            len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+            if (len < 0) {
+                ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
+            } else if (len == 0) {
+                ESP_LOGW(TAG, "Connection closed");
+            } else {
+                rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
+                ESP_LOGI(TAG, "Received %d bytes: %s", len, rx_buffer);
             }
-        }
+        } while (len > 0);
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-    }
-    ERROR:
-    if (sock != -1) {
-        ESP_LOGE(TAG, "Shutting down socket and restarting...");
         shutdown(sock, 0);
         close(sock);
     }
 
+    CLEAN_UP:
     vTaskDelete(NULL);
 }
 

@@ -6,7 +6,6 @@ namespace SGUCommNS
 {
     enum class EProtocolCmd
     {
-        KeepAlive = 0,
         TurnOff = 1,
         UpdateLight = 2,
         ChevronsLightning = 3,
@@ -40,11 +39,6 @@ namespace SGUCommNS
         uint8_t u8LightCount;
     };
 
-    struct SKeepAliveArg
-    {
-        uint32_t u32MaximumTimeMS;
-    };
-
     struct SChevronsLightningArg
     {
         EChevronAnimation eChevronAnim;
@@ -52,7 +46,6 @@ namespace SGUCommNS
 
     typedef void(*fnUpdateLight)(const SUpdateLightArg* psArg);
     typedef void(*fnTurnOff)(void);
-    typedef void(*fnKeepAlive)(const SKeepAliveArg* psKeepAliveArg);
     typedef void(*fnChevronsLightning)(const SChevronsLightningArg* psChevronLightningArg);
 
     typedef void(*fnGotoFactory)();
@@ -61,7 +54,6 @@ namespace SGUCommNS
 
     typedef struct
     {
-        fnKeepAlive fnKeepAliveHandler;
         fnTurnOff fnTurnOffHandler;
 
         fnUpdateLight fnUpdateLightHandler;
@@ -78,7 +70,6 @@ namespace SGUCommNS
         bool Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t u16Length);
 
         // Encode keep alive command.
-        uint32_t EncKeepAlive(uint8_t* u8Dst, uint16_t u16MaxLen, const SKeepAliveArg* psArg);
         uint32_t EncTurnOff(uint8_t* u8Dst, uint16_t u16MaxLen);
         uint32_t EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg);
         uint32_t EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const SChevronsLightningArg* psArg);
