@@ -435,7 +435,7 @@ static void MainTask(void *pvParameters)
         if (len > 0)
         {
             ESP_LOGI(TAG, "Receiving data, len: %d", (int)len);
-            if (!sSGUComm.Decode(m_sConfig, u8Buffers, len))
+            if (!SGUComm::Decode(m_sConfig, u8Buffers, len))
             {
                 ESP_LOGE(TAG, "Unable to decode message");
             }

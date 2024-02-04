@@ -67,13 +67,13 @@ namespace SGUCommNS
     class SGUComm
     {
         public:
-        bool Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t u16Length);
+        static bool Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t u16Length);
 
         // Encode keep alive command.
-        uint32_t EncTurnOff(uint8_t* u8Dst, uint16_t u16MaxLen);
-        uint32_t EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg);
-        uint32_t EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const SChevronsLightningArg* psArg);
-        uint32_t EncGotoFactory(uint8_t* u8Dst, uint16_t u16MaxLen);
-        uint32_t EncGotoOTAMode(uint8_t* u8Dst, uint16_t u16MaxLen);
+        static uint32_t EncTurnOff(uint8_t* u8Dst, uint16_t u16MaxLen);
+        static uint32_t EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg);
+        static uint32_t EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const SChevronsLightningArg* psArg);
+        static uint32_t EncGotoFactory(uint8_t* u8Dst, uint16_t u16MaxLen);
+        static uint32_t EncGotoOTAMode(uint8_t* u8Dst, uint16_t u16MaxLen);
     };
 }
