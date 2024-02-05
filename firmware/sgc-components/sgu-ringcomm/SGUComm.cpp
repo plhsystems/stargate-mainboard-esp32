@@ -24,7 +24,7 @@ bool SGUComm::Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t 
     {
         case EProtocolCmd::UpdateLight:
         {
-            // CMD | R | G | B | LIGHT0 | LIGHT1 | ...
+            // R | G | B | LIGHT0 | LIGHT1 | ...
             if (u16Length < 4)
                 return false;
 
@@ -57,16 +57,9 @@ bool SGUComm::Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t 
             }
             return true;
         }
-        case EProtocolCmd::GotoOTAMode:
-        {
-            if (refConfig.fnGotoOTAModeHandler != NULL) {
-                refConfig.fnGotoOTAModeHandler();
-            }
-            return true;
-        }
         case EProtocolCmd::ChevronsLightning:
         {
-            // CMD | ANIM ...
+            // ANIM ...
             if (u16Length < 1)
                 return false;
 
@@ -81,6 +74,18 @@ bool SGUComm::Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t 
 
             if (refConfig.fnChevronsLightningHandler != NULL) {
                 refConfig.fnChevronsLightningHandler(&sChevronsLightningArg);
+            }
+            return true;
+        }
+        case EProtocolCmd::PingPong:
+        {
+            // PingPong
+            if (u16Length < 4)
+                return false;
+            SPingPongArg sPongArg;
+            memcpy(&sPongArg.u32PingPong, &u8Datas[0], sizeof(uint32_t));
+            if (refConfig.fnPongHandler != NULL) {
+                refConfig.fnPongHandler(&sPongArg);
             }
             return true;
         }
@@ -110,17 +115,6 @@ uint32_t SGUComm::EncGotoFactory(uint8_t* u8Dst, uint16_t u16MaxLen)
     return u16ReqLength;
 }
 
-uint32_t SGUComm::EncGotoOTAMode(uint8_t* u8Dst, uint16_t u16MaxLen)
-{
-    const uint16_t u16ReqLength = MAGIC_LENGTH+/*Cmd*/1;
-    if (u16MaxLen < u16ReqLength)
-        return 0;
-    u8Dst[0] = MAGIC0;
-    u8Dst[1] = MAGIC1;
-    u8Dst[2] = (uint8_t)EProtocolCmd::GotoOTAMode;
-    return u16ReqLength;
-}
-
 uint32_t SGUComm::EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg)
 {
     const uint16_t u16ReqLength = MAGIC_LENGTH + /*Cmd*/1 + /*R|G|B*/3 + /*Light indexes...*/psArg->u8LightCount;
@@ -145,5 +139,17 @@ uint32_t SGUComm::EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const 
     u8Dst[1] = MAGIC1;
     u8Dst[2] = (uint8_t)EProtocolCmd::ChevronsLightning;
     u8Dst[3] = (uint8_t)psArg->eChevronAnim;
+    return u16ReqLength;
+}
+
+uint32_t SGUComm::EncPingPong(uint8_t* u8Dst, uint16_t u16MaxLen, const SPingPongArg* psArg)
+{
+    const uint16_t u16ReqLength = MAGIC_LENGTH + /*Cmd*/1 + /*Anim Type*/4;
+    if (u16MaxLen < u16ReqLength)
+        return 0;
+    u8Dst[0] = MAGIC0;
+    u8Dst[1] = MAGIC1;
+    u8Dst[2] = (uint8_t)EProtocolCmd::PingPong;
+    memcpy(&u8Dst[3], &psArg->u32PingPong, sizeof(uint32_t));
     return u16ReqLength;
 }

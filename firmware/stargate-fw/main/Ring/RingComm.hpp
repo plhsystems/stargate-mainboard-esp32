@@ -47,6 +47,8 @@ class RingComm
     private:
 
     TaskHandle_t m_sRingCommHandle;
+
+    int m_commSocket = -1;
 };
 
 #endif

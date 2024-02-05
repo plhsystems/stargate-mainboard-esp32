@@ -31,41 +31,58 @@ void RingComm::Start()
 void RingComm::TaskRunning(void* pArg)
 {
     RingComm* pRC = (RingComm*)pArg;
-    int sock = -1;
-
+    pRC->m_commSocket = -1;
+    {
     struct sockaddr_in dest_addr;
     dest_addr.sin_addr.s_addr = inet_addr(FWCONFIG_RING_IPADDRESS);
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(FWCONFIG_RING_PORT);
 
-    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock < 0) {
+    pRC->m_commSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (pRC->m_commSocket < 0) {
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
         goto CLEAN_UP;
     }
     ESP_LOGI(TAG, "Socket created, sending to %s:%d", FWCONFIG_RING_IPADDRESS, FWCONFIG_RING_PORT);
 
+    uint32_t u32 = 0;
+    uint32_t u32PingPong = 1;
+
     while(true)
     {
         uint8_t payloads[64];
 
-        const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = SGUCommNS::EChevronAnimation::FadeIn };
-        const int32_t length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
-
-        int err = sendto(sock, payloads, length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        int32_t length = 0;
+        if (u32 == 0) {
+            const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = SGUCommNS::EChevronAnimation::FadeIn };
+            length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
+        }
+        else if (u32 == 1) {
+            const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = SGUCommNS::EChevronAnimation::FadeOut };
+            length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
+        }
+        else if (u32 == 2) {
+            const SGUCommNS::SPingPongArg arg = { .u32PingPong = u32PingPong };
+            length = SGUCommNS::SGUComm::EncPingPong(payloads, sizeof(payloads), &arg);
+        }
+        u32 = (u32 + 1) % 3;
+        int err = sendto(pRC->m_commSocket, payloads, length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
             ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
             goto CLEAN_UP;
         }
         ESP_LOGI(TAG, "Message sent");
 
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(4000 / portTICK_PERIOD_MS);
+
+        u32PingPong++;
+    }
     }
     CLEAN_UP:
-    if (sock != -1) {
+    if (pRC->m_commSocket != -1) {
         ESP_LOGE(TAG, "Shutting down socket and restarting...");
-        shutdown(sock, 0);
-        close(sock);
+        shutdown(pRC->m_commSocket, 0);
+        close(pRC->m_commSocket);
     }
     vTaskDelete(NULL);
 }
@@ -91,7 +108,6 @@ void RingComm::SendGotoFactory()
 }
 
 /*
-
 void RingComm::TaskRunning(void* pArg)
 {
     RingComm* pRC = (RingComm*)pArg;

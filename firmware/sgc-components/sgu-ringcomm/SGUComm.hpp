@@ -10,7 +10,8 @@ namespace SGUCommNS
         UpdateLight = 2,
         ChevronsLightning = 3,
         GotoFactory = 4,
-        GotoOTAMode = 5,
+        //RESERVED = 5,
+        PingPong = 6,
     };
 
     struct sRGB
@@ -44,13 +45,19 @@ namespace SGUCommNS
         EChevronAnimation eChevronAnim;
     };
 
+    struct SPingPongArg
+    {
+        uint32_t u32PingPong;
+    };
+
     typedef void(*fnUpdateLight)(const SUpdateLightArg* psArg);
     typedef void(*fnTurnOff)(void);
     typedef void(*fnChevronsLightning)(const SChevronsLightningArg* psChevronLightningArg);
 
     typedef void(*fnGotoFactory)();
 
-    typedef void(*fnGotoOTAMode)(void);
+    typedef void(*fnPing)(const SPingPongArg* psArg);
+    typedef void(*fnPong)(const SPingPongArg* psArg);
 
     typedef struct
     {
@@ -61,7 +68,8 @@ namespace SGUCommNS
 
         fnGotoFactory fnGotoFactoryHandler;
 
-        fnGotoOTAMode fnGotoOTAModeHandler;
+        fnPing fnPingHandler;
+        fnPing fnPongHandler;
     } SConfig;
 
     class SGUComm
@@ -74,6 +82,7 @@ namespace SGUCommNS
         static uint32_t EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg);
         static uint32_t EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const SChevronsLightningArg* psArg);
         static uint32_t EncGotoFactory(uint8_t* u8Dst, uint16_t u16MaxLen);
-        static uint32_t EncGotoOTAMode(uint8_t* u8Dst, uint16_t u16MaxLen);
+        
+        static uint32_t EncPingPong(uint8_t* u8Dst, uint16_t u16MaxLen, const SPingPongArg* psArg);
     };
 }

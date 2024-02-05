@@ -55,6 +55,9 @@ static volatile int32_t m_s32ChevronAnim = -1;
 
 static esp_pm_lock_handle_t m_lockHandle;
 
+static int m_UdpCommSocket = -1;
+static struct sockaddr_storage m_source_addr; // Large enough for both IPv4 or IPv6
+
 extern "C" {
     void app_main();
 
@@ -64,6 +67,7 @@ extern "C" {
     static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg);
     static void SGUBRChevronsLightningHandler(const SChevronsLightningArg* psChevronLightningArg);
     static void SGUBRGotoFactory();
+    static void PingHandler(const SPingPongArg* psArg);
 }
 
 static const SConfig m_sConfig =
@@ -73,7 +77,7 @@ static const SConfig m_sConfig =
     .fnUpdateLightHandler = SGUBRUpdateLightHandler,
     .fnChevronsLightningHandler = SGUBRChevronsLightningHandler,
     .fnGotoFactoryHandler = SGUBRGotoFactory,
-    .fnGotoOTAModeHandler = NULL
+    .fnPingHandler = PingHandler,
 };
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
@@ -394,6 +398,22 @@ static void SGUBRGotoFactory()
     ResetAutoOffTicks();
 }
 
+static void PingHandler(const SPingPongArg* psArg)
+{
+    ESP_LOGI(TAG, "Ping received: %" PRIu32, psArg->u32PingPong);
+    if (m_UdpCommSocket < 0)
+        return;
+
+    uint8_t u8Payloads[128];
+    const int length = SGUComm::EncPingPong(u8Payloads, sizeof(u8Payloads), psArg);
+    int err = sendto(m_UdpCommSocket, u8Payloads, length, 0, (struct sockaddr *)&m_source_addr, sizeof(m_source_addr));
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+        return;
+    }
+    ESP_LOGI(TAG, "Ping response sent");
+}
+
 static void MainTask(void *pvParameters)
 {
     ESP_LOGI(TAG, "MainTask started ...");
@@ -412,6 +432,7 @@ static void MainTask(void *pvParameters)
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
         goto ERROR;
     }
+    m_UdpCommSocket = sock;
     ESP_LOGI(TAG, "Socket created");
 
     int err = bind(sock, (struct sockaddr *)&dest_addr_ip4, sizeof(dest_addr_ip4));
@@ -429,9 +450,8 @@ static void MainTask(void *pvParameters)
 
     while(true)
     {
-        struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-        socklen_t socklen = sizeof(source_addr);
-        int len = recvfrom(sock, u8Buffers, sizeof(u8Buffers), 0, (struct sockaddr *)&source_addr, &socklen);
+        socklen_t socklen = sizeof(m_source_addr);
+        int len = recvfrom(sock, u8Buffers, sizeof(u8Buffers), 0, (struct sockaddr *)&m_source_addr, &socklen);
         if (len > 0)
         {
             ESP_LOGI(TAG, "Receiving data, len: %d", (int)len);
@@ -500,8 +520,7 @@ void app_main(void)
                 // If we hold the switch long enough it stop the process.
                 if ( (xTaskGetTickCount() - switchTicks) > pdMS_TO_TICKS(FWCONFIG_SWITCH_HOLDDELAY_MS))
                 {
-                    m_bIsSuicide = true;
-                    switchTicks = 0; // Reset;
+                    SGUBRGotoFactory();
                 }
             }
             else
