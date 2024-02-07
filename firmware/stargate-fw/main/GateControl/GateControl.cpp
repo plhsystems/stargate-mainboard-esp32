@@ -274,7 +274,7 @@ bool GateControl::DialAddress()
         // Dial sequence ...
         const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
         const double dAngle = (SGURingNS::LEDIndexToDeg(s32LedIndex));
-        const int32_t s32SymbolToTicks = (dAngle/360)*s32NewStepsPerRotation;
+        const int32_t s32SymbolToTicks = -1*(dAngle/360)*s32NewStepsPerRotation;
 
         const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
 

@@ -41,10 +41,20 @@ class RingComm
     }
     private:
 
+    // Working delay
+    static constexpr uint32_t PINGPONG_TIMEOUT_MS = 1500;
+    static constexpr uint32_t PINGPONG_INTERVAL_MS = 500;
+
+    // Task related
     TaskHandle_t m_sRingCommHandle;
 
+    // Socket related
     int m_commSocket = -1;
     struct sockaddr_in m_dest_addr;
+
+    // Process
+    uint32_t m_u32LastPingResponse = 0;
+    bool m_bIsConnected = false;
 };
 
 #endif

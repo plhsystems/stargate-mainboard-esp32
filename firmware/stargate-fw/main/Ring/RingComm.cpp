@@ -41,7 +41,6 @@ void RingComm::TaskRunning(void* pArg)
     }
     ESP_LOGI(TAG, "Socket created, sending to %s:%d", FWCONFIG_RING_IPADDRESS, FWCONFIG_RING_PORT);
 
-    uint32_t u32 = 0;
     uint32_t u32PingPong = 1;
 
     TickType_t ttPingPongTicks = 0;
@@ -50,7 +49,7 @@ void RingComm::TaskRunning(void* pArg)
     {
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 50000,
+            .tv_usec = 100000,
         };
         fd_set rfds;
         FD_ZERO(&rfds);
@@ -73,22 +72,37 @@ void RingComm::TaskRunning(void* pArg)
                     ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
                     break;
                 }
-                ESP_LOGI(TAG, "received %d bytes", len);
+
+                // Receiving response
+                pRC->m_u32LastPingResponse = xTaskGetTickCount();
+                if (!pRC->m_bIsConnected)
+                {
+                    pRC->m_bIsConnected = true;
+                    ESP_LOGI(TAG, "received %d bytes", len);
+                    ESP_LOGI(TAG, "Connected to the ring");
+                }
             }
         }
 
+        // Disconnection detected
+        if (pRC->m_bIsConnected && pdTICKS_TO_MS(xTaskGetTickCount() - pRC->m_u32LastPingResponse) > PINGPONG_TIMEOUT_MS )
+        {
+            pRC->m_bIsConnected = false;
+            ESP_LOGI(TAG, "Disconnected from the ring");
+        }
+
         // Ping every seconds
-        if ( pdTICKS_TO_MS(xTaskGetTickCount() - ttPingPongTicks) > 1000 ) {
+        if ( pdTICKS_TO_MS(xTaskGetTickCount() - ttPingPongTicks) > PINGPONG_INTERVAL_MS ) {
             ttPingPongTicks = xTaskGetTickCount();
             const SGUCommNS::SPingPongArg arg = { .u32PingPong = u32PingPong };
             uint8_t payloads[16];
-            const int32_t length = SGUCommNS::SGUComm::EncPingPong(payloads, sizeof(payloads), &arg);
+            const uint32_t u32Length = SGUCommNS::SGUComm::EncPingPong(payloads, sizeof(payloads), &arg);
             u32PingPong++;
 
-            int err = sendto(pRC->m_commSocket, payloads, length, 0, (struct sockaddr *)&pRC->m_dest_addr, sizeof(pRC->m_dest_addr));
+            int err = sendto(pRC->m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&pRC->m_dest_addr, sizeof(pRC->m_dest_addr));
             if (err < 0) {
-                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                goto CLEAN_UP;
+                ESP_LOGE(TAG, "Error occurred during ping: errno %d", errno);
+                // goto CLEAN_UP;
             }
         }
         // 50 hz maximum
@@ -106,10 +120,12 @@ void RingComm::TaskRunning(void* pArg)
 
 void RingComm::SendPowerOff()
 {
-    /*
-    const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = SGUCommNS::EChevronAnimation::FadeOut };
-    length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
-    */
+    uint8_t payloads[16];
+    const uint32_t u32Length = SGUCommNS::SGUComm::EncTurnOff(payloads, sizeof(payloads));
+    const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+    }
 }
 
 void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
@@ -122,8 +138,8 @@ void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
         .u8Lights = u8Lights,
         .u8LightCount = sizeof(u8Lights) / sizeof(uint8_t)
     };
-    const int32_t length = SGUCommNS::SGUComm::EncUpdateLight(payloads, sizeof(payloads), &arg);
-    const int err = sendto(m_commSocket, payloads, length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
+    const uint32_t u32Length = SGUCommNS::SGUComm::EncUpdateLight(payloads, sizeof(payloads), &arg);
+    const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
@@ -133,8 +149,8 @@ void RingComm::SendGateAnimation(SGUCommNS::EChevronAnimation animation)
 {
     uint8_t payloads[16];
     const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = animation };
-    const int32_t length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
-    const int err = sendto(m_commSocket, payloads, length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
+    const uint32_t u32Length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
+    const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
@@ -142,5 +158,10 @@ void RingComm::SendGateAnimation(SGUCommNS::EChevronAnimation animation)
 
 void RingComm::SendGotoFactory()
 {
-
+    uint8_t payloads[16];
+    const uint32_t u32Length = SGUCommNS::SGUComm::EncGotoFactory(payloads, sizeof(payloads));
+    const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+    }
 }
