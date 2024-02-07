@@ -56,8 +56,7 @@ namespace SGUCommNS
 
     typedef void(*fnGotoFactory)();
 
-    typedef void(*fnPing)(const SPingPongArg* psArg);
-    typedef void(*fnPong)(const SPingPongArg* psArg);
+    typedef void(*fnPingPong)(const SPingPongArg* psArg);
 
     typedef struct
     {
@@ -68,8 +67,7 @@ namespace SGUCommNS
 
         fnGotoFactory fnGotoFactoryHandler;
 
-        fnPing fnPingHandler;
-        fnPing fnPongHandler;
+        fnPingPong fnPingPongHandler;
     } SConfig;
 
     class SGUComm

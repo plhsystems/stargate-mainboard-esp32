@@ -67,7 +67,7 @@ extern "C" {
     static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg);
     static void SGUBRChevronsLightningHandler(const SChevronsLightningArg* psChevronLightningArg);
     static void SGUBRGotoFactory();
-    static void PingHandler(const SPingPongArg* psArg);
+    static void PingPongHandler(const SPingPongArg* psArg);
 }
 
 static const SConfig m_sConfig =
@@ -77,7 +77,7 @@ static const SConfig m_sConfig =
     .fnUpdateLightHandler = SGUBRUpdateLightHandler,
     .fnChevronsLightningHandler = SGUBRChevronsLightningHandler,
     .fnGotoFactoryHandler = SGUBRGotoFactory,
-    .fnPingHandler = PingHandler,
+    .fnPingPongHandler = PingPongHandler,
 };
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
@@ -398,7 +398,7 @@ static void SGUBRGotoFactory()
     ResetAutoOffTicks();
 }
 
-static void PingHandler(const SPingPongArg* psArg)
+static void PingPongHandler(const SPingPongArg* psArg)
 {
     ESP_LOGI(TAG, "Ping received: %" PRIu32, psArg->u32PingPong);
     if (m_UdpCommSocket < 0)

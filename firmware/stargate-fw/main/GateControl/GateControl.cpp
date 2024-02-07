@@ -4,6 +4,8 @@
 #include "../HW/HW.hpp"
 #include "misc-formula.h"
 #include "SGURing.hpp"
+#include "SGUComm.hpp"
+#include "../Ring/RingComm.hpp"
 
 #define TAG "GateControl"
 
@@ -246,6 +248,8 @@ bool GateControl::DialAddress()
         goto ERROR;
     }
 
+    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::FadeIn);
+
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
     AnimRampLight(true);
@@ -277,6 +281,10 @@ bool GateControl::DialAddress()
         ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
         MoveStepperTo(s32MoveTicks);
 
+        vTaskDelay(pdMS_TO_TICKS(750));
+        RingComm::getI().SendLightUpSymbol(u8Symbol);
+        vTaskDelay(pdMS_TO_TICKS(750));
+
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
@@ -287,6 +295,7 @@ bool GateControl::DialAddress()
     ret = false;
     END:
     HW::getI()->PowerDownStepper();
+    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::FadeOut);
     AnimRampLight(false);
     return ret;
 }

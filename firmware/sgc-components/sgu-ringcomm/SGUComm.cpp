@@ -84,8 +84,8 @@ bool SGUComm::Decode(const SConfig& refConfig, const uint8_t* u8Datas, uint16_t 
                 return false;
             SPingPongArg sPongArg;
             memcpy(&sPongArg.u32PingPong, &u8Datas[0], sizeof(uint32_t));
-            if (refConfig.fnPongHandler != NULL) {
-                refConfig.fnPongHandler(&sPongArg);
+            if (refConfig.fnPingPongHandler != NULL) {
+                refConfig.fnPingPongHandler(&sPongArg);
             }
             return true;
         }
@@ -144,7 +144,7 @@ uint32_t SGUComm::EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const 
 
 uint32_t SGUComm::EncPingPong(uint8_t* u8Dst, uint16_t u16MaxLen, const SPingPongArg* psArg)
 {
-    const uint16_t u16ReqLength = MAGIC_LENGTH + /*Cmd*/1 + /*Anim Type*/4;
+    const uint16_t u16ReqLength = MAGIC_LENGTH + /*Cmd*/1 + /*Counter*/4;
     if (u16MaxLen < u16ReqLength)
         return 0;
     u8Dst[0] = MAGIC0;

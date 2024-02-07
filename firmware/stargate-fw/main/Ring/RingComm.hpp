@@ -5,20 +5,15 @@
 #include "SGUComm.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "SGUComm.hpp"
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
 
 class RingComm
 {
     public:
-    enum class GateAnimation
-    {
-        FadeIn = 0,
-        FadeOut = 1,
-        ErrorToWhite = 2,
-        ErrorToOff = 3,
-        AllSymbolsOn = 4,
-
-        Count
-    };
     private:
     RingComm();
 
@@ -36,7 +31,7 @@ class RingComm
     void SendKeepAlive();
     void SendPowerOff();
     void SendLightUpSymbol(uint8_t u8Symbol);
-    void SendGateAnimation(GateAnimation animation);
+    void SendGateAnimation(SGUCommNS::EChevronAnimation animation);
     void SendGotoFactory();
 
     static RingComm& getI()
@@ -49,6 +44,7 @@ class RingComm
     TaskHandle_t m_sRingCommHandle;
 
     int m_commSocket = -1;
+    struct sockaddr_in m_dest_addr;
 };
 
 #endif
