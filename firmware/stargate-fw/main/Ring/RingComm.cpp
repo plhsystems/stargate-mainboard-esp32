@@ -3,6 +3,7 @@
 #include "SGUComm.hpp"
 #include "SGURing.hpp"
 #include "../FWConfig.hpp"
+#include "../Settings.hpp"
 
 static const char *TAG = "RingComm";
 
@@ -49,7 +50,7 @@ void RingComm::TaskRunning(void* pArg)
     {
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 100000,
+            .tv_usec = 50000,
         };
         fd_set rfds;
         FD_ZERO(&rfds);
@@ -106,7 +107,7 @@ void RingComm::TaskRunning(void* pArg)
             }
         }
         // 50 hz maximum
-        vTaskDelay(pdMS_TO_TICKS(20));
+        //vTaskDelay(pdMS_TO_TICKS(20));
     }
     }
     CLEAN_UP:
@@ -132,9 +133,12 @@ void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
 {
     uint8_t payloads[16];
     const uint8_t u8Lights[] = { (uint8_t)SGURingNS::SymbolToLedIndex(u8Symbol) };
+
+    const uint8_t u8Bright = Settings::getI().GetValueInt32(Settings::Entry::RingSymbolLight);
+
     const SGUCommNS::SUpdateLightArg arg =
     {
-        .sColor = { .u8Red = 15, .u8Green = 15, .u8Blue = 15 },
+        .sColor = { .u8Red = u8Bright, .u8Green = u8Bright, .u8Blue = u8Bright },
         .u8Lights = u8Lights,
         .u8LightCount = sizeof(u8Lights) / sizeof(uint8_t)
     };

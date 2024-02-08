@@ -18,6 +18,8 @@ class Settings
 
         // Ring rotation calibration
         StepsPerRotation,
+
+        RingCalibTimeout,
         RingHomeOffset,
         RingHomeGapRange,
         // Wormhole timeout
@@ -80,6 +82,8 @@ class Settings
         [(int)Settings::Entry::RingSymbolLight] =         NVSJSON_INITINT32_RNG("SGUR.SymLight",   "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  20000, NVSJSON_EFLAGS_None),
+
+        [(int)Settings::Entry::RingCalibTimeout] =        NVSJSON_INITINT32_RNG("Ring.CalToMS",    "Calibration process timeout",       40000,10000, 120000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",        0,-2000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::RingHomeGapRange] =        NVSJSON_INITINT32_RNG("Ring.HomeGap",    "Home sensor deadband",                  0,    0,   2000, NVSJSON_EFLAGS_None),
 

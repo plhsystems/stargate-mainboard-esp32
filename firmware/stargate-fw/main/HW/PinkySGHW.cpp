@@ -5,6 +5,7 @@
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
 #include "driver/ledc.h"
+#include "FreeRTOS/task.h"
 
 // Motor control
 #define STEPPER_DIR_PIN GPIO_NUM_33
@@ -149,6 +150,7 @@ void PinkySGHW::StepStepperCCW()
 void PinkySGHW::PowerDownStepper()
 {
     gpio_set_level(STEPPER_SLP_PIN, false);
+    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
 void PinkySGHW::PowerUpServo()

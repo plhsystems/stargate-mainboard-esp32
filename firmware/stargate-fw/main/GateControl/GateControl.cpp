@@ -122,12 +122,11 @@ bool GateControl::AutoCalibrate()
 {
     bool bSucceeded = false;
     {
-    const uint32_t u32Timeout = 40*1000;
+    const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
     // We need two transitions from LOW to HIGH.
     // we give it 40s maximum to find the home.
     HW::getI()->PowerUpStepper();
-    vTaskDelay(pdMS_TO_TICKS(100));
 
     ESP_LOGI(TAG, "Finding home in progress");
     if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
@@ -179,7 +178,6 @@ bool GateControl::AutoHome()
     bool bSucceeded = false;
     {
     HW::getI()->PowerUpStepper();
-    vTaskDelay(pdMS_TO_TICKS(100));
 
     const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
     const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
@@ -189,7 +187,7 @@ bool GateControl::AutoHome()
         goto ERROR;
     }
 
-    const uint32_t u32Timeout = 40*1000;
+    const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
     // If the ring is already near the home sensor, we just need to move a little bit.
     if (HW::getI()->GetIsHomeSensorActive()) {
@@ -240,7 +238,6 @@ bool GateControl::DialAddress()
     bool ret = false;
     {
     HW::getI()->PowerUpStepper();
-    vTaskDelay(pdMS_TO_TICKS(100));
 
     if (!m_bIsHomingDone)
     {
@@ -281,7 +278,7 @@ bool GateControl::DialAddress()
         ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
         MoveStepperTo(s32MoveTicks);
 
-        vTaskDelay(pdMS_TO_TICKS(750));
+        vTaskDelay(pdMS_TO_TICKS(300));
         RingComm::getI().SendLightUpSymbol(u8Symbol);
         vTaskDelay(pdMS_TO_TICKS(750));
 
@@ -295,6 +292,7 @@ bool GateControl::DialAddress()
     ret = false;
     END:
     HW::getI()->PowerDownStepper();
+    vTaskDelay(pdMS_TO_TICKS(500));
     RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::FadeOut);
     AnimRampLight(false);
     return ret;
@@ -305,7 +303,7 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
     TickType_t ttStart = xTaskGetTickCount();
     bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
 
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(40*1000))
+    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout)))
     {
         if (m_bIsCancelAction) {
             ESP_LOGE(TAG, "Unable to complete the spin operation, cancelled by the user");
