@@ -412,6 +412,7 @@ static void PingPongHandler(const SPingPongArg* psArg)
         return;
     }
     ESP_LOGI(TAG, "Ping response sent");
+    ResetAutoOffTicks();
 }
 
 static void MainTask(void *pvParameters)
@@ -509,23 +510,24 @@ void app_main(void)
 
     while(true)
     {
+        const bool bSwitchState = gpio_get_level((gpio_num_t)FWCONFIG_SWITCH_PIN);
+        if (!bSwitchState) // Up
+        {
+            if (switchTicks == 0)
+                switchTicks = xTaskGetTickCount();
+
+            // If we hold the switch long enough it stop the process.
+            if ( (xTaskGetTickCount() - switchTicks) > pdMS_TO_TICKS(FWCONFIG_SWITCH_HOLDDELAY_MS))
+            {
+                SGUBRGotoFactory();
+            }
+        }
+        else {
+            switchTicks = 0; // Reset
+        }
+
         if (!m_bIsSuicide)
         {
-            const bool bSwitchState = gpio_get_level((gpio_num_t)FWCONFIG_SWITCH_PIN);
-            if (!bSwitchState) // Up
-            {
-                if (switchTicks == 0)
-                    switchTicks = xTaskGetTickCount();
-
-                // If we hold the switch long enough it stop the process.
-                if ( (xTaskGetTickCount() - switchTicks) > pdMS_TO_TICKS(FWCONFIG_SWITCH_HOLDDELAY_MS))
-                {
-                    SGUBRGotoFactory();
-                }
-            }
-            else
-                switchTicks = 0; // Reset
-
             // Kill the power after 10 minutes maximum
             if ((xTaskGetTickCount() - m_lAutoOffTicks) > pdMS_TO_TICKS(m_ulAutoOffTimeoutMs))
             {
