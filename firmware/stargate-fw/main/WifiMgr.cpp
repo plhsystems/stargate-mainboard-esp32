@@ -69,8 +69,8 @@ void WifiMgr::Init()
     m_pWifiSoftAP = esp_netif_create_default_wifi_ap();
 
     esp_netif_ip_info_t ipInfo;
-    IP4_ADDR(&ipInfo.ip, 192, 168, 4, 1);
-	IP4_ADDR(&ipInfo.gw, 192, 168, 4, 1);
+    IP4_ADDR(&ipInfo.ip, 192, 168, 66, 1);
+	IP4_ADDR(&ipInfo.gw, 192, 168, 66, 1);
 	IP4_ADDR(&ipInfo.netmask, 255, 255, 255, 0);
 	esp_netif_dhcps_stop(m_pWifiSoftAP);
 	esp_netif_set_ip_info(m_pWifiSoftAP, &ipInfo);
@@ -89,11 +89,10 @@ void WifiMgr::Init()
     wifi_configAP.ap.max_connection = FWCONFIG_SOFTAP_MAX_CONN;
     wifi_configAP.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
 
-    uint8_t macAddr[6];
-    esp_read_mac(macAddr, ESP_MAC_WIFI_SOFTAP);
-
-    sprintf((char*)wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_SSID_BASE, macAddr[3], macAddr[4], macAddr[5]);
-
+    //uint8_t macAddr[6];
+    //esp_read_mac(macAddr, ESP_MAC_WIFI_SOFTAP);
+    //sprintf((char*)wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_SSID_BASE, macAddr[3], macAddr[4], macAddr[5]);
+    strcpy((char*)wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_SSID);
     int n = strlen((const char*)wifi_configAP.ap.ssid);
     wifi_configAP.ap.ssid_len = n;
 

@@ -27,12 +27,6 @@ class UniverseGate : public BaseGate
     }
     inline int32_t GetAddressCount() const override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
-    // Calculate the position
-    double LEDIndexToDeg(int32_t s32LedIndex);
-    int32_t ChevronIndexToLedIndex(int32_t s32ChevronNumber);
-    int32_t SymbolToLedIndex(int32_t s32SymbolNumber);
-    bool IsLEDIndexChevron(int32_t s32LedIndex);
-
     private:
     static inline const GateAddress m_gateAddresses[] =
     {
