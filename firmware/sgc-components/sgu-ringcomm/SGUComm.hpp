@@ -28,7 +28,7 @@ namespace SGUCommNS
         ErrorToWhite = 2,
         ErrorToOff = 3,
         AllSymbolsOn = 4,
-        Suicide = 5,
+        PoweringOff = 5,
 
         Count
     };

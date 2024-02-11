@@ -12,6 +12,12 @@
 #define APIURL_POSTCONTROL_DIALADDRESS_URI      "/api/control/dialaddress"
 #define APIURL_POSTCONTROL_MANUALWORMHOLE_URI   "/api/control/manualwormhole"
 #define APIURL_POSTCONTROL_ABORT_URI            "/api/control/abort"
+// Ring control
+#define APIURL_POSTRINGCONTROL_POWEROFF_URI     "/api/ringcontrol/poweroff"
+#define APIURL_POSTRINGCONTROL_TESTANIMATE_URI  "/api/ringcontrol/testanimate"
+#define APIURL_POSTRINGCONTROL_TESTSYMBOLS_URI  "/api/ringcontrol/testsymbols"
+#define APIURL_POSTRINGCONTROL_TESTCHEVRONS_URI "/api/ringcontrol/testchevrons"
+#define APIURL_POSTRINGCONTROL_GOTOFACTORY_URI  "/api/ringcontrol/gotofactory"
 
 #define APIURL_GETPOST_SETTINGSJSON_URI "/api/settingsjson"
 #define APIURL_GETFREERTOSDBGINFO_URI "/api/getfreertosdbginfo"

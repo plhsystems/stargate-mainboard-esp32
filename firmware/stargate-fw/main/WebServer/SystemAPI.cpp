@@ -7,12 +7,12 @@
 #include "nvsjson.h"
 #include "../Settings.hpp"
 #include "WifiMgr.hpp"
-#include "cJSON.h"
 #include "esp_netif_types.h"
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
 #include "../GateControl/GateControl.hpp"
+#include "../Ring/RingComm.hpp"
 
 #define TAG "WebAPI"
 
@@ -25,13 +25,13 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     char* pExportJSON = NULL;
 
     if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
-        pExportJSON = GetStatus();
+        pExportJSON = getI().GetStatus();
     }
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
-        pExportJSON = GetSysInfo();
+        pExportJSON = getI().GetSysInfo();
     }
     else if (strcmp(req->uri, APIURL_GETSOUNDFXLIST_URI) == 0) {
-        pExportJSON = GetAllSoundLists();
+        pExportJSON = getI().GetAllSoundLists();
     }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
@@ -42,13 +42,13 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
         vTaskList(pExportJSON);
     }
     else if (strcmp(req->uri, APIURL_GETGALAXYINFO_MILKYWAY_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
     }
     else if (strcmp(req->uri, APIURL_GETGALAXYINFO_PEGASUS_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::Pegasus);
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Pegasus);
     }
     else if (strcmp(req->uri, APIURL_GETGALAXYINFO_UNIVERSE_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::Universe);
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Universe);
     }
     else {
         ESP_LOGE(TAG, "api_get_handler, url: %s", req->uri);
@@ -82,6 +82,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
 esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
+    cJSON* pRoot = nullptr;
     WebServer& ws = WebServer::getI();
 
     // Get datas
@@ -105,30 +106,70 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             goto ERROR;
         }
     }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::AutoCalibrate);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::DialAddress);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
-        GateControl::getI().AbortAction();
-    }
-    else {
-        ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
-        goto ERROR;
+    else
+    {
+        pRoot = cJSON_Parse((const char*)ws.m_u8Buffers);
+
+        // Gate control
+        if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
+            GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
+            GateControl::getI().QueueAction(GateControl::ECmd::AutoCalibrate);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
+            GateControl::getI().QueueAction(GateControl::ECmd::DialAddress);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
+            GateControl::getI().AbortAction();
+        }
+        // Ring control
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_POWEROFF_URI) == 0) {
+            RingComm::getI().SendPowerOff();
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "anim");
+            if (!cJSON_IsNumber(jItemAnim)) {
+                goto ERROR;
+            }
+            if (jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
+                goto ERROR;
+            }
+            RingComm::getI().SendGateAnimation((SGUCommNS::EChevronAnimation)jItemAnim->valueint);
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTSYMBOLS_URI) == 0) {
+            goto ERROR;
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTCHEVRONS_URI) == 0) {
+            goto ERROR;
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_GOTOFACTORY_URI) == 0) {
+            RingComm::getI().SendGotoFactory();
+        }
+        else {
+            ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
+            httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
+            goto ERROR;
+        }
     }
     goto END;
     ERROR:
     err = ESP_FAIL;
+    ESP_LOGE(TAG, "api_post_handler, url: %s, execution failed", req->uri);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unable to complete the request");
     END:
+    if (nullptr != pRoot) {
+        cJSON_Delete(pRoot);
+    }
+
     httpd_resp_set_hdr(req, "Connection", "close");
     httpd_resp_send_chunk(req, NULL, 0);
     return err;
+}
+
+bool WebServer::WebAPIPostRingControlTestAnimate(cJSON* pRoot)
+{
+    return true;
 }
 
 char* WebServer::GetStatus()
@@ -140,8 +181,6 @@ char* WebServer::GetStatus()
         {
             goto ERROR;
         }
-        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "state");
-
         char* pStr =  cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;

@@ -39,6 +39,10 @@ class RingComm
         return instance;
     }
     private:
+    bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_xMutexHandle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
+    void UnlockMutex() { xSemaphoreGive( m_xMutexHandle ); }
+
+    private:
 
     // Working delay
     static constexpr uint32_t PINGPONG_TIMEOUT_MS = 1500;
@@ -54,5 +58,9 @@ class RingComm
     // Process
     uint32_t m_u32LastPingResponse = 0;
     bool m_bIsConnected = false;
+
+    // Mutex
+    StaticSemaphore_t m_xMutexBuffer; // Define the buffer for the mutex's data structure
+    SemaphoreHandle_t m_xMutexHandle; // Declare a handle for the mutex
 };
 
