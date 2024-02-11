@@ -3,6 +3,8 @@
 #include <cstdint>
 #include "SGHW_HAL.hpp"
 #include "led_strip.h"
+#include "freertos/semphr.h"
+#include "freertos/FreeRTOS.h"
 
 class PinkySGHW : public SGHW_HAL
 {
@@ -34,7 +36,15 @@ class PinkySGHW : public SGHW_HAL
     bool GetIsHomeSensorActive() override;
 
     private:
+    bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_xMutexHandle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
+    void UnlockMutex() { xSemaphoreGive( m_xMutexHandle ); }
+
+    private:
     led_strip_handle_t led_strip;
 
     double m_dLastServoPosition;
+
+    // Mutex
+    StaticSemaphore_t m_xMutexBuffer; // Define the buffer for the mutex's data structure
+    SemaphoreHandle_t m_xMutexHandle; // Declare a handle for the mutex
 };

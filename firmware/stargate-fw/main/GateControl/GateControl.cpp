@@ -159,8 +159,8 @@ bool GateControl::AutoCalibrate()
     ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
 
     // Save the calibration result.
-    Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, false, s32NewStepsPerRotation);
-    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, false, s32Gap);
+    Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, s32NewStepsPerRotation);
+    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, s32Gap);
     Settings::getI().Commit();
     }
     bSucceeded = true;

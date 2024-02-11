@@ -23,8 +23,6 @@ class HttpClient
 
     static void TaskRunning(void* pArg);
 
-    static esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt);
-
     static HttpClient& getI()
     {
         static HttpClient instance;

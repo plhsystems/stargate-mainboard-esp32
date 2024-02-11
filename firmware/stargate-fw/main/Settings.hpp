@@ -53,6 +53,7 @@ class Settings
     void Commit();
 
     int32_t GetValueInt32(Settings::Entry eEntry);
+    NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, int32_t s32NewValue);
     NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, bool bIsDryRun, int32_t s32NewValue);
 
     void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
