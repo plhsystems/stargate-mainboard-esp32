@@ -100,6 +100,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "api_post_handler, url: %s", req->uri);
     if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
+        // ==============================================
+        // Import the JSON setting file
         if (!Settings::getI().ImportJSON((const char*)ws.m_u8Buffers)) {
             ESP_LOGE(TAG, "Unable to import JSON");
             httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown request");
@@ -110,6 +112,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     {
         pRoot = cJSON_Parse((const char*)ws.m_u8Buffers);
 
+        // ==============================================
         // Gate control
         if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
             GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
@@ -123,25 +126,18 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
             GateControl::getI().AbortAction();
         }
+        // ==============================================
         // Ring control
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_POWEROFF_URI) == 0) {
             RingComm::getI().SendPowerOff();
         }
-        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_ANIMATE_URI) == 0) {
             const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "anim");
-            if (!cJSON_IsNumber(jItemAnim)) {
-                goto ERROR;
-            }
-            if (jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
+            if (!!cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
                 goto ERROR;
             }
             RingComm::getI().SendGateAnimation((SGUCommNS::EChevronAnimation)jItemAnim->valueint);
-        }
-        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTSYMBOLS_URI) == 0) {
-            goto ERROR;
-        }
-        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTCHEVRONS_URI) == 0) {
-            goto ERROR;
         }
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_GOTOFACTORY_URI) == 0) {
             RingComm::getI().SendGotoFactory();
