@@ -1,11 +1,6 @@
 #include "Settings.hpp"
 #include <cstring>
 
-Settings::Settings()
-{
-
-}
-
 void Settings::Init()
 {
     const NVSJSON_ESETRET ret = NVSJSON_Init(&m_sSettingHandle, &m_sSettingConfig);

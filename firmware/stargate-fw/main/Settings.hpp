@@ -1,5 +1,4 @@
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
+#pragma once
 
 #include "nvsjson.h"
 
@@ -38,8 +37,8 @@ class Settings
         Count
     };
 
-    private:
-    Settings();
+    public:
+    Settings() = default;
 
     public:
     // Singleton pattern
@@ -105,4 +104,3 @@ class Settings
     const NVSJSON_SConfig m_sSettingConfig = { .szPartitionName = "nvs", .pSettingEntries = m_sConfigEntries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
 };
 
-#endif

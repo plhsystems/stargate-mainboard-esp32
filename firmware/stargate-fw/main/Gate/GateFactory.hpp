@@ -1,9 +1,9 @@
+#pragma once
+
 #include "BaseGate.hpp"
 #include "MilkyWayGate.hpp"
 #include "PegasusGate.hpp"
 #include "UniverseGate.hpp"
-
-#pragma once
 
 class GateFactory
 {

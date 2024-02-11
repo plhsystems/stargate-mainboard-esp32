@@ -1,5 +1,4 @@
-#ifndef _SOUNDFX_H_
-#define _SOUNDFX_H_
+#pragma once
 
 class SoundFX
 {
@@ -65,4 +64,3 @@ class SoundFX
     };
 };
 
-#endif

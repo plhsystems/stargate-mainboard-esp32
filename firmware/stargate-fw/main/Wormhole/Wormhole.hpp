@@ -1,5 +1,4 @@
-#ifndef _WORMHOLE_H_
-#define _WORMHOLE_H_
+#pragma once
 
 class Wormhole
 {
@@ -30,5 +29,3 @@ class Wormhole
     public:
     static bool ValidateWormholeType(EType eWormholeType);
 };
-
-#endif

@@ -6,13 +6,9 @@
 
 const char *TAG = "wifi";
 
-WifiMgr::WifiMgr()
-{
-
-}
-
 void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    WifiMgr* pWiFiMgr = (WifiMgr*)arg;
     if (event_id == WIFI_EVENT_AP_STACONNECTED) {
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x join, AID=%d",
@@ -28,16 +24,17 @@ void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t
 
 void WifiMgr::wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    WifiMgr* pWiFiMgr = (WifiMgr*)arg;
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        getI().m_eWiFiSTAState = EState::Connecting;
+        pWiFiMgr->m_eWiFiSTAState = EState::Connecting;
         esp_wifi_connect();
      }
      else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED ) {
         ESP_LOGI(TAG, "Connected to the AP");
-        esp_netif_create_ip6_linklocal(getI().m_pWifiSTA);
-        getI().m_eWiFiSTAState = EState::Connected;
+        esp_netif_create_ip6_linklocal(pWiFiMgr->m_pWifiSTA);
+        pWiFiMgr->m_eWiFiSTAState = EState::Connected;
      } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        getI().m_eWiFiSTAState = EState::Connecting;
+        pWiFiMgr->m_eWiFiSTAState = EState::Connecting;
         //TODO add a timer
         esp_wifi_connect();
         ESP_LOGI(TAG, "connect to the AP faile, retry to connect to the AP");
@@ -79,7 +76,7 @@ void WifiMgr::Init()
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
                                                         &wifi_event_handler,
-                                                        NULL,
+                                                        this,
                                                         NULL));
 
     wifi_config_t wifi_configAP;
@@ -116,18 +113,18 @@ void WifiMgr::Init()
         ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                             ESP_EVENT_ANY_ID,
                                                             &wifistation_event_handler,
-                                                            NULL,
+                                                            this,
                                                             &instance_any_id));
 
         ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                                                             IP_EVENT_STA_GOT_IP,
                                                             &wifistation_event_handler,
-                                                            NULL,
+                                                            this,
                                                             &instance_got_ip));
         ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                                                             IP_EVENT_GOT_IP6,
                                                             &wifistation_event_handler,
-                                                            NULL,
+                                                            this,
                                                             &instance_got_ip6));
 
         wifi_config_t wifi_configSTA;

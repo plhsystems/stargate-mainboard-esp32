@@ -1,5 +1,4 @@
-#ifndef _WEBSERVER_H
-#define _WEBSERVER_H
+#pragma once
 
 #include "esp_http_server.h"
 #include "EmbeddedFiles.h"
@@ -64,4 +63,3 @@ class WebServer
     httpd_uri_t m_sHttpOTAUploadPost;
 };
 
-#endif

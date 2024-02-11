@@ -10,11 +10,6 @@ using namespace std;
 
 #define TAG "HttpClient"
 
-HttpClient::HttpClient()
-{
-
-}
-
 void HttpClient::Init()
 {
 
@@ -30,6 +25,8 @@ void HttpClient::Start()
 
 void HttpClient::TaskRunning(void* pArg)
 {
+    HttpClient* pHttpClient = (HttpClient*)pArg;
+
     esp_http_client_handle_t h = NULL;
     int32_t s32FastAttempt = FWCONFIG_HTTPCLIENT_FASTATTEMPT_COUNT;
 
@@ -115,6 +112,6 @@ void HttpClient::TaskRunning(void* pArg)
             vTaskDelay(pdMS_TO_TICKS(10*60*1000));
         }
     }
-    getI().m_sTaskHTTPClientHandle = NULL;
+    pHttpClient->m_sTaskHTTPClientHandle = NULL;
     vTaskDelete(NULL);
 }

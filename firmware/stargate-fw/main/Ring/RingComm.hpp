@@ -1,5 +1,4 @@
-#ifndef _RINGU_H_
-#define _RINGU_H_
+#pragma once
 
 #include "stdint.h"
 #include "SGUComm.hpp"
@@ -57,4 +56,3 @@ class RingComm
     bool m_bIsConnected = false;
 };
 
-#endif
