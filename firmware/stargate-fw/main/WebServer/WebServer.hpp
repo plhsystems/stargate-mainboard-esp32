@@ -37,8 +37,6 @@ class WebServer
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
     static esp_err_t GateControlAPIPostHandler(httpd_req_t *req);
 
-    bool WebAPIPostRingControlTestAnimate(cJSON* pRoot);
-
     // Get API
     char* GetStatus();
     char* GetSysInfo();

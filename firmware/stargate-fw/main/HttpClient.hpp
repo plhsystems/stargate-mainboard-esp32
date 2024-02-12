@@ -25,7 +25,7 @@ class HttpClient
         static HttpClient instance;
         return instance;
     }
-    
+
     private:
     TaskHandle_t m_sTaskHTTPClientHandle;
 };

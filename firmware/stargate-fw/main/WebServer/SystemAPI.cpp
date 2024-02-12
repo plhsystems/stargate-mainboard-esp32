@@ -13,6 +13,8 @@
 #include "../Gate/GateFactory.hpp"
 #include "../GateControl/GateControl.hpp"
 #include "../Ring/RingComm.hpp"
+#include "../HW/HW.hpp"
+#include "../Audio/SoundFX.hpp"
 
 #define TAG "WebAPI"
 
@@ -30,7 +32,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
         pExportJSON = getI().GetSysInfo();
     }
-    else if (strcmp(req->uri, APIURL_GETSOUNDFXLIST_URI) == 0) {
+    else if (strcmp(req->uri, APIURL_GETSOUNDLIST_URI) == 0) {
         pExportJSON = getI().GetAllSoundLists();
     }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
@@ -126,12 +128,42 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
             GateControl::getI().AbortAction();
         }
+        // Test control
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "value");
+            if (!cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+                goto ERROR;
+            }
+            HW::getI()->SetRampLight(jItemAnim->valuedouble);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "value");
+            if (!cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+                goto ERROR;
+            }
+            HW::getI()->SetServo(jItemAnim->valuedouble);
+        }
+        // Sounds
+        else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "id");
+            if (!cJSON_IsNumber(jItemAnim)) {
+                goto ERROR;
+            }
+            if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint-1), false)) {
+                goto ERROR;
+            }
+        }
+        else if (strcmp(req->uri, APIURL_STOPSOUND_URI) == 0) {
+            SoundFX::getI().StopSound();
+        }
         // ==============================================
         // Ring control
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_POWEROFF_URI) == 0) {
             RingComm::getI().SendPowerOff();
         }
-        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_ANIMATE_URI) == 0) {
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
             const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "anim");
             if (!!cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
@@ -161,11 +193,6 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Connection", "close");
     httpd_resp_send_chunk(req, NULL, 0);
     return err;
-}
-
-bool WebServer::WebAPIPostRingControlTestAnimate(cJSON* pRoot)
-{
-    return true;
 }
 
 char* WebServer::GetStatus()
@@ -326,17 +353,16 @@ char* WebServer::GetAllSoundLists()
             goto ERROR;
 
         cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "files");
-        /* TODO: Reactivate this later
-        for(int i = 0; i < 10; i++)
+        for(int32_t i = 0; i < SoundFX::getI().GetFileCount(); i++)
         {
-            const SOUNDFX_SFile* pFile = SOUNDFX_GetFile((SOUNDFX_EFILE)i);
+            const SoundFX::SoundFile* pFile = SoundFX::getI().GetFile((SoundFX::FileID)i);
 
             cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i+1));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->szName));
             cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->szDesc));
             cJSON_AddItemToArray(pEntries, pNewFile);
-        }*/
-
+        }
         char* pStr = cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;
