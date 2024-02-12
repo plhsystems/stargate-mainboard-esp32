@@ -1,6 +1,6 @@
 #include "PegasusGate.hpp"
 
-PegasusGate::PegasusGate() : BaseGate(GateGalaxy::Pegasus)
+PegasusGate::PegasusGate() : BaseGate(GateGalaxy::Pegasus, "Pegasus")
 {
 
 }

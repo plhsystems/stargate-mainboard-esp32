@@ -17,10 +17,11 @@ enum class GateGalaxy
 class BaseGate
 {
     public:
-     protected:
-    BaseGate(GateGalaxy eGateGalaxy);
+    protected:
+    BaseGate(GateGalaxy eGateGalaxy, const char* szName);
     public:
     const GateGalaxy eGateGalaxy;
+    const char* szName;
 
     virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const = 0;
     virtual int32_t GetSymbolCount() const = 0;

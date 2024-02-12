@@ -13,6 +13,8 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
 
         BaseGate& bg = GateFactory::Get(eGateGalaxy);
         // TODO: Add a cache expiration value
+
+        cJSON_AddItemToObject(pRoot, "name", cJSON_CreateString(bg.szName));
         // ------------------------------
         // Symbols
         cJSON* pSymbolsEntries = cJSON_AddArrayToObject(pRoot, "symbols");

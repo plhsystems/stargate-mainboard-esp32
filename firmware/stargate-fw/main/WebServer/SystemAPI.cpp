@@ -43,13 +43,13 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
         pExportJSON = (char*)malloc(4096);
         vTaskList(pExportJSON);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_MILKYWAY_URI) == 0) {
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_MILKYWAY_URI) == 0) {
         pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_PEGASUS_URI) == 0) {
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_PEGASUS_URI) == 0) {
         pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Pegasus);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_UNIVERSE_URI) == 0) {
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_UNIVERSE_URI) == 0) {
         pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Universe);
     }
     else {

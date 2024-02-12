@@ -1,6 +1,6 @@
 #include "UniverseGate.hpp"
 
-UniverseGate::UniverseGate() : BaseGate(GateGalaxy::Universe)
+UniverseGate::UniverseGate() : BaseGate(GateGalaxy::Universe, "Universe")
 {
 
 }
