@@ -13,6 +13,7 @@
 #include "../Gate/GateFactory.hpp"
 #include "../Common/Chevron.hpp"
 #include "../Settings.hpp"
+#include "../Wormhole/Wormhole.hpp"
 #include "HW/PinkySGHW.hpp"
 
 enum class ETransition
@@ -42,8 +43,28 @@ class GateControl
         DialAddress,
         ManualWormhole,
     };
-
     private:
+    struct SCmd
+    {
+        ECmd eCmd;
+        union
+        {
+            struct
+            {
+                uint8_t u8Symbols[9];
+                uint8_t u8SymbolCount;
+            } sDialAddress;
+            struct
+            {
+                uint8_t u8Key;
+            } sKeypress;
+            struct
+            {
+                Wormhole::EType eWormholeType;
+            } sManualWormhole;
+        } uArg;
+    };
+
     GateControl();
 
     #define STEPEND_BIT    0x01

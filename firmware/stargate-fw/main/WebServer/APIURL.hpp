@@ -1,8 +1,10 @@
 #pragma once
 
+// MISC API
 #define APIURL_GETSTATUS_URI        "/api/getstatus"
 #define APIURL_GETSYSINFO_URI       "/api/getsysinfo"
 
+// Sound API
 #define APIURL_GETSOUNDLIST_URI     "/api/sound/list"
 #define APIURL_PLAYSOUND_URI        "/api/sound/play"
 #define APIURL_STOPSOUND_URI        "/api/sound/stop"
@@ -14,6 +16,7 @@
 #define APIURL_POSTCONTROL_DIALADDRESS_URI      "/api/control/dialaddress"
 #define APIURL_POSTCONTROL_MANUALWORMHOLE_URI   "/api/control/manualwormhole"
 #define APIURL_POSTCONTROL_ABORT_URI            "/api/control/abort"
+
 // Test the hardware
 #define APIURL_POSTCONTROL_TESTRAMPLIGHT_URI    "/api/control/testramplight"
 #define APIURL_POSTCONTROL_TESTSERVO_URI        "/api/control/testservo"

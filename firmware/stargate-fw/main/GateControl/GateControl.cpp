@@ -102,13 +102,28 @@ void GateControl::TaskRunning(void* pArg)
                 }
                 break;
             }
+            case ECmd::KeyPress:
+            {
+                // TODO: Keypress one by one
+                ESP_LOGI(TAG, "TODO: KeyPress");
+                break;
+            }
             case ECmd::DialAddress:
             {
-                if (gc->DialAddress())
-                {
+                ESP_LOGI(TAG, "Dialing address started");
+                if (!gc->DialAddress()) {
+                    ESP_LOGE(TAG, "Dialing address failed");
+                }
+                else {
+                    ESP_LOGI(TAG, "Dialing address succeeded.");
                     gc->AutoHome();
                 }
-
+                break;
+            }
+            case ECmd::ManualWormhole:
+            {
+                // TODO: Start manual wormhole
+                ESP_LOGI(TAG, "TODO: ManualWormhole");
                 break;
             }
             default:
