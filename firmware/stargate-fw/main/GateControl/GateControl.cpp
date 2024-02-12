@@ -40,14 +40,32 @@ void GateControl::StartTask()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.sSignalTimerHandle));
 }
 
-void GateControl::QueueAction(ECmd cmd)
+void GateControl::QueueAutoHome()
 {
-    m_eCmd = cmd;
+    const SCmd sCmd = { .eCmd = ECmd::AutoHome };
+    PriQueueAction(sCmd);
+}
+
+void GateControl::QueueAutoCalibrate()
+{
+    const SCmd sCmd = { .eCmd = ECmd::AutoCalibrate };
+    PriQueueAction(sCmd);
+}
+
+void GateControl::QueueDialAddress()
+{
+    const SCmd sCmd = { .eCmd = ECmd::DialAddress };
+    PriQueueAction(sCmd);
 }
 
 void GateControl::AbortAction()
 {
     m_bIsCancelAction = true;
+}
+
+void GateControl::PriQueueAction(SCmd cmd)
+{
+    m_sCmd = cmd;
 }
 
 void GateControl::TaskRunning(void* pArg)
@@ -64,7 +82,7 @@ void GateControl::TaskRunning(void* pArg)
     // Dialing
     while(true)
     {
-        const ECmd eCmd = gc->m_eCmd;
+        const ECmd eCmd = gc->m_sCmd.eCmd;
         if (eCmd == ECmd::Idle)
         {
             // TODO: Will be replaced by a manual event.
@@ -74,7 +92,7 @@ void GateControl::TaskRunning(void* pArg)
 
         // Reset the receiving ..
         gc->m_bIsCancelAction = false;
-        gc->m_eCmd = ECmd::Idle;
+        gc->m_sCmd.eCmd = ECmd::Idle;
 
         switch(eCmd)
         {

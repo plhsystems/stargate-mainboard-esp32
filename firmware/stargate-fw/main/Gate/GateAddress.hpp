@@ -54,7 +54,6 @@ class GateAddress
 
         m_u8Symbols[6] = u8Sym7;
         m_u8Symbols[7] = u8Sym8;
-        m_u8Symbols[8] = 0;
     }
     GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6, uint8_t u8Sym7, uint8_t u8Sym8, uint8_t u8Sym9) :
         m_szName(szName),

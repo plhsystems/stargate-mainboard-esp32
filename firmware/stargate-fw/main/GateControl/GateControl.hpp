@@ -90,7 +90,10 @@ class GateControl
     void StartTask();
 
     // Actions
-    void QueueAction(ECmd cmd);
+    void QueueAutoHome();
+    void QueueAutoCalibrate();
+    void QueueDialAddress();
+
     void AbortAction();
 
     static GateControl& getI()
@@ -99,6 +102,8 @@ class GateControl
         return instance;
     }
     private:
+    void PriQueueAction(SCmd cmd);
+
     bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
     bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
     bool DialAddress();
@@ -116,7 +121,7 @@ class GateControl
 
     // Actions
     volatile bool m_bIsCancelAction;
-    volatile ECmd m_eCmd;
+    SCmd m_sCmd;
 
     int32_t m_bIsHomingDone = false;
     int32_t m_s32CurrentPositionTicks = 0;

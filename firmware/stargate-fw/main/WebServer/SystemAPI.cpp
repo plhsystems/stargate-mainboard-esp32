@@ -117,13 +117,13 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         // ==============================================
         // Gate control
         if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
-            GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
+            GateControl::getI().QueueAutoHome();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
-            GateControl::getI().QueueAction(GateControl::ECmd::AutoCalibrate);
+            GateControl::getI().QueueAutoCalibrate();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-            GateControl::getI().QueueAction(GateControl::ECmd::DialAddress);
+            GateControl::getI().QueueDialAddress();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
             GateControl::getI().AbortAction();
