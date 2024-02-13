@@ -29,8 +29,8 @@ class BaseGate
     virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
     virtual int32_t GetAddressCount() const { return 0; }
 
-    static inline const GateSymbol InvalidSymbol{ 0, "Invalid" };
-    static inline const GateAddress InvalidGateAddress { "Invalid" };
+    static inline const GateSymbol InvalidSymbol{ };
+    static inline const GateAddress InvalidGateAddress { };
 };
 
 

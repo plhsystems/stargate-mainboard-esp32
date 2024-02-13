@@ -123,7 +123,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             GateControl::getI().QueueAutoCalibrate();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-            GateControl::getI().QueueDialAddress();
+            GateAddress ga { "", 1, 36, 2, 35, 3, 34, 4, 33 };
+            GateControl::getI().QueueDialAddress(ga);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
             GateControl::getI().AbortAction();

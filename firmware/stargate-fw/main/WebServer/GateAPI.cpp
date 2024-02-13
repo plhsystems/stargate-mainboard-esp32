@@ -36,6 +36,7 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
             const GateAddress& gateAddr = bg.GetAddress(i);
 
             cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i+1));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(gateAddr.GetName()));
             // Address
             cJSON* pAddressEntries = cJSON_AddArrayToObject(pNewFile, "address");

@@ -11,6 +11,7 @@
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
+#include "../Gate/GateAddress.hpp"
 #include "../Common/Chevron.hpp"
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
@@ -47,22 +48,18 @@ class GateControl
     struct SCmd
     {
         ECmd eCmd;
-        union
+        struct
         {
-            struct
-            {
-                uint8_t u8Symbols[9];
-                uint8_t u8SymbolCount;
-            } sDialAddress;
-            struct
-            {
-                uint8_t u8Key;
-            } sKeypress;
-            struct
-            {
-                Wormhole::EType eWormholeType;
-            } sManualWormhole;
-        } uArg;
+            GateAddress sGateAddress;
+        } sDialAddress;
+        struct
+        {
+            uint8_t u8Key;
+        } sKeypress;
+        struct
+        {
+            Wormhole::EType eWormholeType;
+        } sManualWormhole;
     };
 
     GateControl();
@@ -92,7 +89,7 @@ class GateControl
     // Actions
     void QueueAutoHome();
     void QueueAutoCalibrate();
-    void QueueDialAddress();
+    void QueueDialAddress(GateAddress& ga);
 
     void AbortAction();
 
@@ -106,7 +103,7 @@ class GateControl
 
     bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
     bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    bool DialAddress();
+    bool DialAddress(GateAddress& ga);
 
     void AnimRampLight(bool bIsActive);
     // Stepper

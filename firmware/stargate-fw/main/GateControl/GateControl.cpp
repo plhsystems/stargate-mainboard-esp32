@@ -52,9 +52,13 @@ void GateControl::QueueAutoCalibrate()
     PriQueueAction(sCmd);
 }
 
-void GateControl::QueueDialAddress()
+void GateControl::QueueDialAddress(GateAddress& ga)
 {
-    const SCmd sCmd = { .eCmd = ECmd::DialAddress };
+    const SCmd sCmd =
+    {
+        .eCmd = ECmd::DialAddress,
+        .sDialAddress = { .sGateAddress = ga }
+    };
     PriQueueAction(sCmd);
 }
 
@@ -129,7 +133,7 @@ void GateControl::TaskRunning(void* pArg)
             case ECmd::DialAddress:
             {
                 ESP_LOGI(TAG, "Dialing address started");
-                if (!gc->DialAddress()) {
+                if (!gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress)) {
                     ESP_LOGE(TAG, "Dialing address failed");
                 }
                 else {
@@ -266,7 +270,7 @@ bool GateControl::AutoHome()
     return bSucceeded;
 }
 
-bool GateControl::DialAddress()
+bool GateControl::DialAddress(GateAddress& ga)
 {
     bool ret = false;
     {
@@ -288,17 +292,15 @@ bool GateControl::DialAddress()
 
     // m_bIsHomingDone / m_s32CurrentPositionTicks
     const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-    //const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
-    const uint8_t symbols[] = { 1, 36, 2, 35, 3, 34, 18 };
 
-    for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+    for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
     {
         if (m_bIsCancelAction) {
             ESP_LOGE(TAG, "Unable to complete dialing, cancelled by the user");
             goto ERROR;
         }
 
-        const uint8_t u8Symbol = symbols[i];
+        const uint8_t u8Symbol = ga.GetSymbol(i);
         const Chevron currentChevron = chevrons[i];
 
         // Dial sequence ...
