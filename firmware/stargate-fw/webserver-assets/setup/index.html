@@ -12,10 +12,10 @@
 		<div id="app">
 			<!-- Main part -->
 			<div class="main">
-                <button @click="SendAction(apiControlURLs.AutoHome)">Auto home</button>
-                <button @click="SendAction(apiControlURLs.AutoCalibrate)">Auto calibrate</button>
-                <button @click="SendAction(apiControlURLs.Abort)">Abort</button>
-                <button @click="SendAction(apiControlURLs.DialAddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
+                <button @click="SendAction(apiControlURLs.control_autohome)">Auto home</button>
+                <button @click="SendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
+                <button @click="SendAction(apiControlURLs.control_abort)">Abort</button>
+                <button @click="SendAction(apiControlURLs.control_dialaddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
 			</div>
 		</div>
         <!-- JS -->

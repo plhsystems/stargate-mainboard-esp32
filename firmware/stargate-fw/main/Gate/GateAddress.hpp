@@ -12,6 +12,12 @@ class GateAddress
         memset(m_u8Symbols, 0, sizeof(m_u8Symbols));
     }
 
+    GateAddress(uint8_t u8Symbols[9], uint8_t u8SymbolCount) :
+        m_szName(""),
+        m_u32SymbolCount(u8SymbolCount)
+    {
+        memcpy(m_u8Symbols, u8Symbols, sizeof(u8SymbolCount));
+    }
     GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6) :
         m_szName(szName),
         m_u32SymbolCount(6)
@@ -87,9 +93,11 @@ class GateAddress
         return m_u8Symbols[u8Index];
     }
     inline uint32_t GetSymbolCount() const { return m_u32SymbolCount; }
+
+    static constexpr uint32_t SYMBOL_COUNT = 9;
     private:
 
     const char* m_szName;
-    uint8_t m_u8Symbols[9];
+    uint8_t m_u8Symbols[SYMBOL_COUNT] = {0};
     uint32_t m_u32SymbolCount;
 };

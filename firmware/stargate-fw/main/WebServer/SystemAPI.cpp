@@ -123,7 +123,29 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             GateControl::getI().QueueAutoCalibrate();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-            GateAddress ga { "", 1, 36, 2, 35, 3, 34, 4, 33 };
+            const cJSON* jItemAddrs = cJSON_GetObjectItem(pRoot, "addr");
+            if (!cJSON_IsArray(jItemAddrs)) {
+                goto ERROR;
+            }
+            
+            // Check for symbols
+            uint8_t u8Symbols[GateAddress::SYMBOL_COUNT];
+            uint8_t u8SymbolCount = 0;
+
+            if (cJSON_GetArraySize(jItemAddrs) > sizeof(u8Symbols)) {
+                goto ERROR;
+            }
+
+            const cJSON* cJSONItem = NULL;
+            cJSON_ArrayForEach(cJSONItem, jItemAddrs)
+            {
+                if (!cJSON_IsNumber(cJSONItem)) {
+                    goto ERROR;
+                }
+                u8Symbols[u8SymbolCount] = (uint8_t)cJSONItem->valueint;
+                u8SymbolCount++;
+            }
+            GateAddress ga { u8Symbols, u8SymbolCount };
             GateControl::getI().QueueDialAddress(ga);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
@@ -131,7 +153,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         // Test control
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "value");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
             if (!cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
                 goto ERROR;
@@ -139,7 +161,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             HW::getI()->SetRampLight(jItemAnim->valuedouble);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "value");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
             if (!cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
                 goto ERROR;
@@ -148,7 +170,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         // Sounds
         else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "id");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
             if (!cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
             }
@@ -165,7 +187,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             RingComm::getI().SendPowerOff();
         }
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItemCaseSensitive(pRoot, "anim");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "anim");
             if (!!cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
                 goto ERROR;
