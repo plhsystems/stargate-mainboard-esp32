@@ -1,5 +1,7 @@
 function SendAction(actionURL, data)
 {
+  console.log("SendAction", actionURL, data);
+
   var xhr = new XMLHttpRequest();
   xhr.open("POST", actionURL, true);
   if (data) {
@@ -14,7 +16,9 @@ function SendAction(actionURL, data)
 
 let currentData =
 {
-	is_connected: false
+	is_connected: false,
+
+  ramp_perc: 0.0,
 };
 
 var currentApp = new Vue({

@@ -16,7 +16,23 @@
                 <button @click="SendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
                 <button @click="SendAction(apiControlURLs.control_abort)">Abort</button>
                 <button @click="SendAction(apiControlURLs.control_dialaddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
-			</div>
+
+                <button @click="SendAction(apiControlURLs.control_keypress)">Keypress</button>
+                <button @click="SendAction(apiControlURLs.control_manualwormhole)">Manual wormhole</button><br>
+
+                <button @click="SendAction(apiControlURLs.control_testramplight, { value : parseFloat(ramp_perc) })">Test ramp light</button>
+                <input type="range" min="0" max="1" step="0.05" id="id_ramp_perc" v-model="ramp_perc"><br>
+                
+                <button @click="SendAction(apiControlURLs.control_testservo)">Test servo</button>
+
+                <button @click="SendAction(apiControlURLs.sound_play)">Play sound</button>
+                <button @click="SendAction(apiControlURLs.sound_stop)">Stop sound</button>
+
+                <button @click="SendAction(apiControlURLs.ringcontrol_poweroff)">Ring Power-Off</button>
+                <button @click="SendAction(apiControlURLs.ringcontrol_testanimate)">Test Animation</button>
+                <button @click="SendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
+
+            </div>
 		</div>
         <!-- JS -->
         <script type="text/javascript" src="../common/js/vue.min.js"></script>

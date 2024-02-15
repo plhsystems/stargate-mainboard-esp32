@@ -127,15 +127,12 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             if (!cJSON_IsArray(jItemAddrs)) {
                 goto ERROR;
             }
-            
             // Check for symbols
             uint8_t u8Symbols[GateAddress::SYMBOL_COUNT];
             uint8_t u8SymbolCount = 0;
-
-            if (cJSON_GetArraySize(jItemAddrs) > sizeof(u8Symbols)) {
+            if (cJSON_GetArraySize(jItemAddrs) > GateAddress::SYMBOL_COUNT) {
                 goto ERROR;
             }
-
             const cJSON* cJSONItem = NULL;
             cJSON_ArrayForEach(cJSONItem, jItemAddrs)
             {
