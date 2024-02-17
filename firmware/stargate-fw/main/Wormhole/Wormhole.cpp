@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "Wormhole.hpp"
+#include "../Settings.hpp"
 #include "misc-formula.h"
 #include "misc-macro.h"
 #include "freertos/FreeRTOS.h"
@@ -10,6 +11,8 @@ Wormhole::Wormhole(SGHW_HAL* pHAL, EType eWormholeType) :
     m_eWormholeType(eWormholeType),
     m_pHAL(pHAL)
 {
+    m_u32MaxBrightness = Settings::getI().GetValueInt32(Settings::Entry::WormholeMaxLight);
+
     for(int i = 0; i < LEDEFFECT_COUNT; i++) {
         SLedEffect* pLedEffect = &m_sLedEffects[i];
 
@@ -27,14 +30,23 @@ void Wormhole::Begin()
 
 void Wormhole::OpeningAnimation()
 {
+    m_pHAL->ClearAllWHPixels();
+    m_pHAL->RefreshWHPixels();
 
+    IlluminateRing(ERing::Ring0);
+    IlluminateRing(ERing::Ring1);
+    IlluminateRing(ERing::Ring2);
+    IlluminateRing(ERing::Ring3);
+    vTaskDelay(pdMS_TO_TICKS(400));
+    IlluminateRing(ERing::Ring2);
+    IlluminateRing(ERing::Ring1);
+    IlluminateRing(ERing::Ring0);
 }
 
 void Wormhole::RunTicks()
 {
     const float minF = 0.30f;
     const float maxF = 1.00f;
-    const uint8_t u8MaxPWM = 220;
 
     if (!m_bIsRunInitialized) {
         // Random initialization
@@ -66,32 +78,26 @@ void Wormhole::RunTicks()
         float fCorrValue = MISCFA_LinearizeLEDOutput(pLedEffect->fOne);
 
         // Make the outer ring glowing less
-        switch(GetRing(i))
-        {
-            case 0:
-                fCorrValue *= 0.2f;
-                break;
-            case 1:
-                fCorrValue *= 0.6f;
-                break;
-            case 2:
-                fCorrValue *= 0.9f;
-                break;
-            case 3:
-                fCorrValue *= 1.0f;
-                break;
-        }
+        constexpr float fltRingCorrValues[(int)Wormhole::ERing::Count] = { 0.1f, 0.6f, 0.9f, 1.0f };
+        fCorrValue *= fltRingCorrValues[(int)GetRing(i)];
 
-        m_pHAL->SetWHPixel(i, MISCMACRO_MAX((uint8_t)(fCorrValue*u8MaxPWM), 16), MISCMACRO_MAX((uint8_t)(fCorrValue*u8MaxPWM), 16), MISCMACRO_MIN(16+(uint8_t)(fCorrValue*(u8MaxPWM)), u8MaxPWM-16));
+        m_pHAL->SetWHPixel(i, MISCMACRO_MAX((uint8_t)(fCorrValue*m_u32MaxBrightness), 16), MISCMACRO_MAX((uint8_t)(fCorrValue*m_u32MaxBrightness), 16), MISCMACRO_MIN(16+(uint8_t)(fCorrValue*(m_u32MaxBrightness)), m_u32MaxBrightness-16));
     }
-
     m_pHAL->RefreshWHPixels();
+
+    // 50 HZ
     vTaskDelay(pdMS_TO_TICKS(20));
 }
 
 void Wormhole::ClosingAnimation()
 {
+    IlluminateRing(ERing::Ring3);
+    IlluminateRing(ERing::Ring2);
+    IlluminateRing(ERing::Ring1);
 
+    // Clear all pixels
+    m_pHAL->ClearAllWHPixels();
+    m_pHAL->RefreshWHPixels();
 }
 
 void Wormhole::End()
@@ -100,20 +106,37 @@ void Wormhole::End()
     m_pHAL->RefreshWHPixels();
 }
 
-
-int32_t Wormhole::GetRing(int zeroBasedIndex)
+Wormhole::ERing Wormhole::GetRing(int zeroBasedIndex)
 {
     for(int j = 0; j < sizeof(m_pRing0_OneBased)/sizeof(m_pRing0_OneBased[0]); j++)
         if (m_pRing0_OneBased[j]-1 == zeroBasedIndex)
-            return 0;
+            return Wormhole::ERing::Ring0;
     for(int j = 0; j < sizeof(m_pRing1_OneBased)/sizeof(m_pRing1_OneBased[0]); j++)
         if (m_pRing1_OneBased[j]-1 == zeroBasedIndex)
-            return 1;
+            return Wormhole::ERing::Ring1;
     for(int j = 0; j < sizeof(m_pRing2_OneBased)/sizeof(m_pRing2_OneBased[0]); j++)
         if (m_pRing2_OneBased[j]-1 == zeroBasedIndex)
-            return 2;
+            return Wormhole::ERing::Ring2;
     for(int j = 0; j < sizeof(m_pRing3_OneBased)/sizeof(m_pRing3_OneBased[0]); j++)
         if (m_pRing3_OneBased[j]-1 == zeroBasedIndex)
-            return 3;
-    return 0;
+            return Wormhole::ERing::Ring3;
+    return Wormhole::ERing::Ring0;
+}
+
+void Wormhole::IlluminateRing(Wormhole::ERing eRing)
+{
+    const uint32_t whiteMax = m_u32MaxBrightness;
+    
+    for(float brig = 0.0f; brig < 1.00f; brig += 0.08f)
+    {
+        const SRingEntry* psRingEntries = &m_sRingEntries[(int)eRing];
+
+        for(int i = 0; i < psRingEntries->u32RingCount; i++)
+        {
+            m_pHAL->SetWHPixel(psRingEntries->pRing[i]-1, (uint8_t)(whiteMax - m_u32MaxBrightness * brig), (uint8_t)(whiteMax - m_u32MaxBrightness * brig), (uint8_t)(whiteMax - m_u32MaxBrightness * brig));
+        }
+
+        m_pHAL->RefreshWHPixels();
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
 }
