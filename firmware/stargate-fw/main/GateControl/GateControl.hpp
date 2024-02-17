@@ -90,6 +90,7 @@ class GateControl
     void QueueAutoHome();
     void QueueAutoCalibrate();
     void QueueDialAddress(GateAddress& ga);
+    void QueueManualWormhole(Wormhole::EType type);
 
     void AbortAction();
 

@@ -188,6 +188,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             }
             // TODO: Implement the wormhole.
             ESP_LOGI(TAG, "Implement wormhole, id: %d", jItemAnim->valueint);
+            GateControl::getI().QueueManualWormhole( (Wormhole::EType)jItemAnim->valueint );
         }
         else if (strcmp(req->uri, APIURL_STOPSOUND_URI) == 0) {
             SoundFX::getI().StopSound();

@@ -13,26 +13,17 @@ class Wormhole
         Count
     };
 
-    enum class EAnimation
-    {
-        Opening,
-        Running,
-        Closing,
-
-        Count
-    };
-
     public:
     Wormhole(EType eWormholeType);
 
     void Begin();
-    void SetAnimation(EAnimation eAnimation);
+    void OpeningAnimation();
     void RunTicks();
+    void ClosingAnimation();
     void End();
 
     private:
     EType m_eWormholeType;
-    EAnimation m_eAnimation;
     public:
     static bool ValidateWormholeType(EType eWormholeType);
 

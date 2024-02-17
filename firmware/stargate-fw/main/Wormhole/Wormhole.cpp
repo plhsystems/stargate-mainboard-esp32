@@ -1,4 +1,6 @@
 #include "Wormhole.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 Wormhole::Wormhole(EType eWormholeType) :
     m_eWormholeType(eWormholeType)
@@ -6,17 +8,22 @@ Wormhole::Wormhole(EType eWormholeType) :
 
 }
 
-void Wormhole::SetAnimation(EAnimation eAnimation)
-{
-    m_eAnimation = eAnimation;
-}
-
 void Wormhole::Begin()
 {
 
 }
 
+void Wormhole::OpeningAnimation()
+{
+
+}
+
 void Wormhole::RunTicks()
+{
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
+
+void Wormhole::ClosingAnimation()
 {
 
 }

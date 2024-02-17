@@ -62,6 +62,16 @@ void GateControl::QueueDialAddress(GateAddress& ga)
     PriQueueAction(sCmd);
 }
 
+void GateControl::QueueManualWormhole(Wormhole::EType type)
+{
+    const SCmd sCmd =
+    {
+        .eCmd = ECmd::ManualWormhole,
+        .sManualWormhole = { .eWormholeType = type }
+    };
+    PriQueueAction(sCmd);
+}
+
 void GateControl::AbortAction()
 {
     m_bIsCancelAction = true;
@@ -147,6 +157,14 @@ void GateControl::TaskRunning(void* pArg)
             {
                 // TODO: Start manual wormhole
                 ESP_LOGI(TAG, "TODO: ManualWormhole");
+                Wormhole wm { gc->m_sCmd.sManualWormhole.eWormholeType };
+                wm.Begin();
+                wm.OpeningAnimation();
+                while(!gc->m_bIsCancelAction) {
+                    wm.RunTicks();
+                }
+                wm.ClosingAnimation();
+                wm.End();
                 break;
             }
             default:
