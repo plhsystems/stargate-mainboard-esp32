@@ -112,7 +112,7 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     if (pFile == NULL)
     {
         ESP_LOGE(TAG, "Failed to open file for reading");
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File does not exist");
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "FileID does not exist");
         return ESP_FAIL;
     }
 
@@ -131,7 +131,7 @@ static esp_err_t file_get_handler(httpd_req_t *req)
         if (n > 0) {
             /* Send the buffer contents as HTTP response m_u8Buffers */
             if (httpd_resp_send_chunk(req, (char*)(pFile->pu8StartAddr + u32Index), n) != ESP_OK) {
-                ESP_LOGE(TAG, "File sending failed!");
+                ESP_LOGE(TAG, "FileID sending failed!");
                 /* Abort sending file */
                 httpd_resp_sendstr_chunk(req, NULL);
                 /* Respond with 500 Internal Server Error */

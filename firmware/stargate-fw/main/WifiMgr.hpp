@@ -1,5 +1,4 @@
-#ifndef _WIFIMGR_H_
-#define _WIFIMGR_H_
+#pragma once
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -27,9 +26,8 @@ class WifiMgr
         Count
     };
 
-    private:
-    WifiMgr();
-
+    public:
+    WifiMgr() = default;
     public:
     // Singleton pattern
     WifiMgr(WifiMgr const&) = delete;
@@ -51,9 +49,11 @@ class WifiMgr
         static WifiMgr instance;
         return instance;
     }
+
     private:
     static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     static void wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    
     static void time_sync_notification_cb(struct timeval* tv);
 
     esp_netif_t* m_pWifiSTA;
@@ -62,4 +62,3 @@ class WifiMgr
     EState m_eWiFiSTAState = EState::Deactivated;
 };
 
-#endif

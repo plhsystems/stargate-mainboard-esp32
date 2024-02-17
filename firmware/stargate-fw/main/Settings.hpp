@@ -1,5 +1,4 @@
-#ifndef _SETTINGS_H_
-#define _SETTINGS_H_
+#pragma once
 
 #include "nvsjson.h"
 
@@ -38,8 +37,8 @@ class Settings
         Count
     };
 
-    private:
-    Settings();
+    public:
+    Settings() = default;
 
     public:
     // Singleton pattern
@@ -53,6 +52,7 @@ class Settings
     void Commit();
 
     int32_t GetValueInt32(Settings::Entry eEntry);
+    NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, int32_t s32NewValue);
     NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, bool bIsDryRun, int32_t s32NewValue);
 
     void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
@@ -104,4 +104,3 @@ class Settings
     const NVSJSON_SConfig m_sSettingConfig = { .szPartitionName = "nvs", .pSettingEntries = m_sConfigEntries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
 };
 
-#endif

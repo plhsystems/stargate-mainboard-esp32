@@ -40,14 +40,36 @@ void GateControl::StartTask()
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.sSignalTimerHandle));
 }
 
-void GateControl::QueueAction(ECmd cmd)
+void GateControl::QueueAutoHome()
 {
-    m_eCmd = cmd;
+    const SCmd sCmd = { .eCmd = ECmd::AutoHome };
+    PriQueueAction(sCmd);
+}
+
+void GateControl::QueueAutoCalibrate()
+{
+    const SCmd sCmd = { .eCmd = ECmd::AutoCalibrate };
+    PriQueueAction(sCmd);
+}
+
+void GateControl::QueueDialAddress(GateAddress& ga)
+{
+    const SCmd sCmd =
+    {
+        .eCmd = ECmd::DialAddress,
+        .sDialAddress = { .sGateAddress = ga }
+    };
+    PriQueueAction(sCmd);
 }
 
 void GateControl::AbortAction()
 {
     m_bIsCancelAction = true;
+}
+
+void GateControl::PriQueueAction(SCmd cmd)
+{
+    m_sCmd = cmd;
 }
 
 void GateControl::TaskRunning(void* pArg)
@@ -64,7 +86,7 @@ void GateControl::TaskRunning(void* pArg)
     // Dialing
     while(true)
     {
-        const ECmd eCmd = gc->m_eCmd;
+        const ECmd eCmd = gc->m_sCmd.eCmd;
         if (eCmd == ECmd::Idle)
         {
             // TODO: Will be replaced by a manual event.
@@ -74,7 +96,7 @@ void GateControl::TaskRunning(void* pArg)
 
         // Reset the receiving ..
         gc->m_bIsCancelAction = false;
-        gc->m_eCmd = ECmd::Idle;
+        gc->m_sCmd.eCmd = ECmd::Idle;
 
         switch(eCmd)
         {
@@ -102,13 +124,28 @@ void GateControl::TaskRunning(void* pArg)
                 }
                 break;
             }
+            case ECmd::KeyPress:
+            {
+                // TODO: Keypress one by one
+                ESP_LOGI(TAG, "TODO: KeyPress");
+                break;
+            }
             case ECmd::DialAddress:
             {
-                if (gc->DialAddress())
-                {
+                ESP_LOGI(TAG, "Dialing address started");
+                if (!gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress)) {
+                    ESP_LOGE(TAG, "Dialing address failed");
+                }
+                else {
+                    ESP_LOGI(TAG, "Dialing address succeeded.");
                     gc->AutoHome();
                 }
-
+                break;
+            }
+            case ECmd::ManualWormhole:
+            {
+                // TODO: Start manual wormhole
+                ESP_LOGI(TAG, "TODO: ManualWormhole");
                 break;
             }
             default:
@@ -159,8 +196,8 @@ bool GateControl::AutoCalibrate()
     ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
 
     // Save the calibration result.
-    Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, false, s32NewStepsPerRotation);
-    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, false, s32Gap);
+    Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, s32NewStepsPerRotation);
+    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, s32Gap);
     Settings::getI().Commit();
     }
     bSucceeded = true;
@@ -233,7 +270,7 @@ bool GateControl::AutoHome()
     return bSucceeded;
 }
 
-bool GateControl::DialAddress()
+bool GateControl::DialAddress(GateAddress& ga)
 {
     bool ret = false;
     {
@@ -255,17 +292,15 @@ bool GateControl::DialAddress()
 
     // m_bIsHomingDone / m_s32CurrentPositionTicks
     const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-    //const uint8_t symbols[] = { 5, 10, 20, 30, 3, 16, 1 };
-    const uint8_t symbols[] = { 1, 36, 2, 35, 3, 34, 18 };
 
-    for(int32_t i = 0; i < (sizeof(symbols)/sizeof(symbols[0])); i++)
+    for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
     {
         if (m_bIsCancelAction) {
             ESP_LOGE(TAG, "Unable to complete dialing, cancelled by the user");
             goto ERROR;
         }
 
-        const uint8_t u8Symbol = symbols[i];
+        const uint8_t u8Symbol = ga.GetSymbol(i);
         const Chevron currentChevron = chevrons[i];
 
         // Dial sequence ...

@@ -13,22 +13,26 @@ RingComm::RingComm()
 
 void RingComm::Init()
 {
-
+    m_xMutexHandle = xSemaphoreCreateMutexStatic( &m_xMutexBuffer );
 }
 
 void RingComm::Start()
 {
+    LockMutex();
     ESP_LOGI(TAG, "Start ring comm");
     // Create a task to receive communication datas
 	if (xTaskCreatePinnedToCore(TaskRunning, "RingComm", FWCONFIG_RINGCOMM_STACKSIZE, (void*)this, FWCONFIG_RINGCOMM_PRIORITY_DEFAULT, &m_sRingCommHandle, FWCONFIG_RINGCOMM_COREID) != pdPASS )
 	{
 		ESP_ERROR_CHECK(ESP_FAIL);
 	}
+    UnlockMutex();
 }
 
 void RingComm::TaskRunning(void* pArg)
 {
     RingComm* pRC = (RingComm*)pArg;
+
+    pRC->LockMutex();
     pRC->m_commSocket = -1;
     {
     pRC->m_dest_addr.sin_addr.s_addr = inet_addr(FWCONFIG_RING_IPADDRESS);
@@ -36,6 +40,7 @@ void RingComm::TaskRunning(void* pArg)
     pRC->m_dest_addr.sin_port = htons(FWCONFIG_RING_PORT);
 
     pRC->m_commSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    pRC->UnlockMutex();
     if (pRC->m_commSocket < 0) {
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
         goto CLEAN_UP;
@@ -111,26 +116,32 @@ void RingComm::TaskRunning(void* pArg)
     }
     }
     CLEAN_UP:
+    pRC->LockMutex();
     if (pRC->m_commSocket != -1) {
         ESP_LOGE(TAG, "Shutting down socket and restarting...");
         shutdown(pRC->m_commSocket, 0);
         close(pRC->m_commSocket);
+        pRC->m_commSocket = 1;
     }
+    pRC->UnlockMutex();
     vTaskDelete(NULL);
 }
 
 void RingComm::SendPowerOff()
 {
+    LockMutex();
     uint8_t payloads[16];
     const uint32_t u32Length = SGUCommNS::SGUComm::EncTurnOff(payloads, sizeof(payloads));
     const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
+    UnlockMutex();
 }
 
 void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
 {
+    LockMutex();
     uint8_t payloads[16];
     const uint8_t u8Lights[] = { (uint8_t)SGURingNS::SymbolToLedIndex(u8Symbol) };
 
@@ -147,10 +158,12 @@ void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
+    UnlockMutex();
 }
 
 void RingComm::SendGateAnimation(SGUCommNS::EChevronAnimation animation)
 {
+    LockMutex();
     uint8_t payloads[16];
     const SGUCommNS::SChevronsLightningArg arg = { .eChevronAnim = animation };
     const uint32_t u32Length = SGUCommNS::SGUComm::EncChevronLightning(payloads, sizeof(payloads), &arg);
@@ -158,14 +171,17 @@ void RingComm::SendGateAnimation(SGUCommNS::EChevronAnimation animation)
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
+    UnlockMutex();
 }
 
 void RingComm::SendGotoFactory()
 {
+    LockMutex();
     uint8_t payloads[16];
     const uint32_t u32Length = SGUCommNS::SGUComm::EncGotoFactory(payloads, sizeof(payloads));
     const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
     if (err < 0) {
         ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
     }
+    UnlockMutex();
 }

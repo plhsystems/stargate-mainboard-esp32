@@ -1,5 +1,4 @@
-#ifndef _CHEVRON_H_
-#define _CHEVRON_H_
+#pragma once
 
 enum class Chevron
 {
@@ -17,5 +16,3 @@ enum class Chevron
 
     Count
 };
-
-#endif

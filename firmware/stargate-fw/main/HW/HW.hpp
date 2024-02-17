@@ -1,3 +1,5 @@
+#pragma once
+
 #include "HWConfig.hpp"
 #include "SGHW_HAL.hpp"
 #include "PinkySGHW.hpp"

@@ -17,10 +17,11 @@ enum class GateGalaxy
 class BaseGate
 {
     public:
-     protected:
-    BaseGate(GateGalaxy eGateGalaxy);
+    protected:
+    BaseGate(GateGalaxy eGateGalaxy, const char* szName);
     public:
     const GateGalaxy eGateGalaxy;
+    const char* szName;
 
     virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const = 0;
     virtual int32_t GetSymbolCount() const = 0;
@@ -28,8 +29,8 @@ class BaseGate
     virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
     virtual int32_t GetAddressCount() const { return 0; }
 
-    static inline const GateSymbol InvalidSymbol{ 0, "Invalid" };
-    static inline const GateAddress InvalidGateAddress { "Invalid" };
+    static inline const GateSymbol InvalidSymbol{ };
+    static inline const GateAddress InvalidGateAddress { };
 };
 
 

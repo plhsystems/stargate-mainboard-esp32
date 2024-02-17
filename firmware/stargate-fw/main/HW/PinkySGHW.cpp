@@ -42,6 +42,8 @@ PinkySGHW::PinkySGHW()
 
 void PinkySGHW::Init()
 {
+    m_xMutexHandle = xSemaphoreCreateMutexStatic( &m_xMutexBuffer );
+
     //install gpio isr service
     gpio_install_isr_service(0);
 
@@ -119,9 +121,11 @@ void PinkySGHW::Init()
 
 void PinkySGHW::SetRampLight(double dPerc)
 {
+    LockMutex();
     ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 4095 * dPerc));
     // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
+    UnlockMutex();
 }
 
 void PinkySGHW::PowerUpStepper()
@@ -160,14 +164,18 @@ void PinkySGHW::PowerUpServo()
 
 void PinkySGHW::SetServo(double dPosition)
 {
+    LockMutex();
     mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, SERVO_PWM2PERCENT(dPosition));
     mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
     m_dLastServoPosition = dPosition;
+    UnlockMutex();
 }
 
 void PinkySGHW::PowerDownServo()
 {
+    LockMutex();
     mcpwm_set_signal_low(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A);
+    UnlockMutex();
 }
 
 // Wormhole related
@@ -178,17 +186,23 @@ int32_t PinkySGHW::GetWHPixelCount()
 
 void PinkySGHW::SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
 {
+    LockMutex();
     led_strip_set_pixel(led_strip, u32Index, u8Red, u8Green, u8Blue);
+    UnlockMutex();
 }
 
 void PinkySGHW::ClearAllWHPixels()
 {
+    LockMutex();
     led_strip_clear(led_strip);
+    UnlockMutex();
 }
 
 void PinkySGHW::RefreshWHPixels()
 {
+    LockMutex();
     led_strip_refresh(led_strip);
+    UnlockMutex();
 }
 
 void PinkySGHW::SetSanityLED(bool bState)

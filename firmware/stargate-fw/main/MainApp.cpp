@@ -71,7 +71,7 @@ void app_main(void)
     free(szAllTask);
 
     // Autocalibrate as the default action
-    GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
+    GateControl::getI().QueueAutoHome();
 
     bool bSanity = false;
     while(true)

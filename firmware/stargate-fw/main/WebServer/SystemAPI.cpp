@@ -7,12 +7,14 @@
 #include "nvsjson.h"
 #include "../Settings.hpp"
 #include "WifiMgr.hpp"
-#include "cJSON.h"
 #include "esp_netif_types.h"
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
 #include "../GateControl/GateControl.hpp"
+#include "../Ring/RingComm.hpp"
+#include "../HW/HW.hpp"
+#include "../Audio/SoundFX.hpp"
 
 #define TAG "WebAPI"
 
@@ -25,13 +27,13 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     char* pExportJSON = NULL;
 
     if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
-        pExportJSON = GetStatus();
+        pExportJSON = getI().GetStatus();
     }
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
-        pExportJSON = GetSysInfo();
+        pExportJSON = getI().GetSysInfo();
     }
-    else if (strcmp(req->uri, APIURL_GETSOUNDFXLIST_URI) == 0) {
-        pExportJSON = GetAllSoundLists();
+    else if (strcmp(req->uri, APIURL_GETSOUNDLIST_URI) == 0) {
+        pExportJSON = getI().GetAllSoundLists();
     }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
@@ -41,14 +43,14 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
         pExportJSON = (char*)malloc(4096);
         vTaskList(pExportJSON);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_MILKYWAY_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_MILKYWAY_URI) == 0) {
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_PEGASUS_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::Pegasus);
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_PEGASUS_URI) == 0) {
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Pegasus);
     }
-    else if (strcmp(req->uri, APIURL_GETGALAXYINFO_UNIVERSE_URI) == 0) {
-        pExportJSON = GetGalaxyInfoJSON(GateGalaxy::Universe);
+    else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_UNIVERSE_URI) == 0) {
+        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Universe);
     }
     else {
         ESP_LOGE(TAG, "api_get_handler, url: %s", req->uri);
@@ -82,6 +84,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
 esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
+    cJSON* pRoot = nullptr;
     WebServer& ws = WebServer::getI();
 
     // Get datas
@@ -99,33 +102,129 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "api_post_handler, url: %s", req->uri);
     if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
+        // ==============================================
+        // Import the JSON setting file
         if (!Settings::getI().ImportJSON((const char*)ws.m_u8Buffers)) {
             ESP_LOGE(TAG, "Unable to import JSON");
             httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown request");
             goto ERROR;
         }
     }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::AutoHome);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::AutoCalibrate);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-        GateControl::getI().QueueAction(GateControl::ECmd::DialAddress);
-    }
-    else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
-        GateControl::getI().AbortAction();
-    }
-    else {
-        ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
-        goto ERROR;
+    else
+    {
+        pRoot = cJSON_Parse((const char*)ws.m_u8Buffers);
+
+        // ==============================================
+        // Gate control
+        if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOHOME_URI) == 0) {
+            GateControl::getI().QueueAutoHome();
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_AUTOCALIBRATE_URI) == 0) {
+            GateControl::getI().QueueAutoCalibrate();
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
+            const cJSON* jItemAddrs = cJSON_GetObjectItem(pRoot, "addr");
+            if (nullptr == jItemAddrs ||
+                !cJSON_IsArray(jItemAddrs)) {
+                goto ERROR;
+            }
+            // Check for symbols
+            uint8_t u8Symbols[GateAddress::SYMBOL_COUNT];
+            uint8_t u8SymbolCount = 0;
+            if (cJSON_GetArraySize(jItemAddrs) > GateAddress::SYMBOL_COUNT) {
+                goto ERROR;
+            }
+            const cJSON* cJSONItem = NULL;
+            cJSON_ArrayForEach(cJSONItem, jItemAddrs)
+            {
+                if (!cJSON_IsNumber(cJSONItem)) {
+                    goto ERROR;
+                }
+                u8Symbols[u8SymbolCount] = (uint8_t)cJSONItem->valueint;
+                u8SymbolCount++;
+            }
+            GateAddress ga { u8Symbols, u8SymbolCount };
+            GateControl::getI().QueueDialAddress(ga);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
+            GateControl::getI().AbortAction();
+        }
+        // Test control
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+                goto ERROR;
+            }
+            HW::getI()->SetRampLight(jItemAnim->valuedouble);
+        }
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+                goto ERROR;
+            }
+            HW::getI()->SetServo(jItemAnim->valuedouble);
+        }
+        // Sounds
+        else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim)) {
+                goto ERROR;
+            }
+            if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint-1), false)) {
+                goto ERROR;
+            }
+        }
+        // Wormhole manual wormhole mode
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_MANUALWORMHOLE_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim)) {
+                goto ERROR;
+            }
+            // TODO: Implement the wormhole.
+            ESP_LOGI(TAG, "Implement wormhole, id: %d", jItemAnim->valueint);
+        }
+        else if (strcmp(req->uri, APIURL_STOPSOUND_URI) == 0) {
+            SoundFX::getI().StopSound();
+        }
+        // ==============================================
+        // Ring control
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_POWEROFF_URI) == 0) {
+            RingComm::getI().SendPowerOff();
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
+                jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
+                goto ERROR;
+            }
+            RingComm::getI().SendGateAnimation((SGUCommNS::EChevronAnimation)jItemAnim->valueint);
+        }
+        else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_GOTOFACTORY_URI) == 0) {
+            RingComm::getI().SendGotoFactory();
+        }
+        else {
+            ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
+            httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown request");
+            goto ERROR;
+        }
     }
     goto END;
     ERROR:
     err = ESP_FAIL;
+    ESP_LOGE(TAG, "api_post_handler, url: %s, execution failed", req->uri);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unable to complete the request");
     END:
+    if (nullptr != pRoot) {
+        cJSON_Delete(pRoot);
+    }
+
     httpd_resp_set_hdr(req, "Connection", "close");
     httpd_resp_send_chunk(req, NULL, 0);
     return err;
@@ -140,8 +239,6 @@ char* WebServer::GetStatus()
         {
             goto ERROR;
         }
-        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "state");
-
         char* pStr =  cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;
@@ -291,17 +388,16 @@ char* WebServer::GetAllSoundLists()
             goto ERROR;
 
         cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "files");
-        /* TODO: Reactivate this later
-        for(int i = 0; i < 10; i++)
+        for(int32_t i = 0; i < SoundFX::getI().GetFileCount(); i++)
         {
-            const SOUNDFX_SFile* pFile = SOUNDFX_GetFile((SOUNDFX_EFILE)i);
+            const SoundFX::SoundFile* pFile = SoundFX::getI().GetFile((SoundFX::FileID)i);
 
             cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i+1));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->szName));
             cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->szDesc));
             cJSON_AddItemToArray(pEntries, pNewFile);
-        }*/
-
+        }
         char* pStr = cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;

@@ -1,5 +1,4 @@
-#ifndef _HWCONFIG_H_
-#define _HWCONFIG_H_
+#pragma once
 
 #include "driver/gpio.h"
 
@@ -8,5 +7,3 @@
 #define HWCONFIG_BOARD_PABLOBOARD (2)
 
 #define HWCONFIG_BOARD_CURRENT (HWCONFIG_BOARD_PINKYBOARD)
-
-#endif

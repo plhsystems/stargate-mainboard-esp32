@@ -39,6 +39,8 @@ using namespace SGUCommNS;
 
 #define SGU_GATTS_TAG "SGU-GATTS"
 
+// If we go beyond 160 it risk damaging the internal battery.
+// 0.035 A x 45 * 160/255
 #define LED_OUTPUT_MAX (160)
 #define LED_OUTPUT_IDLE (100)
 
@@ -51,7 +53,7 @@ static volatile TickType_t m_lAutoOffTicks = 0;
 static volatile TickType_t m_ulAutoOffTimeoutMs = FWCONFIG_HOLDPOWER_DELAY_MS;
 
 // Chevron animation
-static volatile int32_t m_s32ChevronAnim = -1;
+static int32_t m_s32ChevronAnim = -1;
 
 static esp_pm_lock_handle_t m_lockHandle;
 
@@ -165,9 +167,9 @@ static void LedRefreshTask(void *pvParameters)
         {
             switch((EChevronAnimation)m_s32ChevronAnim)
             {
-                case EChevronAnimation::Suicide:
+                case EChevronAnimation::PoweringOff:
                 {
-                    ESP_LOGI(TAG, "Animation / Suicide");
+                    ESP_LOGI(TAG, "Animation / PoweringOff");
                     // Light up the hidden chevron RED.
                     GPIO_SetPixel(SGURingNS::ChevronIndexToLedIndex(5), LED_OUTPUT_MAX, 0, 0);
                     GPIO_SetPixel(SGURingNS::ChevronIndexToLedIndex(6), LED_OUTPUT_MAX, 0, 0);
@@ -375,7 +377,7 @@ static void SGUBRChevronsLightningHandler(const SChevronsLightningArg* psChevron
     ESP_LOGI(TAG, "BLE Chevron light received");
 
     // Not ready for chevron animation yet.
-    m_s32ChevronAnim = (volatile int32_t)psChevronLightningArg->eChevronAnim;
+    m_s32ChevronAnim = (int32_t)psChevronLightningArg->eChevronAnim;
     ResetAutoOffTicks();
 }
 
@@ -540,7 +542,7 @@ void app_main(void)
         {
             if (!bLastIsSuicide)
             {
-                m_s32ChevronAnim = (volatile int32_t)EChevronAnimation::Suicide;
+                m_s32ChevronAnim = (int32_t)EChevronAnimation::PoweringOff;
                 ESP_LOGW(TAG, "Suicide animation");
             }
 

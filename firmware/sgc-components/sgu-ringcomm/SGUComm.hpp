@@ -28,7 +28,7 @@ namespace SGUCommNS
         ErrorToWhite = 2,
         ErrorToOff = 3,
         AllSymbolsOn = 4,
-        Suicide = 5,
+        PoweringOff = 5,
 
         Count
     };
@@ -80,7 +80,20 @@ namespace SGUCommNS
         static uint32_t EncUpdateLight(uint8_t* u8Dst, uint16_t u16MaxLen, const SUpdateLightArg* psArg);
         static uint32_t EncChevronLightning(uint8_t* u8Dst, uint16_t u16MaxLen, const SChevronsLightningArg* psArg);
         static uint32_t EncGotoFactory(uint8_t* u8Dst, uint16_t u16MaxLen);
-        
+
         static uint32_t EncPingPong(uint8_t* u8Dst, uint16_t u16MaxLen, const SPingPongArg* psArg);
     };
+
+    inline static const char* m_szTexts[] =
+    {
+        [(int)EChevronAnimation::FadeIn] = "Fade in",
+        [(int)EChevronAnimation::FadeOut] = "Fade out",
+        [(int)EChevronAnimation::ErrorToWhite]  = "Error to white",
+        [(int)EChevronAnimation::ErrorToOff]  = "Error to off",
+        [(int)EChevronAnimation::AllSymbolsOn] = "All symbols on",
+        [(int)EChevronAnimation::PoweringOff] = "Powering off",
+    };
+    static_assert((int)EChevronAnimation::Count == sizeof(m_szTexts)/sizeof(m_szTexts[0]), "Animation text missmatch");
+
+    inline static const char* GetAnimationText(EChevronAnimation eChevronAnimation) { return m_szTexts[(int)eChevronAnimation]; }
 }
