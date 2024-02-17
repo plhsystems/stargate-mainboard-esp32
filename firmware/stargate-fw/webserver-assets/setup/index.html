@@ -12,25 +12,53 @@
 		<div id="app">
 			<!-- Main part -->
 			<div class="main">
-                <button @click="SendAction(apiControlURLs.control_autohome)">Auto home</button>
-                <button @click="SendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
-                <button @click="SendAction(apiControlURLs.control_abort)">Abort</button>
-                <button @click="SendAction(apiControlURLs.control_dialaddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
+                <button @click="sendAction(apiControlURLs.control_autohome)">Auto home</button>
+                <button @click="sendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
+                <button @click="sendAction(apiControlURLs.control_abort)">Abort</button>
+                <button @click="sendAction(apiControlURLs.control_dialaddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
 
-                <button @click="SendAction(apiControlURLs.control_keypress)">Keypress</button>
-                <button @click="SendAction(apiControlURLs.control_manualwormhole)">Manual wormhole</button><br>
+                <button @click="sendAction(apiControlURLs.control_keypress)">Keypress</button>
+                <br>
+                <!-- Manual wormhole -->
+                <div v-if="galaxy_info && galaxy_info.wormhole_types">
+                    <select v-model="selectedWormholeTypeID">
+                        <option v-for="item in galaxy_info.wormhole_types" :value="item.id">
+                            {{ item.name }}
+                        </option>
+                    </select>
+                    <button @click="sendAction(apiControlURLs.control_manualwormhole, { id : selectedWormholeTypeID })">Manual wormhole</button>
+                </div>
+                <br>
+                <label>
+                    ramp:
+                    <input type="range" min="0" max="1" step="0.05" id="id_ramp_perc" v-model="ramp_perc" v-on:change="sendAction(apiControlURLs.control_testramplight, { value : parseFloat(ramp_perc) })"><br>
+                </label>
+                <label>
+                    servo:
+                    <input type="range" min="0" max="1" step="0.01" id="id_servo_perc" v-model="servo_perc" v-on:change="sendAction(apiControlURLs.control_testservo, { value : parseFloat(servo_perc) })"><br>
+                </label>
 
-                <button @click="SendAction(apiControlURLs.control_testramplight, { value : parseFloat(ramp_perc) })">Test ramp light</button>
-                <input type="range" min="0" max="1" step="0.05" id="id_ramp_perc" v-model="ramp_perc"><br>
-                
-                <button @click="SendAction(apiControlURLs.control_testservo)">Test servo</button>
+                <button @click="sendAction(apiControlURLs.sound_play)">Play sound</button>
+                <button @click="sendAction(apiControlURLs.sound_stop)">Stop sound</button>
 
-                <button @click="SendAction(apiControlURLs.sound_play)">Play sound</button>
-                <button @click="SendAction(apiControlURLs.sound_stop)">Stop sound</button>
+                <button @click="sendAction(apiControlURLs.ringcontrol_poweroff)">Ring Power-Off</button>
 
-                <button @click="SendAction(apiControlURLs.ringcontrol_poweroff)">Ring Power-Off</button>
-                <button @click="SendAction(apiControlURLs.ringcontrol_testanimate)">Test Animation</button>
+                <!-- Test ring animation -->
+                <div v-if="galaxy_info && galaxy_info.ring_animations">
+                    <select v-model="selectedRingAnimationID">
+                        <option v-for="item in galaxy_info.ring_animations" :value="item.id">
+                            {{ item.name }}
+                        </option>
+                    </select>
+                    <button @click="sendAction(apiControlURLs.ringcontrol_testanimate, { id : selectedRingAnimationID })">Test Animation</button>
+                </div>
                 <button @click="SendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
+                <br>
+                <table v-if="galaxy_info">
+                    <tr v-for="item in galaxy_info.addresses" :key="item.id">
+                        <td>{{ item.name }}</td>
+                    </tr>
+                </table>
 
             </div>
 		</div>

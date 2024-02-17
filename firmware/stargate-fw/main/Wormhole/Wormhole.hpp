@@ -7,10 +7,8 @@ class Wormhole
     {
         NormalSGU = 0,
         NormalSG1 = 1,
-        Hell = 2,
-        Blackhole = 3,
-        Strobe = 4,
-        Glitch = 5,
+        Blackhole = 2,
+        GlitchSGU = 3,
 
         Count
     };
@@ -28,4 +26,15 @@ class Wormhole
     EType m_eWormholeType;
     public:
     static bool ValidateWormholeType(EType eWormholeType);
+
+    inline static const char* m_szTexts[] =
+    {
+        [(int)EType::NormalSGU] = "Normal SGU",
+        [(int)EType::NormalSG1] = "Normal SG1",
+        [(int)EType::Blackhole] = "Blackhole",
+        [(int)EType::GlitchSGU] = "Glitch SGU",
+    };
+    static_assert((int)EType::Count == sizeof(m_szTexts)/sizeof(m_szTexts[0]), "Text missmatch");
+
+    inline static const char* GetTypeText(EType eType) { return m_szTexts[(int)eType]; }
 };

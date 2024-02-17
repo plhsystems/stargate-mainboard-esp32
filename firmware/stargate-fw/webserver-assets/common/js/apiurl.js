@@ -23,6 +23,7 @@ const apiControlURLs =
 
     settingsjson:           "/api/settingsjson",
     getfreertosdbginfo:     "/api/getfreertosdbginfo",
+    
     getinfo_milkyway:       "/api/galaxy/getinfo/milkyway",
     getinfo_pegasus:        "/api/galaxy/getinfo/pegasus",
     getinfo_universe:       "/api/galaxy/getinfo/universe"

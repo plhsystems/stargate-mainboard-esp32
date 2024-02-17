@@ -124,7 +124,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
             const cJSON* jItemAddrs = cJSON_GetObjectItem(pRoot, "addr");
-            if (!cJSON_IsArray(jItemAddrs)) {
+            if (nullptr == jItemAddrs ||
+                !cJSON_IsArray(jItemAddrs)) {
                 goto ERROR;
             }
             // Check for symbols
@@ -151,7 +152,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         // Test control
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
             const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
-            if (!cJSON_IsNumber(jItemAnim) ||
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
                 goto ERROR;
             }
@@ -159,7 +161,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
             const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
-            if (!cJSON_IsNumber(jItemAnim) ||
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
                 goto ERROR;
             }
@@ -168,12 +171,23 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         // Sounds
         else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
             const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
-            if (!cJSON_IsNumber(jItemAnim)) {
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
             }
             if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint-1), false)) {
                 goto ERROR;
             }
+        }
+        // Wormhole manual wormhole mode
+        else if (strcmp(req->uri, APIURL_POSTCONTROL_MANUALWORMHOLE_URI) == 0) {
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim)) {
+                goto ERROR;
+            }
+            // TODO: Implement the wormhole.
+            ESP_LOGI(TAG, "Implement wormhole, id: %d", jItemAnim->valueint);
         }
         else if (strcmp(req->uri, APIURL_STOPSOUND_URI) == 0) {
             SoundFX::getI().StopSound();
@@ -184,8 +198,9 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             RingComm::getI().SendPowerOff();
         }
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "anim");
-            if (!!cJSON_IsNumber(jItemAnim) ||
+            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            if (nullptr == jItemAnim ||
+                !cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
                 goto ERROR;
             }
