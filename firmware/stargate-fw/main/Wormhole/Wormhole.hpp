@@ -34,6 +34,8 @@ class Wormhole
     EType m_eWormholeType;
     SGHW_HAL* m_pHAL;
 
+    bool m_bIsRunInitialized = false;
+
     static constexpr uint32_t LEDEFFECT_COUNT = 48;
     SLedEffect m_sLedEffects[LEDEFFECT_COUNT];
 
@@ -48,7 +50,9 @@ class Wormhole
     static constexpr int m_pRing2_OneBased[] = { 37, 38, 39, 40, 28, 29, 30, 42, 43 };
     static constexpr int m_pRing3_OneBased[] = { 41, 44, 45, 46  };
 
-    inline static constexpr char* m_szTexts[] =
+    static int32_t GetRing(int zeroBasedIndex);
+    
+    inline static constexpr const char* m_szTexts[] =
     {
         [(int)EType::NormalSGU] = "Normal SGU",
         [(int)EType::NormalSG1] = "Normal SG1",
