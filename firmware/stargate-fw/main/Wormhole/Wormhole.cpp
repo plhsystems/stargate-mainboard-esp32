@@ -126,9 +126,11 @@ Wormhole::ERing Wormhole::GetRing(int zeroBasedIndex)
 void Wormhole::IlluminateRing(Wormhole::ERing eRing)
 {
     const uint32_t whiteMax = m_u32MaxBrightness;
-    
-    for(float brig = 0.0f; brig < 1.00f; brig += 0.08f)
+
+    for(int32_t s32 = 0; s32 <= 100; s32 += 5)
     {
+        const float brig = s32 * 0.01f;
+
         const SRingEntry* psRingEntries = &m_sRingEntries[(int)eRing];
 
         for(int i = 0; i < psRingEntries->u32RingCount; i++)
