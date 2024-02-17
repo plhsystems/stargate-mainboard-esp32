@@ -132,13 +132,14 @@ void GateControl::TaskRunning(void* pArg)
             }
             case ECmd::DialAddress:
             {
-                ESP_LOGI(TAG, "Dialing address started");
+                char szDbgText[GateAddress::ADDRESSTEXT_LEN+1];
+                gc->m_sCmd.sDialAddress.sGateAddress.GetAddressText(szDbgText);
+                ESP_LOGI(TAG, "Dialing address started, address: %s", szDbgText);
                 if (!gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress)) {
                     ESP_LOGE(TAG, "Dialing address failed");
                 }
                 else {
                     ESP_LOGI(TAG, "Dialing address succeeded.");
-                    gc->AutoHome();
                 }
                 break;
             }
@@ -320,6 +321,14 @@ bool GateControl::DialAddress(GateAddress& ga)
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+
+    // Go back to home position
+    ESP_LOGI(TAG, "Move near the home position");
+    const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
+    MoveStepperTo(s32MoveTicks);
+    ESP_LOGI(TAG, "Confirm the home position");
+    AutoHome();
+
     ret = true;
     goto END;
     }

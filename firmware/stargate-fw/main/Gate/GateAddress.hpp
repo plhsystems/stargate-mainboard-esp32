@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <cstdio>
 
 class GateAddress
 {
@@ -16,7 +17,7 @@ class GateAddress
         m_szName(""),
         m_u32SymbolCount(u8SymbolCount)
     {
-        memcpy(m_u8Symbols, u8Symbols, sizeof(u8SymbolCount));
+        memcpy(m_u8Symbols, u8Symbols, sizeof(m_u8Symbols));
     }
     GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6) :
         m_szName(szName),
@@ -85,6 +86,8 @@ class GateAddress
         m_u8Symbols[8] = u8Sym9;
     }
     public:
+    static constexpr uint32_t ADDRESSTEXT_LEN = 40;
+
     inline const char* GetName() const { return m_szName; }
     inline uint8_t GetSymbol(uint8_t u8Index) const
     {
@@ -93,6 +96,14 @@ class GateAddress
         return m_u8Symbols[u8Index];
     }
     inline uint32_t GetSymbolCount() const { return m_u32SymbolCount; }
+
+    inline uint32_t GetAddressText(char szText[ADDRESSTEXT_LEN+1])
+    {
+        return snprintf(szText, ADDRESSTEXT_LEN, "%d %d %d\t%d %d %d\t%d %d %d",
+            (int)m_u8Symbols[0], (int)m_u8Symbols[1], (int)m_u8Symbols[2],
+            (int)m_u8Symbols[3], (int)m_u8Symbols[4], (int)m_u8Symbols[5],
+            (int)m_u8Symbols[6], (int)m_u8Symbols[7], (int)m_u8Symbols[8]);
+    }
 
     static constexpr uint32_t SYMBOL_COUNT = 9;
     private:

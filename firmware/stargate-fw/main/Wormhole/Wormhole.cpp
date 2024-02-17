@@ -6,23 +6,22 @@ Wormhole::Wormhole(EType eWormholeType) :
 
 }
 
-void Wormhole::OpenAnimation()
+void Wormhole::SetAnimation(EAnimation eAnimation)
+{
+    m_eAnimation = eAnimation;
+}
+
+void Wormhole::Begin()
 {
 
 }
 
-void Wormhole::Run(volatile bool* pbIsCancelFlag)
+void Wormhole::RunTicks()
 {
 
 }
 
-void Wormhole::CloseAnimation()
+void Wormhole::End()
 {
 
 }
-
-void Wormhole::Shutdown()
-{
-
-}
-
