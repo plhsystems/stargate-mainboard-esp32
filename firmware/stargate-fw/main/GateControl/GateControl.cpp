@@ -91,8 +91,6 @@ void GateControl::TaskRunning(void* pArg)
     // Get a stargate instance based on parameters
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
-    Wormhole wormhole(Wormhole::EType::NormalSG1);
-
     // Dialing
     while(true)
     {
@@ -157,7 +155,7 @@ void GateControl::TaskRunning(void* pArg)
             {
                 // TODO: Start manual wormhole
                 ESP_LOGI(TAG, "TODO: ManualWormhole");
-                Wormhole wm { gc->m_sCmd.sManualWormhole.eWormholeType };
+                Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
                 wm.Begin();
                 wm.OpeningAnimation();
                 while(!gc->m_bIsCancelAction) {
