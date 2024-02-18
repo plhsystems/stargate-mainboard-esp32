@@ -88,9 +88,6 @@ void GateControl::TaskRunning(void* pArg)
 
     ESP_LOGI(TAG, "Gatecontrol task started and ready.");
 
-    // Get a stargate instance based on parameters
-    UniverseGate& universeGate = GateFactory::GetUniverseGate();
-
     // Dialing
     while(true)
     {
@@ -304,8 +301,6 @@ bool GateControl::DialAddress(GateAddress& ga)
     }
 
     RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
-
-    UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
     AnimRampLight(true);
 
