@@ -56,9 +56,17 @@
                 <br>
                 <table v-if="galaxy_info">
                     <tr v-for="item in galaxy_info.addresses" :key="item.id">
-                        <td>{{ item.name }}</td>
+                        <td>
+                            <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_dialaddress, { addr: item.address })">
+                                <p>{{ item.name }}</p>
+                                <span v-for="symbol in item.address">
+                                    <span>{{ symbol.name }}</span>
+                                </span>
+                            </button>
+                        </td>
                     </tr>
                 </table>
+
 
             </div>
 		</div>

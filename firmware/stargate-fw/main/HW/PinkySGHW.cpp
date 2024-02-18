@@ -113,6 +113,7 @@ void PinkySGHW::Init()
     };
     led_strip_rmt_config_t rmt_config = {
         .resolution_hz = 10 * 1000 * 1000, // 10MHz
+        .mem_block_symbols = 128
     };
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     /* Set all LED off to clear all pixels */

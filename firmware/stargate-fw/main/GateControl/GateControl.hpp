@@ -51,6 +51,7 @@ class GateControl
         struct
         {
             GateAddress sGateAddress;
+            Wormhole::EType eWormholeType;
         } sDialAddress;
         struct
         {
@@ -90,6 +91,7 @@ class GateControl
     void QueueAutoHome();
     void QueueAutoCalibrate();
     void QueueDialAddress(GateAddress& ga);
+    void QueueManualWormhole(Wormhole::EType type);
 
     void AbortAction();
 

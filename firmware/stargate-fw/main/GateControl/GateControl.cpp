@@ -57,7 +57,17 @@ void GateControl::QueueDialAddress(GateAddress& ga)
     const SCmd sCmd =
     {
         .eCmd = ECmd::DialAddress,
-        .sDialAddress = { .sGateAddress = ga }
+        .sDialAddress = { .sGateAddress = ga, .eWormholeType = Wormhole::EType::NormalSGU }
+    };
+    PriQueueAction(sCmd);
+}
+
+void GateControl::QueueManualWormhole(Wormhole::EType type)
+{
+    const SCmd sCmd =
+    {
+        .eCmd = ECmd::ManualWormhole,
+        .sManualWormhole = { .eWormholeType = type }
     };
     PriQueueAction(sCmd);
 }
@@ -80,8 +90,6 @@ void GateControl::TaskRunning(void* pArg)
 
     // Get a stargate instance based on parameters
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
-
-    Wormhole wormhole(Wormhole::EType::NormalSG1);
 
     // Dialing
     while(true)
@@ -132,26 +140,38 @@ void GateControl::TaskRunning(void* pArg)
             }
             case ECmd::DialAddress:
             {
-                ESP_LOGI(TAG, "Dialing address started");
+                char szDbgText[GateAddress::ADDRESSTEXT_LEN+1];
+                gc->m_sCmd.sDialAddress.sGateAddress.GetAddressText(szDbgText);
+                ESP_LOGI(TAG, "Dialing address started, address: %s", szDbgText);
                 if (!gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress)) {
                     ESP_LOGE(TAG, "Dialing address failed");
                 }
                 else {
                     ESP_LOGI(TAG, "Dialing address succeeded.");
-                    gc->AutoHome();
                 }
                 break;
             }
             case ECmd::ManualWormhole:
             {
-                // TODO: Start manual wormhole
-                ESP_LOGI(TAG, "TODO: ManualWormhole");
+                ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCmd.sManualWormhole.eWormholeType));
+                Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
+                wm.Begin();
+                wm.OpeningAnimation();
+                while(!gc->m_bIsCancelAction) {
+                    wm.RunTicks();
+                }
+                wm.ClosingAnimation();
+                wm.End();
                 break;
             }
             default:
             case ECmd::Idle:
                 break;
         }
+
+        // Reset at the end, it's not really a queue
+        gc->m_bIsCancelAction = false;
+        gc->m_sCmd.eCmd = ECmd::Idle;
     }
 }
 
@@ -272,6 +292,7 @@ bool GateControl::AutoHome()
 
 bool GateControl::DialAddress(GateAddress& ga)
 {
+    Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
     bool ret = false;
     {
     HW::getI()->PowerUpStepper();
@@ -320,6 +341,23 @@ bool GateControl::DialAddress(GateAddress& ga)
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+
+    // Play the wormhole idling animation
+    wm.Begin();
+    wm.OpeningAnimation();
+    while(!m_bIsCancelAction) {
+        wm.RunTicks();
+    }
+    wm.ClosingAnimation();
+    wm.End();
+
+    // Go back to home position
+    ESP_LOGI(TAG, "Move near the home position");
+    const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
+    MoveStepperTo(s32MoveTicks);
+    ESP_LOGI(TAG, "Confirm the home position");
+    AutoHome();
+
     ret = true;
     goto END;
     }
