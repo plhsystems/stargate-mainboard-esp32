@@ -58,15 +58,15 @@
                     </select>
                     <button :disabled="!is_connected" @click="sendAction(apiControlURLs.ringcontrol_testanimate, { id : selectedRingAnimationID })">Test Animation</button>
                 </div>
-                <button @click="sendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
                 <br>
                 <table v-if="galaxy_info">
                     <tr v-for="item in galaxy_info.addresses" :key="item.id">
                         <td>
                             <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_dialaddress, { addr: item.address })">
                                 <p>{{ item.name }}</p>
-                                <span v-for="symbol in item.address">
-                                    <span>{{ symbol.name }}</span>
+                                <span>
+                                    <img v-for="symbolItem in item.address" style="width: 50px" :src="`../galaxies/universe/glyphs/${ symbolItem.toString().padStart(3, '0') }.svg`" />
                                 </span>
                             </button>
                         </td>
