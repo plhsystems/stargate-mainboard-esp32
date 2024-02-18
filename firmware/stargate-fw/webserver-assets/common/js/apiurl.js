@@ -1,7 +1,7 @@
 const apiControlURLs =
 {
     get_status:     "/api/getstatus",
-    get_sys_info:   "/api/getsysinfo",
+    get_sysinfo:    "/api/getsysinfo",
 
     sound_list: "/api/sound/list",
     sound_play: "/api/sound/play",
@@ -23,7 +23,7 @@ const apiControlURLs =
 
     settingsjson:           "/api/settingsjson",
     getfreertosdbginfo:     "/api/getfreertosdbginfo",
-    
+
     getinfo_milkyway:       "/api/galaxy/getinfo/milkyway",
     getinfo_pegasus:        "/api/galaxy/getinfo/pegasus",
     getinfo_universe:       "/api/galaxy/getinfo/universe"

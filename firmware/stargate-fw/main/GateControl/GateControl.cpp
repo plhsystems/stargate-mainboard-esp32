@@ -303,7 +303,7 @@ bool GateControl::DialAddress(GateAddress& ga)
         goto ERROR;
     }
 
-    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::FadeIn);
+    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
 
     UniverseGate& universeGate = GateFactory::GetUniverseGate();
 
@@ -348,6 +348,8 @@ bool GateControl::DialAddress(GateAddress& ga)
     while(!m_bIsCancelAction) {
         wm.RunTicks();
     }
+    // Turn-off all symbols before killing the wormhole
+    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
     wm.ClosingAnimation();
     wm.End();
 
@@ -366,7 +368,7 @@ bool GateControl::DialAddress(GateAddress& ga)
     END:
     HW::getI()->PowerDownStepper();
     vTaskDelay(pdMS_TO_TICKS(500));
-    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::FadeOut);
+    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
     AnimRampLight(false);
     return ret;
 }

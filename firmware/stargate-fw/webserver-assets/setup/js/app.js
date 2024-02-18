@@ -33,20 +33,24 @@ function getData(actionURL, cb)
       // Handle any errors here
       console.log('Fetch error:', error);
       if (cb && cb.fail) {
-        cb.fail(data);
+        cb.fail(error);
       }
     });
 }
 
 let currentData =
 {
+  // Default values, mostly to shut-up vuejs
 	is_connected: false,
 
   ramp_perc: 0.0,
   servo_perc: 0.0,
 
   galaxy_info: { name: "", addresses: [], symbols: [], ring_animations: [], wormhole_types: [] },
+  sys_info: { infos: [] },
+  sound_list: { files: [] },
 
+  selectedSoundFileID: null,
   selectedRingAnimationID: null,
   selectedWormholeTypeID: null
 };
@@ -59,19 +63,33 @@ var currentApp = new Vue({
       console.log("page is fully loaded");
       setTimeout(timerHandler, 500);
 
+      // Get system information
+      getData(apiControlURLs.get_sysinfo,
+      {
+          success: data => {
+            currentApp.sys_info = data;
+          }
+      });
+
       // Code that will run only after the
       // entire view has been rendered
       getData(apiControlURLs.getinfo_universe,
-        {
+      {
           success: data => {
-            console.log("##1 success");
             currentData.galaxy_info = data;
           },
-          fail: data => {
-            console.log("##1 fail");
+          fail: ex => {
             currentData.galaxy_info = null;
           }
       });
+
+      // Sound list
+      getData(apiControlURLs.sound_list,
+        {
+            success: data => {
+              currentApp.sound_list = data;
+            }
+        });
     })
   }
 })
@@ -88,7 +106,6 @@ async function timerHandler() {
       })
       .then((data) =>
       {
-        console.log("data: ", data);
         currentData.is_connected = true;
         setTimeout(timerHandler, 500);
       })

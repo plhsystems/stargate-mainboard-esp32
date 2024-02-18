@@ -23,12 +23,13 @@ namespace SGUCommNS
 
     enum class EChevronAnimation
     {
-        FadeIn = 0,
-        FadeOut = 1,
-        ErrorToWhite = 2,
-        ErrorToOff = 3,
-        AllSymbolsOn = 4,
-        PoweringOff = 5,
+        Chevron_FadeIn = 0,
+        Chevron_FadeOut = 1,
+        Chevron_ErrorToWhite = 2,
+        Chevron_ErrorToOff = 3,
+        Chevron_AllSymbolsOn = 4,
+        Chevron_PoweringOff = 5,
+        Chevron_NoSymbols = 6,
 
         Count
     };
@@ -86,14 +87,15 @@ namespace SGUCommNS
 
     inline static const char* m_szTexts[] =
     {
-        [(int)EChevronAnimation::FadeIn] = "Fade in",
-        [(int)EChevronAnimation::FadeOut] = "Fade out",
-        [(int)EChevronAnimation::ErrorToWhite]  = "Error to white",
-        [(int)EChevronAnimation::ErrorToOff]  = "Error to off",
-        [(int)EChevronAnimation::AllSymbolsOn] = "All symbols on",
-        [(int)EChevronAnimation::PoweringOff] = "Powering off",
+        [(int)EChevronAnimation::Chevron_FadeIn] = "Fade in",
+        [(int)EChevronAnimation::Chevron_FadeOut] = "Fade out",
+        [(int)EChevronAnimation::Chevron_ErrorToWhite]  = "Error to white",
+        [(int)EChevronAnimation::Chevron_ErrorToOff]  = "Error to off",
+        [(int)EChevronAnimation::Chevron_AllSymbolsOn] = "All symbols on",
+        [(int)EChevronAnimation::Chevron_PoweringOff] = "Powering off",
+        [(int)EChevronAnimation::Chevron_NoSymbols] = "Chevron, no symbols",
     };
-    static_assert((int)EChevronAnimation::Count == sizeof(m_szTexts)/sizeof(m_szTexts[0]), "Animation text missmatch");
+    static_assert((int)EChevronAnimation::Count == (sizeof(m_szTexts)/sizeof(m_szTexts[0])), "Animation text missmatch");
 
     inline static const char* GetAnimationText(EChevronAnimation eChevronAnimation) { return m_szTexts[(int)eChevronAnimation]; }
 }

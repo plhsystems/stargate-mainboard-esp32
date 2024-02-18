@@ -12,12 +12,11 @@
 		<div id="app">
 			<!-- Main part -->
 			<div class="main">
-                <button @click="sendAction(apiControlURLs.control_autohome)">Auto home</button>
-                <button @click="sendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
-                <button @click="sendAction(apiControlURLs.control_abort)">Abort</button>
-                <button @click="sendAction(apiControlURLs.control_dialaddress, { addr: [3, 12, 30, 4, 36, 22, 1] })">Dial Address</button>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_autohome)">Auto home</button>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_abort)">Abort</button>
 
-                <button @click="sendAction(apiControlURLs.control_keypress)">Keypress</button>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_keypress)">Keypress</button>
                 <br>
                 <!-- Manual wormhole -->
                 <div v-if="galaxy_info && galaxy_info.wormhole_types">
@@ -26,22 +25,29 @@
                             {{ item.name }}
                         </option>
                     </select>
-                    <button @click="sendAction(apiControlURLs.control_manualwormhole, { id : selectedWormholeTypeID })">Manual wormhole</button>
+                    <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_manualwormhole, { id : selectedWormholeTypeID })">Manual wormhole</button>
                 </div>
                 <br>
                 <label>
                     ramp:
-                    <input type="range" min="0" max="1" step="0.05" id="id_ramp_perc" v-model="ramp_perc" v-on:change="sendAction(apiControlURLs.control_testramplight, { value : parseFloat(ramp_perc) })"><br>
+                    <input :disabled="!is_connected" type="range" min="0" max="1" step="0.05" id="id_ramp_perc" v-model="ramp_perc" v-on:change="sendAction(apiControlURLs.control_testramplight, { value : parseFloat(ramp_perc) })"><br>
                 </label>
                 <label>
                     servo:
-                    <input type="range" min="0" max="1" step="0.01" id="id_servo_perc" v-model="servo_perc" v-on:change="sendAction(apiControlURLs.control_testservo, { value : parseFloat(servo_perc) })"><br>
+                    <input :disabled="!is_connected" type="range" min="0" max="1" step="0.01" id="id_servo_perc" v-model="servo_perc" v-on:change="sendAction(apiControlURLs.control_testservo, { value : parseFloat(servo_perc) })"><br>
                 </label>
-
-                <button @click="sendAction(apiControlURLs.sound_play)">Play sound</button>
-                <button @click="sendAction(apiControlURLs.sound_stop)">Stop sound</button>
-
-                <button @click="sendAction(apiControlURLs.ringcontrol_poweroff)">Ring Power-Off</button>
+                <br>
+                <div>
+                    <select v-model="selectedSoundFileID">
+                        <option v-for="item in sound_list.files" :value="item.id">
+                            {{ item.name }} [{{ item.desc }}]
+                        </option>
+                    </select>
+                    <button :disabled="!is_connected" @click="sendAction(apiControlURLs.sound_play, { id : selectedSoundFileID })">Play sound</button>
+                    <button :disabled="!is_connected" @click="sendAction(apiControlURLs.sound_stop)">Stop sound</button>
+                </div>
+                <br>
+                <button :disabled="!is_connected" @click="sendAction(apiControlURLs.ringcontrol_poweroff)">Ring Power-Off</button>
 
                 <!-- Test ring animation -->
                 <div v-if="galaxy_info && galaxy_info.ring_animations">
@@ -50,9 +56,9 @@
                             {{ item.name }}
                         </option>
                     </select>
-                    <button @click="sendAction(apiControlURLs.ringcontrol_testanimate, { id : selectedRingAnimationID })">Test Animation</button>
+                    <button :disabled="!is_connected" @click="sendAction(apiControlURLs.ringcontrol_testanimate, { id : selectedRingAnimationID })">Test Animation</button>
                 </div>
-                <button @click="SendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
+                <button @click="sendAction(apiControlURLs.ringcontrol_gotofactory)">Goto Factory</button>
                 <br>
                 <table v-if="galaxy_info">
                     <tr v-for="item in galaxy_info.addresses" :key="item.id">
@@ -66,8 +72,21 @@
                         </td>
                     </tr>
                 </table>
-
-
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Name</td>
+                            <td>Value</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in sys_info.infos" :key="item.name">
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.value }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 		</div>
         <!-- JS -->

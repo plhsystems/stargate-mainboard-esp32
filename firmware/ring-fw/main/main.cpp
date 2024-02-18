@@ -167,15 +167,15 @@ static void LedRefreshTask(void *pvParameters)
         {
             switch((EChevronAnimation)m_s32ChevronAnim)
             {
-                case EChevronAnimation::PoweringOff:
+                case EChevronAnimation::Chevron_PoweringOff:
                 {
-                    ESP_LOGI(TAG, "Animation / PoweringOff");
+                    ESP_LOGI(TAG, "Animation / Chevron_PoweringOff");
                     // Light up the hidden chevron RED.
                     GPIO_SetPixel(SGURingNS::ChevronIndexToLedIndex(5), LED_OUTPUT_MAX, 0, 0);
                     GPIO_SetPixel(SGURingNS::ChevronIndexToLedIndex(6), LED_OUTPUT_MAX, 0, 0);
                     break;
                 }
-                case EChevronAnimation::FadeIn:
+                case EChevronAnimation::Chevron_FadeIn:
                 {
                     ESP_LOGI(TAG, "Animation / FadeIn");
 
@@ -195,9 +195,9 @@ static void LedRefreshTask(void *pvParameters)
                     }
                     break;
                 }
-                case EChevronAnimation::FadeOut:
+                case EChevronAnimation::Chevron_FadeOut:
                 {
-                    ESP_LOGI(TAG, "Animation / FadeOut");
+                    ESP_LOGI(TAG, "Animation / Chevron_FadeOut");
                     for(float fltBrightness = 1.0f; fltBrightness >= 0.0f; fltBrightness -= 0.05f)
                     {
                         const uint8_t u8Brightness = (fltBrightness < 0.05f ? 0 : (uint8_t)(MISCFA_LinearizeLEDOutput(fltBrightness) * LED_OUTPUT_MAX));
@@ -214,7 +214,7 @@ static void LedRefreshTask(void *pvParameters)
                     }
                     break;
                 }
-                case EChevronAnimation::ErrorToWhite:
+                case EChevronAnimation::Chevron_ErrorToWhite:
                 {
                     ESP_LOGI(TAG, "Animation / Error");
                     for(int32_t i = 0; i < HWCONFIG_WS1228B_LEDCOUNT; i++)
@@ -240,7 +240,7 @@ static void LedRefreshTask(void *pvParameters)
                     }
                     break;
                 }
-                case EChevronAnimation::ErrorToOff:
+                case EChevronAnimation::Chevron_ErrorToOff:
                 {
                     ESP_LOGI(TAG, "Animation / Error");
                     for(int32_t i = 0; i < HWCONFIG_WS1228B_LEDCOUNT; i++)
@@ -268,9 +268,9 @@ static void LedRefreshTask(void *pvParameters)
                     }
                     break;
                 }
-                case EChevronAnimation::AllSymbolsOn:
+                case EChevronAnimation::Chevron_AllSymbolsOn:
                 {
-                    ESP_LOGI(TAG, "Animation / AllSymbolsOn");
+                    ESP_LOGI(TAG, "Animation / Chevron_AllSymbolsOn");
                     for(float fltBrightness = 0.0f; fltBrightness <= 1.0f; fltBrightness += 0.05f)
                     {
                         const uint8_t u8Brightness = (uint8_t)(MISCFA_LinearizeLEDOutput(fltBrightness) * LED_OUTPUT_MAX);
@@ -284,6 +284,19 @@ static void LedRefreshTask(void *pvParameters)
                         GPIO_RefreshPixels();
                         vTaskDelay(pdMS_TO_TICKS(50));
                     }
+                    break;
+                }
+                case EChevronAnimation::Chevron_NoSymbols:
+                {
+                    ESP_LOGI(TAG, "Animation / Chevron_NoSymbols");
+                    for(int32_t i = 0; i < HWCONFIG_WS1228B_LEDCOUNT; i++)
+                    {
+                        if (SGURingNS::IsLEDIndexChevron(i))
+                            GPIO_SetPixel(i, LED_OUTPUT_MAX, LED_OUTPUT_MAX, LED_OUTPUT_MAX);
+                        else
+                            GPIO_SetPixel(i, 0, 0, 0);
+                    }
+                    GPIO_RefreshPixels();
                     break;
                 }
                 default:
@@ -542,7 +555,7 @@ void app_main(void)
         {
             if (!bLastIsSuicide)
             {
-                m_s32ChevronAnim = (int32_t)EChevronAnimation::PoweringOff;
+                m_s32ChevronAnim = (int32_t)EChevronAnimation::Chevron_PoweringOff;
                 ESP_LOGW(TAG, "Suicide animation");
             }
 

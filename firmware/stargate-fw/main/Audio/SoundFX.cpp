@@ -25,7 +25,7 @@ bool SoundFX::PlaySound(FileID soundFile, bool bRepeat)
     }
     ESP_LOGI(TAG, "TODO: Play sound file, name: %s", pSoundFile->szName);
     // TODO: Fill this
-    return false;
+    return true;
 }
 
 void SoundFX::StopSound()

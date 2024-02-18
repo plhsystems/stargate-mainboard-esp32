@@ -175,7 +175,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
                 !cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
             }
-            if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint-1), false)) {
+            if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint), false)) {
                 goto ERROR;
             }
         }
@@ -308,7 +308,7 @@ char* WebServer::GetSysInfo()
 
         // WiFi-station (IP address)
         cJSON* pEntryJSON9 = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryJSON9, "name", cJSON_CreateString("WiFi (STA ipv4)"));
+        cJSON_AddItemToObject(pEntryJSON9, "name", cJSON_CreateString("WiFi (STA IPv4)"));
         esp_netif_ip_info_t wifiIpSta;
         memset(&wifiIpSta, 0, sizeof(wifiIpSta));
         WifiMgr::getI().GetWiFiSTAIP(wifiIpSta);
@@ -394,7 +394,7 @@ char* WebServer::GetAllSoundLists()
             const SoundFX::SoundFile* pFile = SoundFX::getI().GetFile((SoundFX::FileID)i);
 
             cJSON* pNewFile = cJSON_CreateObject();
-            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i+1));
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->szName));
             cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->szDesc));
             cJSON_AddItemToArray(pEntries, pNewFile);
