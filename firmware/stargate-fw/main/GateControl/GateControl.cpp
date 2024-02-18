@@ -57,7 +57,7 @@ void GateControl::QueueDialAddress(GateAddress& ga)
     const SCmd sCmd =
     {
         .eCmd = ECmd::DialAddress,
-        .sDialAddress = { .sGateAddress = ga }
+        .sDialAddress = { .sGateAddress = ga, .eWormholeType = Wormhole::EType::NormalSGU }
     };
     PriQueueAction(sCmd);
 }
@@ -153,8 +153,7 @@ void GateControl::TaskRunning(void* pArg)
             }
             case ECmd::ManualWormhole:
             {
-                // TODO: Start manual wormhole
-                ESP_LOGI(TAG, "TODO: ManualWormhole");
+                ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCmd.sManualWormhole.eWormholeType));
                 Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
                 wm.Begin();
                 wm.OpeningAnimation();
@@ -169,6 +168,10 @@ void GateControl::TaskRunning(void* pArg)
             case ECmd::Idle:
                 break;
         }
+
+        // Reset at the end, it's not really a queue
+        gc->m_bIsCancelAction = false;
+        gc->m_sCmd.eCmd = ECmd::Idle;
     }
 }
 
@@ -289,6 +292,7 @@ bool GateControl::AutoHome()
 
 bool GateControl::DialAddress(GateAddress& ga)
 {
+    Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
     bool ret = false;
     {
     HW::getI()->PowerUpStepper();
@@ -337,6 +341,15 @@ bool GateControl::DialAddress(GateAddress& ga)
         m_s32CurrentPositionTicks = s32SymbolToTicks;
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
+
+    // Play the wormhole idling animation
+    wm.Begin();
+    wm.OpeningAnimation();
+    while(!m_bIsCancelAction) {
+        wm.RunTicks();
+    }
+    wm.ClosingAnimation();
+    wm.End();
 
     // Go back to home position
     ESP_LOGI(TAG, "Move near the home position");

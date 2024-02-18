@@ -51,6 +51,7 @@ class GateControl
         struct
         {
             GateAddress sGateAddress;
+            Wormhole::EType eWormholeType;
         } sDialAddress;
         struct
         {
