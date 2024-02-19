@@ -103,14 +103,14 @@ class GateControl
     private:
     void PriQueueAction(SCmd cmd);
 
-    bool AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
-    bool AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    bool DialAddress(GateAddress& ga);
+    void AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
+    void AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
+    void DialAddress(GateAddress& ga);
 
     void AnimRampLight(bool bIsActive);
     // Stepper
-    bool SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount);
-    bool MoveStepperTo(int32_t s32Ticks);
+    void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount);
+    void MoveStepperTo(int32_t s32Ticks);
 
     private:
     static void TaskRunning(void* pArg);

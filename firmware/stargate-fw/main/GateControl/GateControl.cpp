@@ -1,3 +1,5 @@
+#include <exception>
+#include <stdexcept>
 #include "GateControl.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../FWConfig.hpp"
@@ -103,67 +105,61 @@ void GateControl::TaskRunning(void* pArg)
         gc->m_bIsCancelAction = false;
         gc->m_sCmd.eCmd = ECmd::Idle;
 
-        switch(eCmd)
+        try
         {
-            case ECmd::AutoCalibrate:
+            switch(eCmd)
             {
-                ESP_LOGI(TAG, "Autocalibrate in progress.");
-                if (!gc->AutoCalibrate()) {
-                    ESP_LOGE(TAG, "Autocalibration failed.");
-                }
-                else {
+                case ECmd::AutoCalibrate:
+                {
+                    ESP_LOGI(TAG, "Autocalibrate in progress.");
+                    gc->AutoCalibrate();
                     // Will move it at it's home position, it should go very fast.
                     ESP_LOGI(TAG, "Autocalibrate succeeded.");
                     gc->AutoHome();
-                }
-                break;
-            }
-            case ECmd::AutoHome:
-            {
-                ESP_LOGI(TAG, "Auto-home started.");
-                if (!gc->AutoHome()) {
-                    ESP_LOGE(TAG, "Auto-home failed.");
-                }
-                else {
                     ESP_LOGI(TAG, "Auto-home succeeded.");
+                    break;
                 }
-                break;
-            }
-            case ECmd::KeyPress:
-            {
-                // TODO: Keypress one by one
-                ESP_LOGI(TAG, "TODO: KeyPress");
-                break;
-            }
-            case ECmd::DialAddress:
-            {
-                char szDbgText[GateAddress::ADDRESSTEXT_LEN+1];
-                gc->m_sCmd.sDialAddress.sGateAddress.GetAddressText(szDbgText);
-                ESP_LOGI(TAG, "Dialing address started, address: %s", szDbgText);
-                if (!gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress)) {
-                    ESP_LOGE(TAG, "Dialing address failed");
+                case ECmd::AutoHome:
+                {
+                    ESP_LOGI(TAG, "Auto-home started.");
+                    gc->AutoHome();
+                    ESP_LOGI(TAG, "Auto-home succeeded.");
+                    break;
                 }
-                else {
+                case ECmd::KeyPress:
+                {
+                    // TODO: Keypress one by one
+                    ESP_LOGI(TAG, "TODO: KeyPress");
+                    break;
+                }
+                case ECmd::DialAddress:
+                {
+                    ESP_LOGI(TAG, "Dialing ....");
+                    gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress);
                     ESP_LOGI(TAG, "Dialing address succeeded.");
+                    break;
                 }
-                break;
-            }
-            case ECmd::ManualWormhole:
-            {
-                ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCmd.sManualWormhole.eWormholeType));
-                Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
-                wm.Begin();
-                wm.OpeningAnimation();
-                while(!gc->m_bIsCancelAction) {
-                    wm.RunTicks();
+                case ECmd::ManualWormhole:
+                {
+                    ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCmd.sManualWormhole.eWormholeType));
+                    Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
+                    wm.Begin();
+                    wm.OpeningAnimation();
+                    while(!gc->m_bIsCancelAction) {
+                        wm.RunTicks();
+                    }
+                    wm.ClosingAnimation();
+                    wm.End();
+                    break;
                 }
-                wm.ClosingAnimation();
-                wm.End();
-                break;
+                default:
+                case ECmd::Idle:
+                    break;
             }
-            default:
-            case ECmd::Idle:
-                break;
+        }
+        catch(const std::exception& e)
+        {
+            ESP_LOGE(TAG, "Exception raised: %s", e.what());
         }
 
         // Reset at the end, it's not really a queue
@@ -172,203 +168,180 @@ void GateControl::TaskRunning(void* pArg)
     }
 }
 
-bool GateControl::AutoCalibrate()
+void GateControl::AutoCalibrate()
 {
-    bool bSucceeded = false;
-    {
     const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
-    // We need two transitions from LOW to HIGH.
-    // we give it 40s maximum to find the home.
-    HW::getI()->PowerUpStepper();
+    try
+    {
+        // We need two transitions from LOW to HIGH.
+        // we give it 40s maximum to find the home.
+        HW::getI()->PowerUpStepper();
 
-    ESP_LOGI(TAG, "Finding home in progress");
-    if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
-        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, rotation steps part #1");
-        goto ERROR;
+        ESP_LOGI(TAG, "Finding home in progress");
+        SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+        ESP_LOGI(TAG, "Home has been found once");
+        int32_t s32NewStepsPerRotation = 0;
+        SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation);
+
+        ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, s32NewStepsPerRotation);
+
+        // Find the gap.
+        // Continue to move until it get out of the home range.
+        int32_t s32Gap = 0;
+
+        SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap);
+        SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap);
+
+        ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
+
+        // Save the calibration result.
+        Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, s32NewStepsPerRotation);
+        Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, s32Gap);
+        Settings::getI().Commit();
+
+        // Go into the other direction until it get out of the sensor
+        HW::getI()->PowerDownStepper();
     }
-    ESP_LOGI(TAG, "Home has been found once");
-    int32_t s32NewStepsPerRotation = 0;
-    if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation)) {
-        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, rotation steps part #2");
-        goto ERROR;
+    catch(const std::exception& e)
+    {
+        // Go into the other direction until it get out of the sensor
+        HW::getI()->PowerDownStepper();
+        throw;
     }
-
-    ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, s32NewStepsPerRotation);
-
-    // Find the gap.
-    // Continue to move until it get out of the home range.
-    int32_t s32Gap = 0;
-
-    if (!SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap)) {
-        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, deadband part #1");
-        goto ERROR;
-    }
-
-    if (!SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap)) {
-        ESP_LOGE(TAG, "Timeout condition during auto-calibrate, deadband part #2");
-        goto ERROR;
-    }
-
-    ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
-
-    // Save the calibration result.
-    Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, s32NewStepsPerRotation);
-    Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, s32Gap);
-    Settings::getI().Commit();
-    }
-    bSucceeded = true;
-    goto END;
-    ERROR:
-    bSucceeded = false;
-    END:
-    // Go into the other direction until it get out of the sensor
-    HW::getI()->PowerDownStepper();
-    return bSucceeded;
 }
 
-bool GateControl::AutoHome()
+void GateControl::AutoHome()
 {
-    bool bSucceeded = false;
+    try
     {
-    HW::getI()->PowerUpStepper();
+        HW::getI()->PowerUpStepper();
 
-    const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-    const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
-    if (s32NewStepsPerRotation == 0 || s32Gap == 0)
+        const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+        const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
+        if (s32NewStepsPerRotation == 0 || s32Gap == 0)
+        {
+            throw std::runtime_error("Auto-calibration needs to be done.");
+        }
+
+        const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
+
+        // If the ring is already near the home sensor, we just need to move a little bit.
+        if (HW::getI()->GetIsHomeSensorActive()) {
+            ESP_LOGI(TAG, "Homing using the fast algorithm");
+
+            SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr);
+            SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+        }
+        else {
+            ESP_LOGI(TAG, "Homing using the slow algorithm");
+            SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+        }
+
+        // Move by half the deadband offset.
+        // this is the real 0 position
+        const int32_t s32HalfDeadband = s32Gap / 2;
+        ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, s32HalfDeadband);
+        for(int i = 0; i < s32HalfDeadband; i++)
+        {
+            HW::getI()->StepStepperCCW();
+            vTaskDelay(1);
+        }
+
+        m_s32CurrentPositionTicks = 0;
+        m_bIsHomingDone = true;
+
+        // Go into the other direction until it get out of the sensor
+        HW::getI()->PowerDownStepper();
+    }
+    catch(const std::exception& e)
     {
-        ESP_LOGE(TAG, "Auto-calibration needs to be done.");
-        goto ERROR;
+        // Go into the other direction until it get out of the sensor
+        HW::getI()->PowerDownStepper();
+        throw;
     }
-
-    const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
-
-    // If the ring is already near the home sensor, we just need to move a little bit.
-    if (HW::getI()->GetIsHomeSensorActive()) {
-        ESP_LOGI(TAG, "Homing using the fast algorithm");
-
-        if (!SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr)) {
-            ESP_LOGE(TAG, "Cannot complete the auto-home, part #1");
-            goto ERROR;
-        }
-        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
-            ESP_LOGE(TAG, "Cannot complete the auto-home, part #2");
-            goto ERROR;
-        }
-    }
-    else {
-        ESP_LOGI(TAG, "Homing using the slow algorithm");
-        if (!SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr)) {
-            ESP_LOGE(TAG, "Cannot complete the auto-home");
-            goto ERROR;
-        }
-    }
-
-    // Move by half the deadband offset.
-    // this is the real 0 position
-    const int32_t s32HalfDeadband = s32Gap / 2;
-    ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, s32HalfDeadband);
-    for(int i = 0; i < s32HalfDeadband; i++)
-    {
-        HW::getI()->StepStepperCCW();
-        vTaskDelay(1);
-    }
-
-    m_s32CurrentPositionTicks = 0;
-    m_bIsHomingDone = true;
-    bSucceeded = true;
-    goto END;
-    }
-    ERROR:
-    bSucceeded = false;
-    END:
-    // Go into the other direction until it get out of the sensor
-    HW::getI()->PowerDownStepper();
-    return bSucceeded;
 }
 
-bool GateControl::DialAddress(GateAddress& ga)
+void GateControl::DialAddress(GateAddress& ga)
 {
-    Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
-    bool ret = false;
+    try
     {
-    HW::getI()->PowerUpStepper();
+        Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
+        HW::getI()->PowerUpStepper();
 
-    if (!m_bIsHomingDone)
-    {
-        ESP_LOGE(TAG, "Homing need to be done");
-        goto ERROR;
-    }
-
-    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
-
-    AnimRampLight(true);
-
-    const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-
-    // m_bIsHomingDone / m_s32CurrentPositionTicks
-    const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-
-    for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
-    {
-        if (m_bIsCancelAction) {
-            ESP_LOGE(TAG, "Unable to complete dialing, cancelled by the user");
-            goto ERROR;
+        if (!m_bIsHomingDone) {
+            throw std::runtime_error("Homing need to be done");
         }
 
-        const uint8_t u8Symbol = ga.GetSymbol(i);
-        const Chevron currentChevron = chevrons[i];
+        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
 
-        // Dial sequence ...
-        const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
-        const double dAngle = (SGURingNS::LEDIndexToDeg(s32LedIndex));
-        const int32_t s32SymbolToTicks = -1*(dAngle/360)*s32NewStepsPerRotation;
+        AnimRampLight(true);
 
-        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
+        const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
 
-        ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
+        // m_bIsHomingDone / m_s32CurrentPositionTicks
+        const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
+
+        for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
+        {
+            if (m_bIsCancelAction) {
+                throw std::runtime_error("Unable to complete dialing, cancelled by the user");
+            }
+
+            const uint8_t u8Symbol = ga.GetSymbol(i);
+            const Chevron currentChevron = chevrons[i];
+
+            // Dial sequence ...
+            const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
+            const double dAngle = (SGURingNS::LEDIndexToDeg(s32LedIndex));
+            const int32_t s32SymbolToTicks = -1*(dAngle/360)*s32NewStepsPerRotation;
+
+            const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
+
+            ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
+            MoveStepperTo(s32MoveTicks);
+
+            vTaskDelay(pdMS_TO_TICKS(300));
+            RingComm::getI().SendLightUpSymbol(u8Symbol);
+            vTaskDelay(pdMS_TO_TICKS(750));
+
+            m_s32CurrentPositionTicks = s32SymbolToTicks;
+            vTaskDelay(pdMS_TO_TICKS(2000));
+        }
+
+        // Play the wormhole idling animation
+        wm.Begin();
+        wm.OpeningAnimation();
+        while(!m_bIsCancelAction) {
+            wm.RunTicks();
+        }
+        // Turn-off all symbols before killing the wormhole
+        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
+        wm.ClosingAnimation();
+        wm.End();
+
+        // Go back to home position
+        ESP_LOGI(TAG, "Move near the home position");
+        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
         MoveStepperTo(s32MoveTicks);
+        ESP_LOGI(TAG, "Confirm the home position");
+        AutoHome();
 
-        vTaskDelay(pdMS_TO_TICKS(300));
-        RingComm::getI().SendLightUpSymbol(u8Symbol);
-        vTaskDelay(pdMS_TO_TICKS(750));
-
-        m_s32CurrentPositionTicks = s32SymbolToTicks;
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(500));
+        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
+        AnimRampLight(false);
+        HW::getI()->PowerDownStepper();
     }
-
-    // Play the wormhole idling animation
-    wm.Begin();
-    wm.OpeningAnimation();
-    while(!m_bIsCancelAction) {
-        wm.RunTicks();
+    catch(const std::exception& e)
+    {
+        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
+        AnimRampLight(false);
+        HW::getI()->PowerDownStepper();
+        throw;
     }
-    // Turn-off all symbols before killing the wormhole
-    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
-    wm.ClosingAnimation();
-    wm.End();
-
-    // Go back to home position
-    ESP_LOGI(TAG, "Move near the home position");
-    const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-    MoveStepperTo(s32MoveTicks);
-    ESP_LOGI(TAG, "Confirm the home position");
-    AutoHome();
-
-    ret = true;
-    goto END;
-    }
-    ERROR:
-    ret = false;
-    END:
-    HW::getI()->PowerDownStepper();
-    vTaskDelay(pdMS_TO_TICKS(500));
-    RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
-    AnimRampLight(false);
-    return ret;
 }
 
-bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
+void GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
 {
     TickType_t ttStart = xTaskGetTickCount();
     bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
@@ -376,8 +349,7 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout)))
     {
         if (m_bIsCancelAction) {
-            ESP_LOGE(TAG, "Unable to complete the spin operation, cancelled by the user");
-            return false;
+            throw std::runtime_error("Unable to complete the spin operation, cancelled by the user");
         }
 
         const bool bNewHomeSensorState = HW::getI()->GetIsHomeSensorActive();
@@ -400,22 +372,21 @@ bool GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
         if (ETransition::Rising == eTransition && bIsRising)
         {
             ESP_LOGI(TAG, "Rising transition detected");
-            return true;
+            return;
         }
         else if (ETransition::Failing == eTransition && bIsFalling) {
             ESP_LOGI(TAG, "Failing transition detected");
-            return true;
+            return;
         }
 
         bOldSensorState = bNewHomeSensorState;
         vTaskDelay(1);
     }
 
-    ESP_LOGE(TAG, "Unable to complete the spin operation");
-    return false;
+    throw std::runtime_error("Unable to complete the spin operation");
 }
 
-bool GateControl::MoveStepperTo(int32_t s32Ticks)
+void GateControl::MoveStepperTo(int32_t s32Ticks)
 {
     // Setup the parameters
     this->m_stepper.s32Count = 0;
@@ -437,11 +408,8 @@ bool GateControl::MoveStepperTo(int32_t s32Ticks)
     if( xResult != pdPASS )
     {
         esp_timer_stop(this->m_stepper.sSignalTimerHandle);
-        ESP_LOGE(TAG, "Error, cannot reach it's destination with-in time ...");
-        return false;
+        throw std::runtime_error("Error, cannot reach it's destination with-in time ...");
     }
-
-    return true;
 }
 
 IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
