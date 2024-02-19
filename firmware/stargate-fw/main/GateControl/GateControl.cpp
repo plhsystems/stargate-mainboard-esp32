@@ -264,6 +264,27 @@ void GateControl::AutoHome()
 
 void GateControl::DialAddress(GateAddress& ga)
 {
+    const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+
+    auto endOfProcess = [&](bool bIsError) -> void
+    {
+        // Go back to home position
+        ESP_LOGI(TAG, "Move near the home position");
+        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
+        MoveStepperTo(s32MoveTicks);
+        ESP_LOGI(TAG, "Confirm the home position");
+        AutoHome();
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+        if (bIsError) {
+            RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
+        } else {
+            RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
+        }
+        AnimRampLight(false);
+        HW::getI()->PowerDownStepper();
+    };
+
     try
     {
         Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
@@ -273,15 +294,12 @@ void GateControl::DialAddress(GateAddress& ga)
             throw std::runtime_error("Homing need to be done");
         }
 
-        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
-
         AnimRampLight(true);
+        vTaskDelay(pdMS_TO_TICKS(750));
+        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
+        vTaskDelay(pdMS_TO_TICKS(750));
 
-        const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-
-        // m_bIsHomingDone / m_s32CurrentPositionTicks
-        const Chevron chevrons[] = { Chevron::Chevron1, Chevron::Chevron2, Chevron::Chevron3, Chevron::Chevron4, Chevron::Chevron5, Chevron::Chevron6, Chevron::Chevron7_Master, Chevron::Chevron8, Chevron::Chevron9 };
-
+        // const EChevron chevrons[] = { EChevron::Chevron1, EChevron::Chevron2, EChevron::Chevron3, EChevron::Chevron4, EChevron::Chevron5, EChevron::Chevron6, EChevron::Chevron7_Master, EChevron::Chevron8, EChevron::Chevron9 };
         for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
         {
             if (m_bIsCancelAction) {
@@ -289,7 +307,6 @@ void GateControl::DialAddress(GateAddress& ga)
             }
 
             const uint8_t u8Symbol = ga.GetSymbol(i);
-            const Chevron currentChevron = chevrons[i];
 
             // Dial sequence ...
             const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
@@ -320,23 +337,11 @@ void GateControl::DialAddress(GateAddress& ga)
         wm.ClosingAnimation();
         wm.End();
 
-        // Go back to home position
-        ESP_LOGI(TAG, "Move near the home position");
-        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-        MoveStepperTo(s32MoveTicks);
-        ESP_LOGI(TAG, "Confirm the home position");
-        AutoHome();
-
-        vTaskDelay(pdMS_TO_TICKS(500));
-        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
-        AnimRampLight(false);
-        HW::getI()->PowerDownStepper();
+        endOfProcess(false);
     }
     catch(const std::exception& e)
     {
-        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
-        AnimRampLight(false);
-        HW::getI()->PowerDownStepper();
+        endOfProcess(true);
         throw;
     }
 }

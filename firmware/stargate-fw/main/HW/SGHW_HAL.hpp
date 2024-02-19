@@ -24,15 +24,16 @@ class SGHW_HAL
     /*! @brief Set chevron lightning status
         @param eChevron     Chevron number
         @param bState       OFF or ON*/
-    virtual void SetChevronLight(Chevron eChevron, bool bState) { }
+    virtual void SetChevronLight(EChevron eChevron, bool bState) { }
 
     /*! @brief Ramp lightning output, based on a PWM.
         @param dPerc    PWM value between [0 and 1] */
     virtual void SetRampLight(double dPerc) { };
 
-    /*! @brief Chevron motor control, each chevron have one motor.
-        @param dPerc    PWM value between [0 and 1] */
-    virtual void MoveChevronMotor(Chevron eChevron, MotorDirection motorDir) { }
+    /*! @brief EChevron motor control, each chevron have one motor.
+        @param eChevron     Chevron number
+        @param dPerc        PWM value between [0 and 1] */
+    virtual void MoveChevronMotor(EChevron eChevron, MotorDirection motorDir) { }
 
     // Stepper.
     /*! @brief Active the power on the stepper driver and motor. */

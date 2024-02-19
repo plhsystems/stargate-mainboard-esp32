@@ -387,7 +387,7 @@ static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg)
 
 static void SGUBRChevronsLightningHandler(const SChevronsLightningArg* psChevronLightningArg)
 {
-    ESP_LOGI(TAG, "BLE Chevron light received");
+    ESP_LOGI(TAG, "BLE EChevron light received");
 
     // Not ready for chevron animation yet.
     m_s32ChevronAnim = (int32_t)psChevronLightningArg->eChevronAnim;
