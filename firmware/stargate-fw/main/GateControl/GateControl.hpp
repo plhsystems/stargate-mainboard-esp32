@@ -121,7 +121,12 @@ class GateControl
     // Actions
     volatile bool m_bIsCancelAction;
     SCmd m_sCmd;
+    // Error management
+    char m_szStatusText[128+1];
+    char m_szErrors[128+1];
+    bool m_bIsInError;
 
+    // Position
     int32_t m_bIsHomingDone = false;
     int32_t m_s32CurrentPositionTicks = 0;
 

@@ -221,7 +221,7 @@ void GateControl::AutoHome()
         const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
         if (s32NewStepsPerRotation == 0 || s32Gap == 0)
         {
-            throw std::runtime_error("Auto-calibration needs to be done.");
+            throw std::runtime_error("Auto-calibration needs to be done");
         }
 
         const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
@@ -303,7 +303,7 @@ void GateControl::DialAddress(GateAddress& ga)
         for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
         {
             if (m_bIsCancelAction) {
-                throw std::runtime_error("Unable to complete dialing, cancelled by the user");
+                throw std::runtime_error("Cancelled by the user");
             }
 
             const uint8_t u8Symbol = ga.GetSymbol(i);
@@ -354,7 +354,7 @@ void GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout)))
     {
         if (m_bIsCancelAction) {
-            throw std::runtime_error("Unable to complete the spin operation, cancelled by the user");
+            throw std::runtime_error("Cancelled by the user");
         }
 
         const bool bNewHomeSensorState = HW::getI()->GetIsHomeSensorActive();
