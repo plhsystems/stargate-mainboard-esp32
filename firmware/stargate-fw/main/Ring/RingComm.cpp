@@ -127,6 +127,11 @@ void RingComm::TaskRunning(void* pArg)
     vTaskDelete(NULL);
 }
 
+bool RingComm::GetIsConnected()
+{
+    return m_bIsConnected;
+}
+
 void RingComm::SendPowerOff()
 {
     LockMutex();

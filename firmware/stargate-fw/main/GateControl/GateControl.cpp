@@ -14,7 +14,7 @@
 GateControl::GateControl() :
     m_bIsCancelAction(false)
 {
-    // Constructor code here
+    m_xSemaphoreHandle = xSemaphoreCreateMutexStatic(&m_xSemaphoreCreateMutex);
 }
 
 void GateControl::Init()
@@ -81,7 +81,7 @@ void GateControl::AbortAction()
 
 void GateControl::PriQueueAction(SCmd cmd)
 {
-    m_sCmd = cmd;
+    m_sNextCmd = cmd;
 }
 
 void GateControl::TaskRunning(void* pArg)
@@ -93,8 +93,13 @@ void GateControl::TaskRunning(void* pArg)
     // Dialing
     while(true)
     {
-        const ECmd eCmd = gc->m_sCmd.eCmd;
-        if (eCmd == ECmd::Idle)
+        xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
+        gc->m_sCurrCmd = gc->m_sNextCmd;
+        gc->m_bIsCancelAction = false;
+        gc->m_sNextCmd.eCmd = ECmd::Idle;   // Reset the command "queue"
+        xSemaphoreGive(gc->m_xSemaphoreHandle);
+
+        if (gc->m_sCurrCmd.eCmd == ECmd::Idle)
         {
             // TODO: Will be replaced by a manual event.
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -102,12 +107,14 @@ void GateControl::TaskRunning(void* pArg)
         }
 
         // Reset the receiving ..
-        gc->m_bIsCancelAction = false;
-        gc->m_sCmd.eCmd = ECmd::Idle;
+        xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
+        gc->m_szErrors[0] = '\0';
+        gc->m_bIsInError = false;
+        xSemaphoreGive(gc->m_xSemaphoreHandle);
 
         try
         {
-            switch(eCmd)
+            switch(gc->m_sCurrCmd.eCmd)
             {
                 case ECmd::AutoCalibrate:
                 {
@@ -135,14 +142,14 @@ void GateControl::TaskRunning(void* pArg)
                 case ECmd::DialAddress:
                 {
                     ESP_LOGI(TAG, "Dialing ....");
-                    gc->DialAddress(gc->m_sCmd.sDialAddress.sGateAddress);
+                    gc->DialAddress(gc->m_sCurrCmd.sDialAddress);
                     ESP_LOGI(TAG, "Dialing address succeeded.");
                     break;
                 }
                 case ECmd::ManualWormhole:
                 {
-                    ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCmd.sManualWormhole.eWormholeType));
-                    Wormhole wm { HW::getI(), gc->m_sCmd.sManualWormhole.eWormholeType };
+                    ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCurrCmd.sManualWormhole.eWormholeType));
+                    Wormhole wm { HW::getI(), gc->m_sCurrCmd.sManualWormhole.eWormholeType };
                     wm.Begin();
                     wm.OpeningAnimation();
                     while(!gc->m_bIsCancelAction) {
@@ -160,11 +167,17 @@ void GateControl::TaskRunning(void* pArg)
         catch(const std::exception& e)
         {
             ESP_LOGE(TAG, "Exception raised: %s", e.what());
+
+            // To be displayed into the web page.
+            xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
+            strncpy(gc->m_szErrors, e.what(), ERROR_LEN);
+            gc->m_bIsInError = true;
+            xSemaphoreGive(gc->m_xSemaphoreHandle);
         }
 
         // Reset at the end, it's not really a queue
         gc->m_bIsCancelAction = false;
-        gc->m_sCmd.eCmd = ECmd::Idle;
+        gc->m_sCurrCmd.eCmd = ECmd::Idle;
     }
 }
 
@@ -262,7 +275,7 @@ void GateControl::AutoHome()
     }
 }
 
-void GateControl::DialAddress(GateAddress& ga)
+void GateControl::DialAddress(const SDialArg& sDialArg)
 {
     const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
 
@@ -287,7 +300,7 @@ void GateControl::DialAddress(GateAddress& ga)
 
     try
     {
-        Wormhole wm { HW::getI(), m_sCmd.sDialAddress.eWormholeType };
+        Wormhole wm { HW::getI(), sDialArg.eWormholeType };
         HW::getI()->PowerUpStepper();
 
         if (!m_bIsHomingDone) {
@@ -300,13 +313,13 @@ void GateControl::DialAddress(GateAddress& ga)
         vTaskDelay(pdMS_TO_TICKS(750));
 
         // const EChevron chevrons[] = { EChevron::Chevron1, EChevron::Chevron2, EChevron::Chevron3, EChevron::Chevron4, EChevron::Chevron5, EChevron::Chevron6, EChevron::Chevron7_Master, EChevron::Chevron8, EChevron::Chevron9 };
-        for(int32_t i = 0; i < ga.GetSymbolCount(); i++)
+        for(int32_t i = 0; i < sDialArg.sGateAddress.GetSymbolCount(); i++)
         {
             if (m_bIsCancelAction) {
                 throw std::runtime_error("Cancelled by the user");
             }
 
-            const uint8_t u8Symbol = ga.GetSymbol(i);
+            const uint8_t u8Symbol = sDialArg.sGateAddress.GetSymbol(i);
 
             // Dial sequence ...
             const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
@@ -486,4 +499,18 @@ void GateControl::AnimRampLight(bool bIsActive)
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
+}
+
+void GateControl::GetState(UIState& uiState)
+{
+    xSemaphoreTake(m_xSemaphoreHandle, portMAX_DELAY);
+    uiState.eCmd = m_sCurrCmd.eCmd;
+    // Last error
+    uiState.bHasLastError = m_bIsInError;
+    strcpy(uiState.szLastError, m_szErrors);
+
+    strcpy(uiState.szStatusText, GetCmdText(m_sCurrCmd.eCmd));
+
+    uiState.bIsCancelRequested = m_bIsCancelAction;
+    xSemaphoreGive(m_xSemaphoreHandle);
 }

@@ -11,6 +11,7 @@
 		<div id="app">
 			<!-- Main part -->
 			<div class="main">
+                <spin>{{ JSON.stringify(status) }}</spin><br>
                 <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_autohome)">Auto home</button>
                 <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_autocalibrate)">Auto calibrate</button>
                 <button :disabled="!is_connected" @click="sendAction(apiControlURLs.control_abort)">Abort</button>

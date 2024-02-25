@@ -139,8 +139,9 @@ typedef enum
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_035_SVG = 113,    /*!< @brief File: galaxies/universe/glyphs/035.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_036_SVG = 114,    /*!< @brief File: galaxies/universe/glyphs/036.svg (size: 2 KB) */
     EF_EFILE_SETUP_INDEX_HTML = 115,    /*!< @brief File: setup/index.html (size: 5 KB) */
-    EF_EFILE_SETUP_JS_APP_JS = 116,    /*!< @brief File: setup/js/app.js (size: 3 KB) */
-    EF_EFILE_COUNT = 117
+    EF_EFILE_SETUP_SETUP_HTML = 116,    /*!< @brief File: setup/setup.html (size: 0  B) */
+    EF_EFILE_SETUP_JS_APP_JS = 117,    /*!< @brief File: setup/js/app.js (size: 3 KB) */
+    EF_EFILE_COUNT = 118
 } EF_EFILE;
 
 /*! @brief Check if compressed flag is active */

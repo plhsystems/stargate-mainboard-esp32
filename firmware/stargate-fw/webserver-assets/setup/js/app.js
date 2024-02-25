@@ -41,6 +41,7 @@ function getData(actionURL, cb)
 let currentData =
 {
   // Default values, mostly to shut-up vuejs
+  status: { text: "", cancel_request: false, error_text: "", is_error: false, time: null, ring: { is_connected: false } },
 	is_connected: false,
 
   ramp_perc: 0.0,
@@ -106,6 +107,7 @@ async function timerHandler() {
       })
       .then((data) =>
       {
+        currentData.status = data;
         currentData.is_connected = true;
         setTimeout(timerHandler, 500);
       })

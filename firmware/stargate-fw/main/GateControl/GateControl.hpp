@@ -32,9 +32,13 @@ enum class ESpinDirection
 class GateControl
 {
     public:
+    static constexpr uint32_t ERROR_LEN = 128;
+
     enum class ECmd
     {
         Idle = 0,
+
+        Stop,
 
         AutoHome,
         AutoCalibrate,
@@ -43,24 +47,44 @@ class GateControl
 
         DialAddress,
         ManualWormhole,
+
+        Count
     };
+
+    struct UIState
+    {
+        ECmd eCmd;
+
+        char szStatusText[ERROR_LEN+1];
+
+        bool bHasLastError;
+        char szLastError[ERROR_LEN+1];
+
+        bool bIsCancelRequested;
+    };
+
     private:
+
+    struct SDialArg
+    {
+        GateAddress sGateAddress;
+        Wormhole::EType eWormholeType;
+    };
+
+    struct SManualWormholeArg
+    {
+        Wormhole::EType eWormholeType;
+    };
+
     struct SCmd
     {
         ECmd eCmd;
-        struct
-        {
-            GateAddress sGateAddress;
-            Wormhole::EType eWormholeType;
-        } sDialAddress;
+        SDialArg sDialAddress;
         struct
         {
             uint8_t u8Key;
         } sKeypress;
-        struct
-        {
-            Wormhole::EType eWormholeType;
-        } sManualWormhole;
+        SManualWormholeArg sManualWormhole;
     };
 
     GateControl();
@@ -95,6 +119,8 @@ class GateControl
 
     void AbortAction();
 
+    void GetState(UIState& uiState);
+
     static GateControl& getI()
     {
         static GateControl instance;
@@ -105,7 +131,7 @@ class GateControl
 
     void AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
     void AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    void DialAddress(GateAddress& ga);
+    void DialAddress(const SDialArg& sDialArg);
 
     void AnimRampLight(bool bIsActive);
     // Stepper
@@ -118,12 +144,17 @@ class GateControl
 
     TaskHandle_t m_sGateControlHandle;
 
+    // Control homing and encoder.
+    StaticSemaphore_t m_xSemaphoreCreateMutex;
+    SemaphoreHandle_t m_xSemaphoreHandle;
+
     // Actions
     volatile bool m_bIsCancelAction;
-    SCmd m_sCmd;
+    SCmd m_sCurrCmd;
+    SCmd m_sNextCmd;
+
     // Error management
-    char m_szStatusText[128+1];
-    char m_szErrors[128+1];
+    char m_szErrors[ERROR_LEN+1] = {0};
     bool m_bIsInError;
 
     // Position
@@ -131,4 +162,19 @@ class GateControl
     int32_t m_s32CurrentPositionTicks = 0;
 
     Stepper m_stepper;
+
+    inline static const char* m_szTexts[] =
+    {
+        [(int)ECmd::Idle]           = "Idle",
+        [(int)ECmd::Stop]           = "Stopping",
+        [(int)ECmd::AutoHome]       = "Auto homing",
+        [(int)ECmd::AutoCalibrate]  = "Auto calibrating",
+        [(int)ECmd::KeyPress]       = "Keypress",
+        [(int)ECmd::DialAddress]    = "Dialing",
+        [(int)ECmd::ManualWormhole] = "Manual wormhole",
+    };
+    static_assert((int)ECmd::Count == (sizeof(m_szTexts)/sizeof(m_szTexts[0])), "Command text missmatch");
+
+    public:
+    inline static const char* GetCmdText(ECmd eCmd) { return m_szTexts[(int)eCmd]; }
 };

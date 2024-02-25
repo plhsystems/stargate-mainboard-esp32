@@ -151,22 +151,22 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         // Test control
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
-            if (nullptr == jItemAnim ||
-                !cJSON_IsNumber(jItemAnim) ||
-                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+            const cJSON* jItemValue = cJSON_GetObjectItem(pRoot, "value");
+            if (nullptr == jItemValue ||
+                !cJSON_IsNumber(jItemValue) ||
+                jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            HW::getI()->SetRampLight(jItemAnim->valuedouble);
+            HW::getI()->SetRampLight(jItemValue->valuedouble);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "value");
-            if (nullptr == jItemAnim ||
-                !cJSON_IsNumber(jItemAnim) ||
-                jItemAnim->valuedouble < 0.0d || jItemAnim->valuedouble > 1.0d) {
+            const cJSON* jItemValue = cJSON_GetObjectItem(pRoot, "value");
+            if (nullptr == jItemValue ||
+                !cJSON_IsNumber(jItemValue) ||
+                jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            HW::getI()->SetServo(jItemAnim->valuedouble);
+            HW::getI()->SetServo(jItemValue->valuedouble);
         }
         // Sounds
         else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
@@ -236,10 +236,38 @@ char* WebServer::GetStatus()
     cJSON* pRoot = NULL;
     {
         pRoot = cJSON_CreateObject();
-        if (pRoot == NULL)
-        {
+        if (pRoot == NULL) {
             goto ERROR;
         }
+
+         cJSON* pStatusEntry = cJSON_CreateObject();
+
+        GateControl::UIState sState;
+        GateControl::getI().GetState(sState);
+
+        cJSON_AddItemToObject(pStatusEntry, "text", cJSON_CreateString(sState.szStatusText));
+        cJSON_AddItemToObject(pStatusEntry, "cancel_request", cJSON_CreateBool(sState.bIsCancelRequested));
+
+        cJSON_AddItemToObject(pStatusEntry, "error_text", cJSON_CreateString(sState.szLastError));
+        cJSON_AddItemToObject(pStatusEntry, "is_error", cJSON_CreateBool(sState.bHasLastError));
+
+        cJSON* pRingEntry = cJSON_CreateObject();
+        RingComm& refRingComm = RingComm::getI();
+        cJSON_AddItemToObject(pRingEntry, "is_connected", cJSON_CreateBool(refRingComm.GetIsConnected()));
+        cJSON_AddItemToObject(pStatusEntry, "ring", pRingEntry);
+
+        time_t now = 0;
+        struct tm timeinfo = { 0 };
+        time(&now);
+        localtime_r(&now, &timeinfo);
+
+        cJSON* pTimeEntry = cJSON_CreateObject();
+        cJSON_AddItemToObject(pTimeEntry, "h", cJSON_CreateNumber(timeinfo.tm_hour));
+        cJSON_AddItemToObject(pTimeEntry, "m", cJSON_CreateNumber(timeinfo.tm_min));
+        cJSON_AddItemToObject(pStatusEntry, "time", pTimeEntry);
+
+        cJSON_AddItemToObject(pRoot, "status", pStatusEntry);
+
         char* pStr =  cJSON_PrintUnformatted(pRoot);
         cJSON_Delete(pRoot);
         return pStr;
