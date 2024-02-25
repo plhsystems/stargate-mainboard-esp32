@@ -27,6 +27,8 @@ class RingComm
 
     static void TaskRunning(void* pArg);
 
+    bool GetIsConnected();
+
     void SendKeepAlive();
     void SendPowerOff();
     void SendLightUpSymbol(uint8_t u8Symbol);

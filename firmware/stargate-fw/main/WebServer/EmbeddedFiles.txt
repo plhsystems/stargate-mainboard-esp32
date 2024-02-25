@@ -114,4 +114,5 @@ galaxies/universe/glyphs/034.svg
 galaxies/universe/glyphs/035.svg
 galaxies/universe/glyphs/036.svg
 setup/index.html
+setup/setup.html
 setup/js/app.js

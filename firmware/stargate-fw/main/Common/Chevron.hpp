@@ -1,6 +1,6 @@
 #pragma once
 
-enum class Chevron
+enum class EChevron
 {
     Chevron7_Master = 0,
 
