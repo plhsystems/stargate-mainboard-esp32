@@ -7,7 +7,7 @@ class UniverseGate : public BaseGate
 {
     public:
     UniverseGate();
-    private:
+    public:
     static const int32_t m_s32SymbolCount = 36;
 
     inline const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const override
@@ -27,6 +27,7 @@ class UniverseGate : public BaseGate
     }
     inline int32_t GetAddressCount() const override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
+    private:
     static inline const GateAddress m_gateAddresses[] =
     {
         // No point of origin in Universe

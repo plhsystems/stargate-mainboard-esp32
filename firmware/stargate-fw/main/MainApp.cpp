@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "GateControl.hpp"
-#include "HW/BoardHW.hpp"
+#include "GateControl/GateControl.hpp"
+#include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
 #include "Ring/RingComm.hpp"
@@ -18,8 +18,6 @@ extern "C" {
 }
 
 #define TAG "MainApp"
-
-static GateControl m_gc;
 
 void app_main(void)
 {
@@ -40,7 +38,7 @@ void app_main(void)
 
     // Initialize all modules
     ESP_LOGI(TAG, "Initialize gate control");
-    BoardHW::Init();
+    HW::getI()->Init();
     ESP_LOGI(TAG, "Loading sound FX");
     SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
@@ -48,7 +46,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initialize web server");
     WebServer::getI().Init();
     ESP_LOGI(TAG, "Initialize gate control");
-    m_gc.Init();
+    GateControl::getI().Init();
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
@@ -63,7 +61,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting sound FX");
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
-    m_gc.StartTask();
+    GateControl::getI().StartTask();
     ESP_LOGI(TAG, "Starting web server");
     WebServer::getI().Start();
     ESP_LOGI(TAG, "Starting HTTP Client");
@@ -71,10 +69,21 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting USB-DHD");
     USB_DHD::getI().Start();
 
-    // Die.
     // For debug purpose ...
     char* szAllTask = (char*)malloc(4096);
     vTaskList(szAllTask);
     ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
     free(szAllTask);
+
+    // Autocalibrate as the default action
+    GateControl::getI().QueueAutoHome();
+
+    bool bSanity = false;
+    while(true)
+    {
+      // The least interesting task to ever exist.
+      HW::getI()->SetSanityLED(bSanity);
+      bSanity = !bSanity;
+      vTaskDelay(pdMS_TO_TICKS(250));
+    }
 }

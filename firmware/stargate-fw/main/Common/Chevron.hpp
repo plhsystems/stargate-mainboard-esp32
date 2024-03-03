@@ -1,7 +1,6 @@
-#ifndef _CHEVRON_H_
-#define _CHEVRON_H_
+#pragma once
 
-enum class Chevron
+enum class EChevron
 {
     Chevron7_Master = 0,
 
@@ -17,5 +16,3 @@ enum class Chevron
 
     Count
 };
-
-#endif

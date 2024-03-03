@@ -1,5 +1,4 @@
-#ifndef _HTTPCLIENT_H_
-#define _HTTPCLIENT_H_
+#pragma once
 
 #include "esp_log.h"
 #include "esp_http_client.h"
@@ -9,9 +8,7 @@
 class HttpClient
 {
     public:
-
-    private:
-    HttpClient();
+    HttpClient() = default;
 
     public:
     // Singleton pattern
@@ -25,15 +22,13 @@ class HttpClient
 
     static void TaskRunning(void* pArg);
 
-    static esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt);
-
     static HttpClient& getI()
     {
         static HttpClient instance;
         return instance;
     }
+
     private:
     TaskHandle_t m_sTaskHTTPClientHandle;
 };
 
-#endif

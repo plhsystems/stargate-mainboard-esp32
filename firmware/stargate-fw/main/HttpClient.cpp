@@ -10,11 +10,6 @@ using namespace std;
 
 #define TAG "HttpClient"
 
-HttpClient::HttpClient()
-{
-
-}
-
 void HttpClient::Init()
 {
 
@@ -30,6 +25,8 @@ void HttpClient::Start()
 
 void HttpClient::TaskRunning(void* pArg)
 {
+    HttpClient* pHttpClient = (HttpClient*)pArg;
+
     esp_http_client_handle_t h = NULL;
     int32_t s32FastAttempt = FWCONFIG_HTTPCLIENT_FASTATTEMPT_COUNT;
 
@@ -49,8 +46,6 @@ void HttpClient::TaskRunning(void* pArg)
                 .timeout_ms = 10000,
 
                 .disable_auto_redirect = false,
-
-               // .event_handler = client_event_get_handler,
 
                 .transport_type = HTTP_TRANSPORT_OVER_SSL,
                 // CRT bundle.
@@ -117,40 +112,6 @@ void HttpClient::TaskRunning(void* pArg)
             vTaskDelay(pdMS_TO_TICKS(10*60*1000));
         }
     }
-    getI().m_sTaskHTTPClientHandle = NULL;
+    pHttpClient->m_sTaskHTTPClientHandle = NULL;
     vTaskDelete(NULL);
 }
-
-esp_err_t HttpClient::client_event_get_handler(esp_http_client_event_handle_t evt)
-{
-    switch (evt->event_id)
-    {
-        case HTTP_EVENT_ON_DATA:
-        {
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-            break;
-        }
-        case HTTP_EVENT_ON_FINISH:
-        {
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
-            break;
-        }
-        case HTTP_EVENT_DISCONNECTED:
-        {
-            ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
-            /* int mbedtls_err = 0;
-            esp_err_t err = esp_tls_get_and_clear_last_error(evt->data, &mbedtls_err, NULL);
-            if (err != 0) {
-                ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
-                ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
-            }*/
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
-    return ESP_OK;
-}
-

@@ -1,6 +1,6 @@
-#ifndef _WEBSERVER_H
-#define _WEBSERVER_H
+#pragma once
 
+#include "cJSON.h"
 #include "esp_http_server.h"
 #include "EmbeddedFiles.h"
 #include "APIURL.hpp"
@@ -35,13 +35,14 @@ class WebServer
 
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
+    static esp_err_t GateControlAPIPostHandler(httpd_req_t *req);
 
     // Get API
-    static char* GetStatus();
-    static char* GetSysInfo();
-    static char* GetAllSoundLists();
+    char* GetStatus();
+    char* GetSysInfo();
+    char* GetAllSoundLists();
 
-    static char* GetGalaxyInfoJSON(GateGalaxy gateGalaxy);
+    char* GetGalaxyInfoJSON(GateGalaxy gateGalaxy);
 
     static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
 
@@ -58,8 +59,8 @@ class WebServer
     httpd_uri_t m_sHttpUI;
     httpd_uri_t m_sHttpGetAPI;
     httpd_uri_t m_sHttpPostAPI;
+    // httpd_uri_t m_sGateControlAPIPost;
 
     httpd_uri_t m_sHttpOTAUploadPost;
 };
 
-#endif

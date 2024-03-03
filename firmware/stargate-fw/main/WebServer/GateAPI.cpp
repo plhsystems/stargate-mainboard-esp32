@@ -2,6 +2,8 @@
 #include "WebServer.hpp"
 #include "Gate/BaseGate.hpp"
 #include "Gate/GateFactory.hpp"
+#include "SGUComm.hpp"
+#include "../Wormhole/Wormhole.hpp"
 
 char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
 {
@@ -13,6 +15,8 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
 
         BaseGate& bg = GateFactory::Get(eGateGalaxy);
         // TODO: Add a cache expiration value
+
+        cJSON_AddItemToObject(pRoot, "name", cJSON_CreateString(bg.szName));
         // ------------------------------
         // Symbols
         cJSON* pSymbolsEntries = cJSON_AddArrayToObject(pRoot, "symbols");
@@ -34,6 +38,7 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
             const GateAddress& gateAddr = bg.GetAddress(i);
 
             cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
             cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(gateAddr.GetName()));
             // Address
             cJSON* pAddressEntries = cJSON_AddArrayToObject(pNewFile, "address");
@@ -42,6 +47,33 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy eGateGalaxy)
                 cJSON_AddItemToArray(pAddressEntries, cJSON_CreateNumber(u8SymbolNum));
             }
             cJSON_AddItemToArray(pAddressesEntries, pNewFile);
+        }
+
+        // ------------------------------
+        // Ring (animations)
+        if (GateGalaxy::Universe == eGateGalaxy) {
+            // There is no possible ring animation on other gates
+            cJSON* pRingAnimationEntries = cJSON_AddArrayToObject(pRoot, "ring_animations");
+            for(int i = 0; i < (int)SGUCommNS::EChevronAnimation::Count; i++)
+            {
+                cJSON* pNewFile = cJSON_CreateObject();
+                cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
+                cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(SGUCommNS::GetAnimationText( (SGUCommNS::EChevronAnimation)i)));
+                cJSON_AddItemToArray(pRingAnimationEntries, pNewFile);
+            }
+        }
+
+        // ------------------------------
+        // Wormholes
+        cJSON* pWormholeEntries = cJSON_AddArrayToObject(pRoot, "wormhole_types");
+        for(int i = 0; i < (int)Wormhole::EType::Count; i++)
+        {
+            const GateAddress& gateAddr = bg.GetAddress(i);
+
+            cJSON* pNewFile = cJSON_CreateObject();
+            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
+            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(Wormhole::GetTypeText( (Wormhole::EType) i)));
+            cJSON_AddItemToArray(pWormholeEntries, pNewFile);
         }
 
         char* pStr = cJSON_PrintUnformatted(pRoot);
