@@ -3,3 +3,7 @@ body {
   color: black;
   margin: 0;
 }
+
+* {
+  font-family: consolas;
+}
