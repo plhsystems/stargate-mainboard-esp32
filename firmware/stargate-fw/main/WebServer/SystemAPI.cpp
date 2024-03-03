@@ -15,6 +15,7 @@
 #include "../Ring/RingComm.hpp"
 #include "../HW/HW.hpp"
 #include "../Audio/SoundFX.hpp"
+#include "../HttpClient.hpp"
 
 #define TAG "WebAPI"
 
@@ -25,6 +26,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
     char* pExportJSON = NULL;
+    bool freeMem = true;
 
     if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
         pExportJSON = getI().GetStatus();
@@ -37,6 +39,14 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         pExportJSON = Settings::getI().ExportJSON();
+    }
+    else if (strcmp(req->uri, APIURL_GETFANGATELIST_MILKYWAY_URI) == 0) {
+        freeMem = false;
+        pExportJSON = (char*)HttpClient::getI().GetFanGateListString();
+        if (nullptr == pExportJSON) {
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Fan gate list isn't available yet");
+        goto ERROR;
+        }
     }
     else if (strcmp(req->uri, APIURL_GETFREERTOSDBGINFO_URI) == 0) {
         // According to the documentation, put a big buffer.
@@ -74,7 +84,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     err = ESP_FAIL;
     END:
     httpd_resp_set_hdr(req, "Connection", "close");
-    if (pExportJSON != NULL) {
+    if (freeMem && pExportJSON != NULL) {
         free(pExportJSON);
         httpd_resp_send_chunk(req, NULL, 0);
     }

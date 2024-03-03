@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
 #include "esp_log.h"
 #include "esp_http_client.h"
 
 class HttpClient
 {
     public:
-    HttpClient() = default;
+    HttpClient();
 
     public:
     // Singleton pattern
@@ -18,6 +19,8 @@ class HttpClient
 
     void Start();
 
+    const char* GetFanGateListString();
+
     static void TaskRunning(void* pArg);
 
     static HttpClient& getI()
@@ -28,5 +31,8 @@ class HttpClient
 
     private:
     TaskHandle_t m_sTaskHTTPClientHandle;
+
+    std::shared_ptr<char[]> m_fanGate;
+    uint32_t m_u32LastUpdateTicks;
 };
 
