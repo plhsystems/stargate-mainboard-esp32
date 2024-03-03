@@ -24,7 +24,7 @@ typedef struct
 typedef enum
 {
     EF_EFILE_FAVICON_ICO = 0,    /*!< @brief File: favicon.ico (size: 7 KB) */
-    EF_EFILE_COMMON_CSS_CONTENT_CSS = 1,    /*!< @brief File: common/css/content.css (size: 69  B) */
+    EF_EFILE_COMMON_CSS_CONTENT_CSS = 1,    /*!< @brief File: common/css/content.css (size: 103  B) */
     EF_EFILE_COMMON_JS_APIURL_JS = 2,    /*!< @brief File: common/js/apiurl.js (size: 1 KB) */
     EF_EFILE_COMMON_JS_VUE_MIN_JS = 3,    /*!< @brief File: common/js/vue.min.js (size: 92 KB) */
     EF_EFILE_GALAXIES_MILKYWAY_GLYPHS_001_SVG = 4,    /*!< @brief File: galaxies/milkyway/glyphs/001.svg (size: 1 KB) */
