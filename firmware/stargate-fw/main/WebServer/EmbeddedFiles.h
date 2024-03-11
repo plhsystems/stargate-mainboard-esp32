@@ -24,7 +24,7 @@ typedef struct
 typedef enum
 {
     EF_EFILE_FAVICON_ICO = 0,    /*!< @brief File: favicon.ico (size: 7 KB) */
-    EF_EFILE_COMMON_CSS_CONTENT_CSS = 1,    /*!< @brief File: common/css/content.css (size: 103  B) */
+    EF_EFILE_COMMON_CSS_CONTENT_CSS = 1,    /*!< @brief File: common/css/content.css (size: 162  B) */
     EF_EFILE_COMMON_JS_APIURL_JS = 2,    /*!< @brief File: common/js/apiurl.js (size: 1 KB) */
     EF_EFILE_COMMON_JS_VUE_MIN_JS = 3,    /*!< @brief File: common/js/vue.min.js (size: 92 KB) */
     EF_EFILE_GALAXIES_MILKYWAY_GLYPHS_001_SVG = 4,    /*!< @brief File: galaxies/milkyway/glyphs/001.svg (size: 1 KB) */
@@ -138,9 +138,9 @@ typedef enum
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_034_SVG = 112,    /*!< @brief File: galaxies/universe/glyphs/034.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_035_SVG = 113,    /*!< @brief File: galaxies/universe/glyphs/035.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_036_SVG = 114,    /*!< @brief File: galaxies/universe/glyphs/036.svg (size: 2 KB) */
-    EF_EFILE_SETUP_INDEX_HTML = 115,    /*!< @brief File: setup/index.html (size: 5 KB) */
+    EF_EFILE_SETUP_INDEX_HTML = 115,    /*!< @brief File: setup/index.html (size: 6 KB) */
     EF_EFILE_SETUP_SETUP_HTML = 116,    /*!< @brief File: setup/setup.html (size: 0  B) */
-    EF_EFILE_SETUP_JS_APP_JS = 117,    /*!< @brief File: setup/js/app.js (size: 3 KB) */
+    EF_EFILE_SETUP_JS_APP_JS = 117,    /*!< @brief File: setup/js/app.js (size: 4 KB) */
     EF_EFILE_COUNT = 118
 } EF_EFILE;
 

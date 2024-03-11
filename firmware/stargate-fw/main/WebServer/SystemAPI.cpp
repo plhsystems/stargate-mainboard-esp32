@@ -45,7 +45,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
         pExportJSON = (char*)HttpClient::getI().GetFanGateListString();
         if (nullptr == pExportJSON) {
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Fan gate list isn't available yet");
-        goto ERROR;
+            goto ERROR;
         }
     }
     else if (strcmp(req->uri, APIURL_GETFREERTOSDBGINFO_URI) == 0) {
@@ -75,6 +75,8 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     }
 
     // Chunk file transfer
+    httpd_resp_set_type(req, "application/json");
+
     if (httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
         goto ERROR;
@@ -86,8 +88,8 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Connection", "close");
     if (freeMem && pExportJSON != NULL) {
         free(pExportJSON);
-        httpd_resp_send_chunk(req, NULL, 0);
     }
+    httpd_resp_send_chunk(req, NULL, 0);
     return err;
 }
 
