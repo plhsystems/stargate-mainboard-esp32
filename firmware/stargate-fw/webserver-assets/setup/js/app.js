@@ -51,6 +51,8 @@ let currentData =
   sys_info: { infos: [] },
   sound_list: { files: [] },
 
+  fangate_list: [],
+
   selectedSoundFileID: null,
   selectedRingAnimationID: null,
   selectedWormholeTypeID: null
@@ -65,6 +67,7 @@ var currentApp = new Vue({
       setTimeout(timerHandler, 500);
 
       // Get system information
+      console.log("loading system info");
       getData(apiControlURLs.get_sysinfo,
       {
           success: data => {
@@ -74,6 +77,7 @@ var currentApp = new Vue({
 
       // Code that will run only after the
       // entire view has been rendered
+      console.log("loading universe infos");
       getData(apiControlURLs.getinfo_universe,
       {
           success: data => {
@@ -84,13 +88,33 @@ var currentApp = new Vue({
           }
       });
 
+      // Fan gate list
+      console.log("loading fan gates list");
+      getData(apiControlURLs.getfangatelist_milkyway,
+      {
+          success: data => {
+            console.log("fangate_list", data);
+            currentApp.fangate_list = data.sort( (a, b) => 
+            {
+              if (a.status < b.status) {
+                return 1;
+              }
+              else if (a.status > b.status) {
+                return -1;
+              }
+              return a.name.localeCompare(b.name);
+            });
+          }
+      });
+
       // Sound list
+      console.log("loading sound list");
       getData(apiControlURLs.sound_list,
-        {
-            success: data => {
-              currentApp.sound_list = data;
-            }
-        });
+      {
+          success: data => {
+            currentApp.sound_list = data;
+          }
+      });
     })
   }
 })

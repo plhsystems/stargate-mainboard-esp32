@@ -87,6 +87,25 @@
                         </tr>
                     </tbody>
                 </table>
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Name</td>
+                            <td>SG Address</td>
+                            <td>IP</td>
+                            <td>Status</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in fangate_list" :key="item.name" :class="{ 'fangate_is_online' : (item.status == 1) }">
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.sg_address }}</td>
+                            <td>{{ item.ip }}</td>
+                            <td>{{ item.status }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 		</div>
         <!-- JS -->

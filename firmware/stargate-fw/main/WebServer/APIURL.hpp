@@ -29,8 +29,12 @@
 #define APIURL_GETPOST_SETTINGSJSON_URI         "/api/settingsjson"
 #define APIURL_GETFREERTOSDBGINFO_URI           "/api/getfreertosdbginfo"
 
+// Basic data for galaxy
 #define APIURL_GALAXY_GETINFO_MILKYWAY_URI       "/api/galaxy/getinfo/milkyway"
 #define APIURL_GALAXY_GETINFO_PEGASUS_URI        "/api/galaxy/getinfo/pegasus"
 #define APIURL_GALAXY_GETINFO_UNIVERSE_URI       "/api/galaxy/getinfo/universe"
 
-#define APIURL_POST_OTAUPLOAD_URI               "/ota/upload"
+// External service (Fan Gate)
+#define APIURL_GETFANGATELIST_MILKYWAY_URI       "/api/getfangatelist/milkyway"
+
+#define APIURL_POST_OTAUPLOAD_URI                "/ota/upload"

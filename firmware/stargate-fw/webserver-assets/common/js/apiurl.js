@@ -26,5 +26,7 @@ const apiControlURLs =
 
     getinfo_milkyway:       "/api/galaxy/getinfo/milkyway",
     getinfo_pegasus:        "/api/galaxy/getinfo/pegasus",
-    getinfo_universe:       "/api/galaxy/getinfo/universe"
+    getinfo_universe:       "/api/galaxy/getinfo/universe",
+
+    getfangatelist_milkyway: "/api/getfangatelist/milkyway",
 }
