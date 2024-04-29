@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "GateControl/GateControl.hpp"
+#include "Gate/GateControl.hpp"
 #include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"

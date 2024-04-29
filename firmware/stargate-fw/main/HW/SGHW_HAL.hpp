@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "../Common/Chevron.hpp"
+#include "../Gate/Chevron.hpp"
 #include "HWConfig.hpp"
 
 enum class MotorDirection

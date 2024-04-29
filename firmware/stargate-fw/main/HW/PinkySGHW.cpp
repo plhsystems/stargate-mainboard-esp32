@@ -120,6 +120,11 @@ void PinkySGHW::Init()
     led_strip_clear(led_strip);
 }
 
+void PinkySGHW::SetChevronLight(EChevron eChevron, bool bState)
+{
+    // No such things on the pinky board.
+}
+
 void PinkySGHW::SetRampLight(double dPerc)
 {
     LockMutex();
