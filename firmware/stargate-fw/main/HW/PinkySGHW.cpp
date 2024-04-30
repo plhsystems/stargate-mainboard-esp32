@@ -5,7 +5,7 @@
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
 #include "driver/ledc.h"
-#include "FreeRTOS/task.h"
+#include "freertos/task.h"
 
 // Motor control
 #define STEPPER_DIR_PIN GPIO_NUM_33
