@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "../Common/Chevron.hpp"
+#include "Chevron.hpp"
 #include "GateAddress.hpp"
 #include "GateSymbol.hpp"
 

@@ -11,7 +11,7 @@
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
-#include "../GateControl/GateControl.hpp"
+#include "../Gate/GateControl.hpp"
 #include "../Ring/RingComm.hpp"
 #include "../HW/HW.hpp"
 #include "../Audio/SoundFX.hpp"

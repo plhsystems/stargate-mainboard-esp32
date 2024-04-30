@@ -1,9 +1,9 @@
 idf_component_register( SRCS
-    "MainApp.cpp" "WiFiMgr.cpp" "Settings.cpp" "HttpClient.cpp"
-    "GateControl/GateControl.cpp"
+    "MainApp.cpp" "WifiMgr.cpp" "Settings.cpp" "HttpClient.cpp"
     "Audio/SoundFX.cpp"
     "Ring/RingComm.cpp"
     "WebServer/WebServer.cpp" "WebServer/SystemAPI.cpp" "WebServer/OTA_API.cpp" "WebServer/GateAPI.cpp" "WebServer/EmbeddedFiles.c"
+    "Gate/GateControl.cpp" "Gate/Chevron.hpp"
     "Gate/BaseGate.cpp" "Gate/MilkyWayGate.cpp" "Gate/PegasusGate.cpp" "Gate/UniverseGate.cpp"
     "Gate/GateFactory.cpp"
     "Wormhole/Wormhole.cpp"

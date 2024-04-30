@@ -5,7 +5,7 @@
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
 #include "driver/ledc.h"
-#include "FreeRTOS/task.h"
+#include "freertos/task.h"
 
 // Motor control
 #define STEPPER_DIR_PIN GPIO_NUM_33
@@ -118,6 +118,11 @@ void PinkySGHW::Init()
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     /* Set all LED off to clear all pixels */
     led_strip_clear(led_strip);
+}
+
+void PinkySGHW::SetChevronLight(EChevron eChevron, bool bState)
+{
+    // No such things on the pinky board.
 }
 
 void PinkySGHW::SetRampLight(double dPerc)

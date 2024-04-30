@@ -12,7 +12,7 @@
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
 #include "../Gate/GateAddress.hpp"
-#include "../Common/Chevron.hpp"
+#include "Chevron.hpp"
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "HW/PinkySGHW.hpp"
