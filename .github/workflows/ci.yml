@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  
+  pull_request:
+    branches: [ main ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Build (ring-factory)
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.2
+        path: ./firmware/ring-factory
+        target: esp32
+
+    - name: Build (ring-fw)
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.2
+        path: ./firmware/ring-fw
+        target: esp32
+
+    - name: Build (stargate-fw)
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.2
+        path: ./Source/stargate-fw
+        target: esp32
