@@ -9,7 +9,6 @@
 /firmware/ring-fw/managed_components
 /firmware/ring-factory/managed_components
 /firmware/ring-factory/main/assets/EmbeddedFiles.bin
-/firmware/ring-factory/main/assets/EmbeddedFiles.c
 /firmware/ring-fw/sdkconfig.old
 /firmware/ring-fw/dependencies.lock
 /firmware/factory-fw/dependencies.lock
