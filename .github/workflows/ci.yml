@@ -35,5 +35,5 @@ jobs:
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v5.2
-        path: ./Source/stargate-fw
+        path: ./firmware/stargate-fw
         target: esp32
