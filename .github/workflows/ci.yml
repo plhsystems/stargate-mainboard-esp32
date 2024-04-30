@@ -17,6 +17,13 @@ jobs:
       with:
         submodules: 'recursive'
       
+    - name: Build (stargate-fw)
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.2
+        path: ./firmware/stargate-fw
+        target: esp32
+
     - name: Build (ring-factory)
       uses: espressif/esp-idf-ci-action@v1
       with:
@@ -29,11 +36,4 @@ jobs:
       with:
         esp_idf_version: v5.2
         path: ./firmware/ring-fw
-        target: esp32
-
-    - name: Build (stargate-fw)
-      uses: espressif/esp-idf-ci-action@v1
-      with:
-        esp_idf_version: v5.2
-        path: ./Source/stargate-fw
         target: esp32

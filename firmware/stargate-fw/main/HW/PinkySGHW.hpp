@@ -13,8 +13,10 @@ class PinkySGHW : public SGHW_HAL
 
     void Init() override;
 
+    void SetChevronLight(EChevron eChevron, bool bState) override;
+
     // Ramp light
-    void SetRampLight(double dPerc);
+    void SetRampLight(double dPerc) override;
 
     void PowerUpStepper() override;
     void StepStepperCW() override;

@@ -6,7 +6,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include "FWConfig.h"
+#include "fwconfig.h"
 #include <string.h>
 #include "lwip/err.h"
 #include "lwip/sockets.h"
