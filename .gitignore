@@ -2,7 +2,6 @@
 /firmware/stargate-fw/sdkconfig.old
 /firmware/stargate-fw/managed_components
 /firmware/stargate-fw/main/WebServer/EmbeddedFiles.bin
-/firmware/stargate-fw/main/WebServer/EmbeddedFiles.c
 /firmware/ring-fw/build
 /firmware/ring-factory/build
 /firmware/ring-factory/.vscode
