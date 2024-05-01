@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "esp_log.h"
 #include "Gate/GateControl.hpp"
 #include "HW/HW.hpp"
 #include "WebServer/WebServer.hpp"
@@ -7,18 +8,11 @@
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
 #include "HttpClient.hpp"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-extern "C" {
-    void app_main(void);
-}
+#include "App.hpp"
 
 #define TAG "MainApp"
 
-void app_main(void)
+void App::Init()
 {
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -72,13 +66,13 @@ void app_main(void)
 
     // Autocalibrate as the default action
     // GateControl::getI().QueueAutoHome();
+}
 
+void App::LoopTick()
+{
     bool bSanity = false;
-    while(true)
-    {
-      // The least interesting task to ever exist.
-      HW::getI()->SetSanityLED(bSanity);
-      bSanity = !bSanity;
-      vTaskDelay(pdMS_TO_TICKS(250));
-    }
+    // The least interesting task to ever exist.
+    HW::getI()->SetSanityLED(bSanity);
+    bSanity = !bSanity;
+    vTaskDelay(pdMS_TO_TICKS(250));
 }
