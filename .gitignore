@@ -13,3 +13,5 @@
 /firmware/ring-fw/dependencies.lock
 /firmware/factory-fw/dependencies.lock
 /firmware/stargate-fw/dependencies.lock
+/firmware/stargate-fw/pinky-board/build
+/firmware/stargate-fw/pinky-board/managed_components
