@@ -17,11 +17,18 @@ jobs:
       with:
         submodules: 'recursive'
       
-    - name: Build (stargate-fw)
+    - name: Build (stargate-fw pablo-board)
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v5.2
-        path: ./firmware/stargate-fw
+        path: ./firmware/stargate-fw/pablo-board
+        target: esp32s3
+      
+    - name: Build (stargate-fw pinky-board)
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.2
+        path: ./firmware/stargate-fw/pinky-board
         target: esp32
 
     - name: Build (ring-factory)
