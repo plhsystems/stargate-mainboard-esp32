@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "App.hpp"
+#include "PinkySGHW.hpp"
 
 extern "C" {
     void app_main(void);
@@ -12,10 +13,16 @@ extern "C" {
 #define TAG "MainApp"
 
 static App g_app;
+static PinkySGHW m_sPinkySGHW;
+
+static App::Config m_sConfig =
+{
+  .pSGHWHal = &m_sPinkySGHW
+};
 
 void app_main(void)
 {
-  g_app.Init();
+  g_app.Init(&m_sConfig);
 
   while(true)
   {

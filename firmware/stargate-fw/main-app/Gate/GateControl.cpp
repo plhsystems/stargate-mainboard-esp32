@@ -3,7 +3,6 @@
 #include "GateControl.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../FWConfig.hpp"
-#include "../HW/HW.hpp"
 #include "misc-formula.h"
 #include "SGURing.hpp"
 #include "SGUComm.hpp"
@@ -17,9 +16,9 @@ GateControl::GateControl() :
     m_xSemaphoreHandle = xSemaphoreCreateMutexStatic(&m_xSemaphoreCreateMutex);
 }
 
-void GateControl::Init()
+void GateControl::Init(SGHW_HAL* pSGHWHal)
 {
-
+    m_pSGHWHAL = pSGHWHal;
 }
 
 void GateControl::StartTask()
@@ -27,7 +26,7 @@ void GateControl::StartTask()
     // Stepper control timer
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = &tmr_signal_callback,
-        .arg = (Stepper*)&this->m_stepper,
+        .arg = this,
         .dispatch_method = ESP_TIMER_ISR,
         .name = "stepper_timer",
     };
@@ -149,7 +148,7 @@ void GateControl::TaskRunning(void* pArg)
                 case ECmd::ManualWormhole:
                 {
                     ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCurrCmd.sManualWormhole.eWormholeType));
-                    Wormhole wm { HW::getI(), gc->m_sCurrCmd.sManualWormhole.eWormholeType };
+                    Wormhole wm { gc->m_pSGHWHAL, gc->m_sCurrCmd.sManualWormhole.eWormholeType };
                     wm.Begin();
                     wm.OpeningAnimation();
                     while(!gc->m_bIsCancelAction) {
@@ -189,7 +188,7 @@ void GateControl::AutoCalibrate()
     {
         // We need two transitions from LOW to HIGH.
         // we give it 40s maximum to find the home.
-        HW::getI()->PowerUpStepper();
+        m_pSGHWHAL->PowerUpStepper();
 
         ESP_LOGI(TAG, "Finding home in progress");
         SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
@@ -214,12 +213,12 @@ void GateControl::AutoCalibrate()
         Settings::getI().Commit();
 
         // Go into the other direction until it get out of the sensor
-        HW::getI()->PowerDownStepper();
+        m_pSGHWHAL->PowerDownStepper();
     }
     catch(const std::exception& e)
     {
         // Go into the other direction until it get out of the sensor
-        HW::getI()->PowerDownStepper();
+        m_pSGHWHAL->PowerDownStepper();
         throw;
     }
 }
@@ -228,7 +227,7 @@ void GateControl::AutoHome()
 {
     try
     {
-        HW::getI()->PowerUpStepper();
+        m_pSGHWHAL->PowerUpStepper();
 
         const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
         const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
@@ -240,7 +239,7 @@ void GateControl::AutoHome()
         const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
         // If the ring is already near the home sensor, we just need to move a little bit.
-        if (HW::getI()->GetIsHomeSensorActive()) {
+        if (m_pSGHWHAL->GetIsHomeSensorActive()) {
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
             SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr);
@@ -257,7 +256,7 @@ void GateControl::AutoHome()
         ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, s32HalfDeadband);
         for(int i = 0; i < s32HalfDeadband; i++)
         {
-            HW::getI()->StepStepperCCW();
+            m_pSGHWHAL->StepStepperCCW();
             vTaskDelay(1);
         }
 
@@ -265,12 +264,12 @@ void GateControl::AutoHome()
         m_bIsHomingDone = true;
 
         // Go into the other direction until it get out of the sensor
-        HW::getI()->PowerDownStepper();
+        m_pSGHWHAL->PowerDownStepper();
     }
     catch(const std::exception& e)
     {
         // Go into the other direction until it get out of the sensor
-        HW::getI()->PowerDownStepper();
+        m_pSGHWHAL->PowerDownStepper();
         throw;
     }
 }
@@ -295,13 +294,13 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
         AnimRampLight(false);
-        HW::getI()->PowerDownStepper();
+        m_pSGHWHAL->PowerDownStepper();
     };
 
     try
     {
-        Wormhole wm { HW::getI(), sDialArg.eWormholeType };
-        HW::getI()->PowerUpStepper();
+        Wormhole wm { m_pSGHWHAL, sDialArg.eWormholeType };
+        m_pSGHWHAL->PowerUpStepper();
 
         if (!m_bIsHomingDone) {
             throw std::runtime_error("Homing need to be done");
@@ -362,7 +361,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
 void GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
 {
     TickType_t ttStart = xTaskGetTickCount();
-    bool bOldSensorState = HW::getI()->GetIsHomeSensorActive();
+    bool bOldSensorState = m_pSGHWHAL->GetIsHomeSensorActive();
 
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout)))
     {
@@ -370,16 +369,16 @@ void GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransiti
             throw std::runtime_error("Cancelled by the user");
         }
 
-        const bool bNewHomeSensorState = HW::getI()->GetIsHomeSensorActive();
+        const bool bNewHomeSensorState = m_pSGHWHAL->GetIsHomeSensorActive();
 
         if (eSpinDirection == ESpinDirection::CCW) {
-            HW::getI()->StepStepperCCW();
+            m_pSGHWHAL->StepStepperCCW();
             if (ps32refTickCount != nullptr) {
                 (*ps32refTickCount)++;
             }
         }
         if (eSpinDirection == ESpinDirection::CW) {
-            HW::getI()->StepStepperCW();
+            m_pSGHWHAL->StepStepperCW();
             if (ps32refTickCount != nullptr) {
                 (*ps32refTickCount)--;
             }
@@ -432,7 +431,8 @@ void GateControl::MoveStepperTo(int32_t s32Ticks)
 
 IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
 {
-    Stepper* step = (Stepper*)arg;
+    GateControl* gc = (GateControl*)arg;
+    Stepper* step = (Stepper*)&gc->m_stepper;
 
     static BaseType_t xHigherPriorityTaskWoken;
 
@@ -469,9 +469,9 @@ IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
     else {
         // Count every two
         if (step->bIsCCW)
-            HW::getI()->StepStepperCCW();
+            gc->m_pSGHWHAL->StepStepperCCW();
         else
-            HW::getI()->StepStepperCW();
+            gc->m_pSGHWHAL->StepStepperCW();
 
         step->s32Count++;
 
@@ -489,13 +489,13 @@ void GateControl::AnimRampLight(bool bIsActive)
     if (bIsActive) {
         for(float flt = 0.0f; flt <= 1.0f; flt += fltInc) {
             // Log corrected
-            HW::getI()->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+            m_pSGHWHAL->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
     else {
         for(float flt = 1.0f; flt >= 0.0f; flt -= fltInc) {
-            HW::getI()->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+            m_pSGHWHAL->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }

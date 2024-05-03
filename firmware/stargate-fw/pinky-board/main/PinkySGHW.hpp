@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "SGHW_HAL.hpp"
+#include "HW/SGHW_HAL.hpp"
 #include "led_strip.h"
 #include "freertos/semphr.h"
 #include "freertos/FreeRTOS.h"

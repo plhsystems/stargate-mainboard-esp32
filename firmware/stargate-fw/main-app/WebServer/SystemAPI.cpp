@@ -13,7 +13,6 @@
 #include "../Gate/GateFactory.hpp"
 #include "../Gate/GateControl.hpp"
 #include "../Ring/RingComm.hpp"
-#include "../HW/HW.hpp"
 #include "../Audio/SoundFX.hpp"
 #include "../HttpClient.hpp"
 
@@ -169,7 +168,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
                 jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            HW::getI()->SetRampLight(jItemValue->valuedouble);
+            ws.m_pSGHWHAL->SetRampLight(jItemValue->valuedouble);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
             const cJSON* jItemValue = cJSON_GetObjectItem(pRoot, "value");
@@ -178,7 +177,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
                 jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            HW::getI()->SetServo(jItemValue->valuedouble);
+            ws.m_pSGHWHAL->SetServo(jItemValue->valuedouble);
         }
         // Sounds
         else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {

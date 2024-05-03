@@ -5,6 +5,7 @@
 #include "EmbeddedFiles.h"
 #include "APIURL.hpp"
 #include "./Gate/BaseGate.hpp"
+#include "HW/SGHW_HAL.hpp"
 
 class WebServer
 {
@@ -20,7 +21,7 @@ class WebServer
     void operator=(WebServer const&) = delete;
 
     public:
-    void Init();
+    void Init(SGHW_HAL* pSGHWHal);
 
     void Start();
 
@@ -53,6 +54,8 @@ class WebServer
     // Variable
     httpd_handle_t m_server;
     httpd_config_t m_config;
+
+    SGHW_HAL* m_pSGHWHAL = nullptr;
 
     uint8_t m_u8Buffers[HTTPSERVER_BUFFERSIZE];
 
