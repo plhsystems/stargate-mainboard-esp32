@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "Gate/GateControl.hpp"
-#include "HW/HW.hpp"
-#include "WebServer/WebServer.hpp"
 #include "Audio/SoundFX.hpp"
 #include "Ring/RingComm.hpp"
 #include "WifiMgr.hpp"
@@ -12,8 +10,9 @@
 
 #define TAG "MainApp"
 
-void App::Init()
+void App::Init(Config* psConfig)
 {
+    m_psConfig = psConfig;
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -31,15 +30,15 @@ void App::Init()
 
     // Initialize all modules
     ESP_LOGI(TAG, "Initialize gate control");
-    HW::getI()->Init();
+    m_psConfig->pSGHWHal->Init();
     ESP_LOGI(TAG, "Loading sound FX");
     SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
     WifiMgr::getI().Init();
     ESP_LOGI(TAG, "Initialize web server");
-    WebServer::getI().Init();
+    WebServer::getI().Init(m_psConfig->pSGHWHal);
     ESP_LOGI(TAG, "Initialize gate control");
-    GateControl::getI().Init();
+    GateControl::getI().Init(psConfig->pSGHWHal);
     ESP_LOGI(TAG, "Loading ring communication");
     RingComm::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
@@ -72,7 +71,7 @@ void App::LoopTick()
 {
     bool bSanity = false;
     // The least interesting task to ever exist.
-    HW::getI()->SetSanityLED(bSanity);
+    m_psConfig->pSGHWHal->SetSanityLED(bSanity);
     bSanity = !bSanity;
     vTaskDelay(pdMS_TO_TICKS(250));
 }

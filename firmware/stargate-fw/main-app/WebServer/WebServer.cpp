@@ -49,8 +49,10 @@ WebServer::WebServer()
     m_sHttpUI.user_ctx  = nullptr;
 }
 
-void WebServer::Init()
+void WebServer::Init(SGHW_HAL* pSGHWHal)
 {
+    m_pSGHWHAL = pSGHWHal;
+
     m_config = HTTPD_DEFAULT_CONFIG();
     m_config.lru_purge_enable = true;
     m_config.uri_match_fn = httpd_uri_match_wildcard;

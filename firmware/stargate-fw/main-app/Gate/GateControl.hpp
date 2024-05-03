@@ -15,7 +15,7 @@
 #include "Chevron.hpp"
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
-#include "HW/PinkySGHW.hpp"
+#include "../HW/SGHW_HAL.hpp"
 
 enum class ETransition
 {
@@ -107,7 +107,7 @@ class GateControl
     GateControl(GateControl const&) = delete;
     void operator=(GateControl const&) = delete;
 
-    void Init();
+    void Init(SGHW_HAL* pSGHWHal);
 
     void StartTask();
 
@@ -160,6 +160,8 @@ class GateControl
     // Position
     int32_t m_bIsHomingDone = false;
     int32_t m_s32CurrentPositionTicks = 0;
+
+    SGHW_HAL* m_pSGHWHAL;
 
     Stepper m_stepper;
 

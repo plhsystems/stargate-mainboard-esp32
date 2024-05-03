@@ -1,5 +1,5 @@
 idf_component_register( SRCS
-    "MainApp.cpp"
+    "MainApp.cpp" "PinkySGHW.cpp"
     INCLUDE_DIRS "."
     REQUIRES main-app)
 
