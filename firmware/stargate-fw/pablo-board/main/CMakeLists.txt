@@ -1,4 +1,4 @@
-idf_component_register(SRCS "MainApp.cpp"
+idf_component_register(SRCS "MainApp.cpp" "PabloSGHW.cpp"
     INCLUDE_DIRS "."
     REQUIRES main-app)
 
