@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nvsjson.h"
+#include "Gate/BaseGate.hpp"
 
 class Settings
 {
@@ -33,6 +34,8 @@ class Settings
         AnimPredialDelayMS,
 
         SoundFXVolume,
+
+        GateGalaxy,
 
         Count
     };
@@ -73,8 +76,8 @@ class Settings
     {
         // // WiFi Station related
         [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",          0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",      "Wi-Fi (SSID)",                         "", NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VAL("WSTA.Pass","Wi-Fi password",                   "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
+        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",          "Wi-Fi (SSID)",                         "", NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VAL("WSTA.Pass",      "Wi-Fi password",                   "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
 
         [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITINT32_RNG("Clamp.LockedPWM", "Servo motor locked PWM",             1250, 1000,   2000, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
@@ -94,11 +97,13 @@ class Settings
         [(int)Settings::Entry::WormholeMaxLight] =        NVSJSON_INITINT32_RNG("WH.MaxLight",     "Maximum brightness for wormhole leds. (Warning: can cause voltage drop)", 200, 0, 255, NVSJSON_EFLAGS_None),
 
         // Animation delay
-        [(int)Settings::Entry::AnimPrelockDelayMS] =      NVSJSON_INITINT32_RNG("dial.anim1",      "Delay before locking the chevron (ms)", 1250, 0, 6000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::AnimPostlockDelayMS] =     NVSJSON_INITINT32_RNG("dial.anim2",      "Delay after locking the chevron (ms)",  1250, 0, 6000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::AnimPredialDelayMS] =      NVSJSON_INITINT32_RNG("dial.anim3",      "Delay before starting to dial (ms)",    2500, 0, 10000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::AnimPrelockDelayMS] =      NVSJSON_INITINT32_RNG("Dial.Anim1",      "Delay before locking the chevron (ms)", 1250, 0, 6000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::AnimPostlockDelayMS] =     NVSJSON_INITINT32_RNG("Dial.Anim2",      "Delay after locking the chevron (ms)",  1250, 0, 6000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::AnimPredialDelayMS] =      NVSJSON_INITINT32_RNG("Dial.Anim3",      "Delay before starting to dial (ms)",    2500, 0, 10000, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::SoundFXVolume] =           NVSJSON_INITINT32_RNG("sound.vol",       "Get audio player volume (percent)",     25,   0,   100, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::SoundFXVolume] =           NVSJSON_INITINT32_RNG("Sound.Vol",       "Get audio player volume (percent)",     25,   0,   100, NVSJSON_EFLAGS_None),
+
+        [(int)Settings::Entry::GateGalaxy] =              NVSJSON_INITINT32_RNG("Gate.Gal",        "Galaxy type -1: None, 0: Milky-way, 1: Pegasus, 2: Universe",      -1,   -1, (int32_t)GateGalaxy::Count-1, NVSJSON_EFLAGS_None),
     };
     NVSJSON_SHandle m_sSettingHandle;
     const NVSJSON_SConfig m_sSettingConfig = { .szPartitionName = "nvs", .pSettingEntries = m_sConfigEntries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
