@@ -104,7 +104,7 @@ typedef enum
     EF_EFILE_GALAXIES_PEGASUS_GLYPHS_A34_SVG = 78,    /*!< @brief File: galaxies/pegasus/glyphs/A34.svg (size: 9 KB) */
     EF_EFILE_GALAXIES_PEGASUS_GLYPHS_A35_SVG = 79,    /*!< @brief File: galaxies/pegasus/glyphs/A35.svg (size: 10 KB) */
     EF_EFILE_GALAXIES_PEGASUS_GLYPHS_A36_SVG = 80,    /*!< @brief File: galaxies/pegasus/glyphs/A36.svg (size: 8 KB) */
-    EF_EFILE_GALAXIES_UNIVERSE_INDEX_HTML = 81,    /*!< @brief File: galaxies/universe/index.html (size: 0  B) */
+    EF_EFILE_GALAXIES_UNIVERSE_INDEX_HTML = 81,    /*!< @brief File: galaxies/universe/index.html (size: 645  B) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_001_SVG = 82,    /*!< @brief File: galaxies/universe/glyphs/001.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_002_SVG = 83,    /*!< @brief File: galaxies/universe/glyphs/002.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_003_SVG = 84,    /*!< @brief File: galaxies/universe/glyphs/003.svg (size: 2 KB) */
@@ -142,9 +142,10 @@ typedef enum
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_035_SVG = 116,    /*!< @brief File: galaxies/universe/glyphs/035.svg (size: 2 KB) */
     EF_EFILE_GALAXIES_UNIVERSE_GLYPHS_036_SVG = 117,    /*!< @brief File: galaxies/universe/glyphs/036.svg (size: 2 KB) */
     EF_EFILE_SETUP_INDEX_HTML = 118,    /*!< @brief File: setup/index.html (size: 6 KB) */
-    EF_EFILE_SETUP_SETUP_HTML = 119,    /*!< @brief File: setup/setup.html (size: 654  B) */
+    EF_EFILE_SETUP_SETTINGS_HTML = 119,    /*!< @brief File: setup/settings.html (size: 2 KB) */
     EF_EFILE_SETUP_JS_APP_JS = 120,    /*!< @brief File: setup/js/app.js (size: 3 KB) */
-    EF_EFILE_COUNT = 121
+    EF_EFILE_SETUP_JS_SETTINGS_JS = 121,    /*!< @brief File: setup/js/settings.js (size: 436  B) */
+    EF_EFILE_COUNT = 122
 } EF_EFILE;
 
 /*! @brief Check if compressed flag is active */
