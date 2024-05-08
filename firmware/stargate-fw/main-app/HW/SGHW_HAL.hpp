@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include "../Gate/Chevron.hpp"
-#include "HWConfig.hpp"
 
 enum class MotorDirection
 {

@@ -2,6 +2,7 @@ favicon.ico
 common/css/content.css
 common/js/apiurl.js
 common/js/vue.min.js
+galaxies/milkyway/index.html
 galaxies/milkyway/glyphs/001.svg
 galaxies/milkyway/glyphs/002.svg
 galaxies/milkyway/glyphs/003.svg
@@ -41,6 +42,7 @@ galaxies/milkyway/glyphs/036.svg
 galaxies/milkyway/glyphs/037.svg
 galaxies/milkyway/glyphs/038.svg
 galaxies/milkyway/glyphs/039.svg
+galaxies/pegasus/index.html
 galaxies/pegasus/glyphs/A01.svg
 galaxies/pegasus/glyphs/A02.svg
 galaxies/pegasus/glyphs/A03.svg
@@ -77,6 +79,7 @@ galaxies/pegasus/glyphs/A33.svg
 galaxies/pegasus/glyphs/A34.svg
 galaxies/pegasus/glyphs/A35.svg
 galaxies/pegasus/glyphs/A36.svg
+galaxies/universe/index.html
 galaxies/universe/glyphs/001.svg
 galaxies/universe/glyphs/002.svg
 galaxies/universe/glyphs/003.svg

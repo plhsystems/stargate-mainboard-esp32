@@ -30,3 +30,43 @@ const apiControlURLs =
 
     getfangatelist_milkyway: "/api/getfangatelist/milkyway",
 }
+
+function sendAction(actionURL, data)
+{
+  console.log("SendAction", actionURL, data);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", actionURL, true);
+  if (data) {
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(data));
+  }
+  else {
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({}));
+  }
+}
+
+function getData(actionURL, cb)
+{
+  fetch(actionURL)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Handle the JSON data here
+      if (cb && cb.success) {
+        cb.success(data);
+      }
+    })
+    .catch(error => {
+      // Handle any errors here
+      console.log('Fetch error:', error);
+      if (cb && cb.fail) {
+        cb.fail(error);
+      }
+    });
+}
