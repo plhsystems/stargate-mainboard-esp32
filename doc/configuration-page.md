@@ -1,6 +1,5 @@
 # Configuration
 
-Every modifiable configurations are listed there.
 Configurations could be imported or exported into JSON.
 
 ## JSON file viewer
