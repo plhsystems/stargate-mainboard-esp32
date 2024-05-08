@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" type="text/css" href="../common/css/content.css">
+        <title>Stargate Command (Setting)</title>
+    </head>
+    <body>
+		<div id="app">
+            <table>
+                <thread>
+                    <tr>
+                        <th>Key</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Min</th>
+                        <th>Default</th>
+                        <th>Max</th>
+                        <th>Value</th>
+                    </tr>
+                </thread>
+                <tbody>
+                    <tr v-for="entry in settings_entries">
+                        <td>{{ entry.key }}</td>
+                        <td>{{ entry.info.desc }}</td>
+                        <td>{{ entry.info.type }}</td>
+                        <td style="text-align: right;">{{ entry.info.min }}</td>
+                        <td style="text-align: right;">{{ entry.info.def }}</td>
+                        <td style="text-align: right;">{{ entry.info.max }}</td>
+                        <td style="color: blue; text-align: right;">{{ entry.value }}</td>
+                    </tr>
+                </tbody>
+            </table>
+		</div>
+        <!-- JS -->
+        <script type="text/javascript" src="../common/js/vue.min.js"></script>
+        <script type="text/javascript" src="../common/js/apiurl.js"></script>
+        <script type="text/javascript" src="js/settings.js"></script>
+    </body>
+</html>

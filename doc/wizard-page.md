@@ -10,13 +10,23 @@ For now we only support the 'Movie' gate mode.
 
 | Name | Value |
 |---|---|
-| Stargate type | Movie, SG1, Atlantis, Universe |
+| Stargate type | Milky-way (SG1), Pegasus (Atlantis), Universe |
 | Chevron count | 7, 8 or 9 |
 
 This step is mandatory, because it change how some input/output will react.
 The wizard will also be different based on this configuration.
 
-## Setup Wi-Fi Station (optional)
+## Setup Wi-Fi
+
+### Soft-AP (optional)
+
+Allows to change the default password, but not to deactivate it because that's the only way to configure the system.
+
+| Name | Value |
+|---|---|
+| Password | Password |
+
+### Station (optional)
 
 | Name | Value |
 |---|---|
@@ -53,6 +63,8 @@ The ring will spin until a designed symbols is aligned with the master chevron, 
 
 ## Chevron locking (mandatory)
 
+**Only apply to the milkyway gate**
+
 Every chevron will be tested one by one to ensure it move properly. If it moves the wrong way it will ask the user to revert motor polarity.
 It will also test the chevrons lights in this step.
 
@@ -64,10 +76,16 @@ It will also test the chevrons lights in this step.
 | Animation pause time  | 1000 |
 | Animation on-off time | 750 |
 
+## Symbols lightning (mandatory)
+
+**Only apply to the pegasus and universe gate**
+
+Each symbol have their own individual light or screen. This will help to ensure everything works correctly.
+
 ## Audio test (optional)
 
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
-It will also provide a volume adjustment slider on the page.
+It will also provide a volume adjustment slider.
 
 ## Test the wormhole (mandatory)
 
