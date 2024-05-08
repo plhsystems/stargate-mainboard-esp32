@@ -85,7 +85,7 @@ Each symbol have their own individual light or screen. This will help to ensure 
 ## Audio test (optional)
 
 Will play a test sound to ensure the speakers are properly connected. It will be a test sound integrated within the firmware.
-It will also provide a volume adjustment slider on the page.
+It will also provide a volume adjustment slider.
 
 ## Test the wormhole (mandatory)
 
