@@ -22,7 +22,9 @@ static App::Config m_sConfig =
 
 void app_main(void)
 {
+  ESP_LOGI(TAG, "app-main init");
   g_app.Init(&m_sConfig);
+  ESP_LOGI(TAG, "app-main init, done");
 
   while(true)
   {
