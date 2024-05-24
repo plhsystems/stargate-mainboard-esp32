@@ -23,22 +23,10 @@ void GateControl::Init(SGHW_HAL* pSGHWHal)
 
 void GateControl::StartTask()
 {
-    // Stepper control timer
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &tmr_signal_callback,
-        .arg = this,
-        .dispatch_method = ESP_TIMER_ISR,
-        .name = "stepper_timer",
-    };
-
 	if (xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_sGateControlHandle, FWCONFIG_GATECONTROL_COREID) != pdPASS )
 	{
 		ESP_ERROR_CHECK(ESP_FAIL);
 	}
-
-    /* Start the timers */
-    this->m_stepper.sTskControlHandle = m_sGateControlHandle;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.sSignalTimerHandle));
 }
 
 void GateControl::QueueAutoHome()
@@ -191,10 +179,10 @@ void GateControl::AutoCalibrate()
         m_pSGHWHAL->PowerUpStepper();
 
         ESP_LOGI(TAG, "Finding home in progress");
-        SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
         ESP_LOGI(TAG, "Home has been found once");
         int32_t s32NewStepsPerRotation = 0;
-        SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation);
+        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation);
 
         ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, s32NewStepsPerRotation);
 
@@ -202,8 +190,8 @@ void GateControl::AutoCalibrate()
         // Continue to move until it get out of the home range.
         int32_t s32Gap = 0;
 
-        SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap);
-        SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap);
+        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap);
+        m_pSGHWHAL->SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap);
 
         ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
 
@@ -242,12 +230,12 @@ void GateControl::AutoHome()
         if (m_pSGHWHAL->GetIsHomeSensorActive()) {
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-            SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr);
-            SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+            m_pSGHWHAL->SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr);
+            m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
         }
         else {
             ESP_LOGI(TAG, "Homing using the slow algorithm");
-            SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+            m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
         }
 
         // Move by half the deadband offset.
@@ -283,7 +271,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
         // Go back to home position
         ESP_LOGI(TAG, "Move near the home position");
         const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-        MoveStepperTo(s32MoveTicks);
+        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
         ESP_LOGI(TAG, "Confirm the home position");
         AutoHome();
 
@@ -328,7 +316,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
 
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
-            MoveStepperTo(s32MoveTicks);
+            m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
 
             vTaskDelay(pdMS_TO_TICKS(300));
             RingComm::getI().SendLightUpSymbol(u8Symbol);
@@ -358,128 +346,6 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
     }
 }
 
-void GateControl::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
-{
-    TickType_t ttStart = xTaskGetTickCount();
-    bool bOldSensorState = m_pSGHWHAL->GetIsHomeSensorActive();
-
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout)))
-    {
-        if (m_bIsCancelAction) {
-            throw std::runtime_error("Cancelled by the user");
-        }
-
-        const bool bNewHomeSensorState = m_pSGHWHAL->GetIsHomeSensorActive();
-
-        if (eSpinDirection == ESpinDirection::CCW) {
-            m_pSGHWHAL->StepStepperCCW();
-            if (ps32refTickCount != nullptr) {
-                (*ps32refTickCount)++;
-            }
-        }
-        if (eSpinDirection == ESpinDirection::CW) {
-            m_pSGHWHAL->StepStepperCW();
-            if (ps32refTickCount != nullptr) {
-                (*ps32refTickCount)--;
-            }
-        }
-
-        const bool bIsRising = !bOldSensorState && bNewHomeSensorState;
-        const bool bIsFalling = bOldSensorState && !bNewHomeSensorState;
-        if (ETransition::Rising == eTransition && bIsRising)
-        {
-            ESP_LOGI(TAG, "Rising transition detected");
-            return;
-        }
-        else if (ETransition::Failing == eTransition && bIsFalling) {
-            ESP_LOGI(TAG, "Failing transition detected");
-            return;
-        }
-
-        bOldSensorState = bNewHomeSensorState;
-        vTaskDelay(1);
-    }
-
-    throw std::runtime_error("Unable to complete the spin operation");
-}
-
-void GateControl::MoveStepperTo(int32_t s32Ticks)
-{
-    // Setup the parameters
-    this->m_stepper.s32Count = 0;
-    this->m_stepper.s32Target = abs(s32Ticks);
-    this->m_stepper.s32Period = 1;
-    this->m_stepper.bIsCCW = s32Ticks > 0;
-
-    ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.sSignalTimerHandle, this->m_stepper.s32Period));
-
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 30000 );
-
-    /* Wait to be notified of an interrupt. */
-    uint32_t ulNotifiedValue = 0;
-    const BaseType_t xResult = xTaskNotifyWait(pdFALSE,    /* Don't clear bits on entry. */
-                        ULONG_MAX,        /* Clear all bits on exit. */
-                        &ulNotifiedValue, /* Stores the notified value. */
-                        xMaxBlockTime );
-
-    if( xResult != pdPASS )
-    {
-        esp_timer_stop(this->m_stepper.sSignalTimerHandle);
-        throw std::runtime_error("Error, cannot reach it's destination with-in time ...");
-    }
-}
-
-IRAM_ATTR void GateControl::tmr_signal_callback(void* arg)
-{
-    GateControl* gc = (GateControl*)arg;
-    Stepper* step = (Stepper*)&gc->m_stepper;
-
-    static BaseType_t xHigherPriorityTaskWoken;
-
-    xHigherPriorityTaskWoken = pdFALSE;
-
-    const int32_t s32 = MISCMACRO_MIN(abs(step->s32Count) , abs(step->s32Target - step->s32Count));
-    /* I just did some tests until I was satisfied */
-    /* #1 (100, 1000), (1400, 300)
-        a = -0.53846153846153846153846153846154
-        b = 1053.84 */
-    /* #2 (100, 700), (1400, 200)
-        a = -0.3846
-        b = 738.44 */
-    const int32_t a = -400;
-    const int32_t b = 1400000;
-    step->s32Period = (a * s32 + b)/1000;
-
-    // I hoped it would reduce jitter.
-    step->s32Period = (step->s32Period / 50) * 50;
-
-    if (step->s32Period < 600)
-        step->s32Period = 600;
-    if (step->s32Period > 1600)
-        step->s32Period = 1600;
-
-    // Wait until the period go to low before considering it finished
-    if (step->s32Target == step->s32Count)
-    {
-        xTaskNotifyFromISR( step->sTskControlHandle,
-            STEPEND_BIT,
-            eSetBits,
-            &xHigherPriorityTaskWoken );
-    }
-    else {
-        // Count every two
-        if (step->bIsCCW)
-            gc->m_pSGHWHAL->StepStepperCCW();
-        else
-            gc->m_pSGHWHAL->StepStepperCW();
-
-        step->s32Count++;
-
-        ESP_ERROR_CHECK(esp_timer_start_once(step->sSignalTimerHandle, step->s32Period));
-    }
-
-    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-}
 
 void GateControl::AnimRampLight(bool bIsActive)
 {

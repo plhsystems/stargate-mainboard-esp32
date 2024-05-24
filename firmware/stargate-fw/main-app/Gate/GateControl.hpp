@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_timer.h"
 #include "misc-macro.h"
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
@@ -16,18 +15,6 @@
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../HW/SGHW_HAL.hpp"
-
-enum class ETransition
-{
-    Rising,
-    Failing
-};
-
-enum class ESpinDirection
-{
-    CCW,
-    CW
-};
 
 class GateControl
 {
@@ -89,19 +76,6 @@ class GateControl
 
     GateControl();
 
-    #define STEPEND_BIT    0x01
-    struct Stepper
-    {
-        esp_timer_handle_t sSignalTimerHandle;
-        TaskHandle_t sTskControlHandle;
-
-        int32_t s32Period = 0;
-        // Counter
-        bool bIsCCW;
-        int32_t s32Count = 0;
-        int32_t s32Target = 0;
-    };
-
     public:
     // Singleton pattern
     GateControl(GateControl const&) = delete;
@@ -134,13 +108,8 @@ class GateControl
     void DialAddress(const SDialArg& sDialArg);
 
     void AnimRampLight(bool bIsActive);
-    // Stepper
-    void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount);
-    void MoveStepperTo(int32_t s32Ticks);
-
     private:
     static void TaskRunning(void* pArg);
-    static void tmr_signal_callback(void* arg);
 
     TaskHandle_t m_sGateControlHandle;
 
@@ -162,8 +131,6 @@ class GateControl
     int32_t m_s32CurrentPositionTicks = 0;
 
     SGHW_HAL* m_pSGHWHAL;
-
-    Stepper m_stepper;
 
     inline static const char* m_szTexts[] =
     {
