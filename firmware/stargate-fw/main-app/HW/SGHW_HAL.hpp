@@ -11,6 +11,18 @@ enum class MotorDirection
     Backward
 };
 
+enum class ETransition
+{
+    Rising,
+    Failing
+};
+
+enum class ESpinDirection
+{
+    CCW,
+    CW
+};
+
 class SGHW_HAL
 {
     public:
@@ -75,4 +87,9 @@ class SGHW_HAL
 
     /*! @brief Is home sensor active ? Meaning the magnet near the home point. */
     virtual bool GetIsHomeSensorActive() { return false; }
+
+    // Stepper
+    virtual void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount) { };
+
+    virtual void MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS) { };
 };
