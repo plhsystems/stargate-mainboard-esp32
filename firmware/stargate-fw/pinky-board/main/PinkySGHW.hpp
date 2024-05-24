@@ -5,9 +5,24 @@
 #include "led_strip.h"
 #include "freertos/semphr.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_timer.h"
 
 class PinkySGHW : public SGHW_HAL
 {
+    
+    #define STEPEND_BIT    0x01
+    struct Stepper
+    {
+        esp_timer_handle_t sSignalTimerHandle;
+        TaskHandle_t sTskControlHandle;
+
+        int32_t s32Period = 0;
+        // Counter
+        bool bIsCCW;
+        int32_t s32Count = 0;
+        int32_t s32Target = 0;
+    };
+
     public:
     PinkySGHW();
 
@@ -37,11 +52,19 @@ class PinkySGHW : public SGHW_HAL
 
     bool GetIsHomeSensorActive() override;
 
+    // Stepper
+    void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount) override;
+    void MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS) override;
+
     private:
     bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_xMutexHandle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
     void UnlockMutex() { xSemaphoreGive( m_xMutexHandle ); }
 
+    static void tmr_signal_callback(void* arg);
+
     private:
+    Stepper m_stepper;
+
     led_strip_handle_t led_strip;
 
     double m_dLastServoPosition;
