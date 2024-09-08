@@ -191,7 +191,7 @@ void PinkySGHW::SetServo(double dPosition)
     mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, v);
     mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
     m_dLastServoPosition = dPosition;
-    ESP_LOGI(TAG, "value: %f", v);
+    ESP_LOGI(TAG, "value: %f pos: %f", v, (float)dPosition);
     UnlockMutex();
 }
 

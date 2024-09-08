@@ -108,6 +108,9 @@ class GateControl
     void DialAddress(const SDialArg& sDialArg);
 
     void AnimRampLight(bool bIsActive);
+
+    void LockClamp();
+    void ReleaseClamp();
     private:
     static void TaskRunning(void* pArg);
 
