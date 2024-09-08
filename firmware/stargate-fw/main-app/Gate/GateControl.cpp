@@ -275,13 +275,6 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
 
     auto endOfProcess = [&](bool bIsError) -> void
     {
-        // Go back to home position
-        ESP_LOGI(TAG, "Move near the home position");
-        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
-        ESP_LOGI(TAG, "Confirm the home position");
-        AutoHome();
-
         vTaskDelay(pdMS_TO_TICKS(500));
         if (bIsError) {
             RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
@@ -289,6 +282,17 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
         AnimRampLight(false);
+
+        if (!bIsError) {
+            // If no error happened, just wait a little bit for the effect.
+            vTaskDelay(pdMS_TO_TICKS(5000));
+        }
+        // Go back to home position
+        ESP_LOGI(TAG, "Move near the home position");
+        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
+        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
+        ESP_LOGI(TAG, "Confirm the home position");
+        AutoHome();
 
         m_pSGHWHAL->PowerDownStepper();
         LockClamp();

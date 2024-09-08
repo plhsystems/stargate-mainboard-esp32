@@ -112,7 +112,7 @@ void RingComm::TaskRunning(void* pArg)
             }
         }
         // 50 hz maximum
-        //vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
     }
     CLEAN_UP:
