@@ -53,6 +53,8 @@ void RingComm::TaskRunning(void* pArg)
 
     while(true)
     {
+        pRC->LockMutex();
+
         struct timeval tv = {
             .tv_sec = 0,
             .tv_usec = 50000,
@@ -111,6 +113,8 @@ void RingComm::TaskRunning(void* pArg)
                 // goto CLEAN_UP;
             }
         }
+
+        pRC->UnlockMutex();
         // 50 hz maximum
         vTaskDelay(pdMS_TO_TICKS(20));
     }
