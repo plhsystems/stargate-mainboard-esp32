@@ -72,7 +72,7 @@ void PinkySGHW::Init()
     // Initialize motor driver
     mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, SERVOMOTOR_PIN);
     mcpwm_config_t servo_config;
-    servo_config.frequency = 50;  // Frequency = 1000Hz,
+    servo_config.frequency = 50;  // Frequency = 50Hz,
     servo_config.cmpr_a = 0;      // Duty cycle of PWMxA = 0
     servo_config.cmpr_b = 0;      // Duty cycle of PWMxb = 0
     servo_config.counter_mode = MCPWM_UP_COUNTER;
@@ -187,9 +187,11 @@ void PinkySGHW::PowerUpServo()
 void PinkySGHW::SetServo(double dPosition)
 {
     LockMutex();
-    mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, SERVO_PWM2PERCENT(dPosition));
+    const float v = 5.0f + dPosition * 5.0f;
+    mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, v);
     mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
     m_dLastServoPosition = dPosition;
+    ESP_LOGI(TAG, "value: %f pos: %f", v, (float)dPosition);
     UnlockMutex();
 }
 
@@ -298,14 +300,17 @@ void PinkySGHW::MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS)
 
     /* Wait to be notified of an interrupt. */
     uint32_t ulNotifiedValue = 0;
-    const BaseType_t xResult = xTaskNotifyWait(pdFALSE,    /* Don't clear bits on entry. */
-                        ULONG_MAX,        /* Clear all bits on exit. */
-                        &ulNotifiedValue, /* Stores the notified value. */
-                        xMaxBlockTime );
+    const BaseType_t xResult = xTaskNotifyWait(
+        pdFALSE,          /* Don't clear bits on entry. */
+        ULONG_MAX,        /* Clear all bits on exit. */
+        &ulNotifiedValue, /* Stores the notified value. */
+        xMaxBlockTime );
+
+    // No longer need to run the timer ...
+    esp_timer_stop(this->m_stepper.sSignalTimerHandle);
 
     if( xResult != pdPASS )
     {
-        esp_timer_stop(this->m_stepper.sSignalTimerHandle);
         throw std::runtime_error("Error, cannot reach it's destination with-in time ...");
     }
 }

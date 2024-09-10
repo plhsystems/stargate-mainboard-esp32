@@ -55,18 +55,21 @@ void RingComm::TaskRunning(void* pArg)
     {
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 50000,
+            .tv_usec = 200000,
         };
         fd_set rfds;
         FD_ZERO(&rfds);
         FD_SET(pRC->m_commSocket, &rfds);
         int s = select(pRC->m_commSocket + 1, &rfds, NULL, NULL, &tv);
-        if (s < 0) {
+
+        if (s < 0)
+        {
             ESP_LOGE(TAG, "Select failed: errno %d", errno);
-            break;
         }
-        else if (s > 0) {
-            if (FD_ISSET(pRC->m_commSocket, &rfds)) {
+        else if (s > 0)
+        {
+            if (FD_ISSET(pRC->m_commSocket, &rfds))
+            {
                 // Incoming datagram received
                 char recvbuf[48];
 
@@ -76,16 +79,16 @@ void RingComm::TaskRunning(void* pArg)
                                     (struct sockaddr *)&raddr, &socklen);
                 if (len < 0) {
                     ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-                    break;
                 }
-
-                // Receiving response
-                pRC->m_u32LastPingResponse = xTaskGetTickCount();
-                if (!pRC->m_bIsConnected)
-                {
-                    pRC->m_bIsConnected = true;
-                    ESP_LOGI(TAG, "received %d bytes", len);
-                    ESP_LOGI(TAG, "Connected to the ring");
+                else {
+                    // Receiving response
+                    pRC->m_u32LastPingResponse = xTaskGetTickCount();
+                    if (!pRC->m_bIsConnected)
+                    {
+                        pRC->m_bIsConnected = true;
+                        ESP_LOGI(TAG, "received %d bytes", len);
+                        ESP_LOGI(TAG, "Connected to the ring");
+                    }
                 }
             }
         }
@@ -95,6 +98,8 @@ void RingComm::TaskRunning(void* pArg)
         {
             pRC->m_bIsConnected = false;
             ESP_LOGI(TAG, "Disconnected from the ring");
+            // Wait a moment before retrying.
+            vTaskDelay(pdMS_TO_TICKS(5000));
         }
 
         // Ping every seconds
@@ -112,7 +117,7 @@ void RingComm::TaskRunning(void* pArg)
             }
         }
         // 50 hz maximum
-        //vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
     }
     CLEAN_UP:

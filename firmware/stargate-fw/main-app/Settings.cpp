@@ -42,6 +42,21 @@ NVSJSON_ESETRET Settings::SetValueString(Settings::Entry eEntry, bool bIsDryRun,
     return NVSJSON_SetValueString(&m_sSettingHandle, (uint16_t)eEntry, bIsDryRun, szValue);
 }
 
+double Settings::GetValueDouble(Settings::Entry eEntry)
+{
+    return NVSJSON_GetValueDouble(&m_sSettingHandle, (uint16_t)eEntry);
+}
+
+NVSJSON_ESETRET Settings::SetValueDouble(Settings::Entry eEntry, bool bIsDryRun, double value)
+{
+    return NVSJSON_SetValueDouble(&m_sSettingHandle, (uint16_t)eEntry, bIsDryRun, value);
+}
+
+NVSJSON_ESETRET Settings::SetValueDouble(Settings::Entry eEntry, double value)
+{
+    return NVSJSON_SetValueDouble(&m_sSettingHandle, (uint16_t)eEntry, false, value);
+}
+
 char* Settings::ExportJSON()
 {
     return NVSJSON_ExportJSON(&m_sSettingHandle);

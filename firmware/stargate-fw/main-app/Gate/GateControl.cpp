@@ -177,6 +177,7 @@ void GateControl::AutoCalibrate()
         // We need two transitions from LOW to HIGH.
         // we give it 40s maximum to find the home.
         m_pSGHWHAL->PowerUpStepper();
+        ReleaseClamp();
 
         ESP_LOGI(TAG, "Finding home in progress");
         m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
@@ -201,12 +202,15 @@ void GateControl::AutoCalibrate()
         Settings::getI().Commit();
 
         // Go into the other direction until it get out of the sensor
+        LockClamp();
         m_pSGHWHAL->PowerDownStepper();
+        m_pSGHWHAL->PowerDownServo();
     }
     catch(const std::exception& e)
     {
         // Go into the other direction until it get out of the sensor
         m_pSGHWHAL->PowerDownStepper();
+        LockClamp();
         throw;
     }
 }
@@ -216,6 +220,7 @@ void GateControl::AutoHome()
     try
     {
         m_pSGHWHAL->PowerUpStepper();
+        ReleaseClamp();
 
         const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
         const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
@@ -251,11 +256,13 @@ void GateControl::AutoHome()
         m_s32CurrentPositionTicks = 0;
         m_bIsHomingDone = true;
 
+        LockClamp();
         // Go into the other direction until it get out of the sensor
         m_pSGHWHAL->PowerDownStepper();
     }
     catch(const std::exception& e)
     {
+        LockClamp();
         // Go into the other direction until it get out of the sensor
         m_pSGHWHAL->PowerDownStepper();
         throw;
@@ -268,13 +275,6 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
 
     auto endOfProcess = [&](bool bIsError) -> void
     {
-        // Go back to home position
-        ESP_LOGI(TAG, "Move near the home position");
-        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
-        ESP_LOGI(TAG, "Confirm the home position");
-        AutoHome();
-
         vTaskDelay(pdMS_TO_TICKS(500));
         if (bIsError) {
             RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
@@ -282,13 +282,27 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
         AnimRampLight(false);
+
+        if (!bIsError) {
+            // If no error happened, just wait a little bit for the effect.
+            vTaskDelay(pdMS_TO_TICKS(5000));
+        }
+        // Go back to home position
+        ESP_LOGI(TAG, "Move near the home position");
+        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
+        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
+        ESP_LOGI(TAG, "Confirm the home position");
+        AutoHome();
+
         m_pSGHWHAL->PowerDownStepper();
+        LockClamp();
     };
 
     try
     {
         Wormhole wm { m_pSGHWHAL, sDialArg.eWormholeType };
         m_pSGHWHAL->PowerUpStepper();
+        ReleaseClamp();
 
         if (!m_bIsHomingDone) {
             throw std::runtime_error("Homing need to be done");
@@ -318,7 +332,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
             m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
 
-            vTaskDelay(pdMS_TO_TICKS(300));
+            vTaskDelay(pdMS_TO_TICKS(500));
             RingComm::getI().SendLightUpSymbol(u8Symbol);
             vTaskDelay(pdMS_TO_TICKS(750));
 
@@ -329,7 +343,13 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
         // Play the wormhole idling animation
         wm.Begin();
         wm.OpeningAnimation();
+
+        const uint32_t start_ticks = xTaskGetTickCount();
         while(!m_bIsCancelAction) {
+            // 5 minutes
+            if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
+                break;
+            }
             wm.RunTicks();
         }
         // Turn-off all symbols before killing the wormhole
@@ -380,3 +400,20 @@ void GateControl::GetState(UIState& uiState)
     uiState.bIsCancelRequested = m_bIsCancelAction;
     xSemaphoreGive(m_xSemaphoreHandle);
 }
+
+void GateControl::ReleaseClamp()
+{
+    // Release the clamp
+    m_pSGHWHAL->PowerUpServo();
+    m_pSGHWHAL->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampReleasedPWM));
+    vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+void GateControl::LockClamp()
+{
+    m_pSGHWHAL->PowerUpServo();
+    m_pSGHWHAL->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampLockedPWM));
+    vTaskDelay(pdMS_TO_TICKS(500));
+    m_pSGHWHAL->PowerDownServo();
+}
+

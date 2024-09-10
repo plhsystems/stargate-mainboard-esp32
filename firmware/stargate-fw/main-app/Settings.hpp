@@ -61,6 +61,10 @@ class Settings
     void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
     NVSJSON_ESETRET SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue);
 
+    double GetValueDouble(Settings::Entry eEntry);
+    NVSJSON_ESETRET SetValueDouble(Settings::Entry eEntry, bool bIsDryRun, double value);
+    NVSJSON_ESETRET SetValueDouble(Settings::Entry eEntry, double value);
+
     bool ImportJSON(const char* szJSON);
     char* ExportJSON();
 
@@ -75,24 +79,25 @@ class Settings
     const NVSJSON_SSettingEntry m_sConfigEntries[(int)Settings::Entry::Count] =
     {
         // // WiFi Station related
-        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",          0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",          "Wi-Fi (SSID)",                         "", NVSJSON_EFLAGS_NeedsReboot),
-        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VAL("WSTA.Pass",      "Wi-Fi password",                   "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
+    //                                                                                                                                      DEFAULT MIN MAX
+        [(int)Settings::Entry::WSTAIsActive] =            NVSJSON_INITINT32_RNG("WSTA.IsActive",   "Wi-Fi is active",                       0,    0, 1, NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",          "Wi-Fi (SSID)",                          "", NVSJSON_EFLAGS_NeedsReboot),
+        [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VAL("WSTA.Pass",      "Wi-Fi password",                        "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
 
-        [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITINT32_RNG("Clamp.LockedPWM", "Servo motor locked PWM",             1250, 1000,   2000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITINT32_RNG("Clamp.ReleasPWM", "Servo motor released PWM",           1000, 1000,   2000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITDOUBLE_RNG("Clamp.LockedPWM", "Servo motor locked PWM",               0.78f, 0.0f,   1.0f, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITDOUBLE_RNG("Clamp.ReleasPWM", "Servo motor released PWM",             0.45f, 0.0f,   1.0f, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::RingSymbolLight] =         NVSJSON_INITINT32_RNG("SGUR.SymLight",   "Symbol brightness",                    15,    3,     50, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingSymbolLight] =         NVSJSON_INITINT32_RNG("SGUR.SymLight",   "Symbol brightness",                     15,    3,     50, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",         7334,    0,  20000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::StepsPerRotation] =        NVSJSON_INITINT32_RNG("StepPerRot",      "How many step per rotation",            7334,    0,  20000, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::RingCalibTimeout] =        NVSJSON_INITINT32_RNG("Ring.CalToMS",    "Calibration process timeout",       40000,10000, 120000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",        0,-2000,   2000, NVSJSON_EFLAGS_None),
-        [(int)Settings::Entry::RingHomeGapRange] =        NVSJSON_INITINT32_RNG("Ring.HomeGap",    "Home sensor deadband",                  0,    0,   2000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingCalibTimeout] =        NVSJSON_INITINT32_RNG("Ring.CalToMS",    "Calibration process timeout",           40000,10000, 120000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeOffset] =          NVSJSON_INITINT32_RNG("Ring.HomeOffset", "Offset relative to home sensor",            0,-2000,   2000, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RingHomeGapRange] =        NVSJSON_INITINT32_RNG("Ring.HomeGap",    "Home sensor deadband",                      0,    0,   2000, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",   300,   10,  38*60, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::GateOpenedTimeout] =       NVSJSON_INITINT32_RNG("GateTimeoutS",    "Timeout (s) before the gate close",     300,   10,  38*60, NVSJSON_EFLAGS_None),
 
-        [(int)Settings::Entry::RampOnPercent] =           NVSJSON_INITINT32_RNG("Ramp.LightOn",    "Ramp illumination ON (percent)",       30,    0,    100, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::RampOnPercent] =           NVSJSON_INITINT32_RNG("Ramp.LightOn",    "Ramp illumination ON (percent)",         30,    0,    100, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::WormholeMaxLight] =        NVSJSON_INITINT32_RNG("WH.MaxLight",     "Maximum brightness for wormhole leds. (Warning: can cause voltage drop)", 200, 0, 255, NVSJSON_EFLAGS_None),
 
