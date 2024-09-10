@@ -332,7 +332,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
             m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
 
-            vTaskDelay(pdMS_TO_TICKS(300));
+            vTaskDelay(pdMS_TO_TICKS(500));
             RingComm::getI().SendLightUpSymbol(u8Symbol);
             vTaskDelay(pdMS_TO_TICKS(750));
 

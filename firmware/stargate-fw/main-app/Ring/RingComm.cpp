@@ -53,22 +53,23 @@ void RingComm::TaskRunning(void* pArg)
 
     while(true)
     {
-        pRC->LockMutex();
-
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 50000,
+            .tv_usec = 100000,
         };
         fd_set rfds;
         FD_ZERO(&rfds);
         FD_SET(pRC->m_commSocket, &rfds);
         int s = select(pRC->m_commSocket + 1, &rfds, NULL, NULL, &tv);
-        if (s < 0) {
+
+        if (s < 0)
+        {
             ESP_LOGE(TAG, "Select failed: errno %d", errno);
-            break;
         }
-        else if (s > 0) {
-            if (FD_ISSET(pRC->m_commSocket, &rfds)) {
+        else if (s > 0)
+        {
+            if (FD_ISSET(pRC->m_commSocket, &rfds))
+            {
                 // Incoming datagram received
                 char recvbuf[48];
 
@@ -78,16 +79,16 @@ void RingComm::TaskRunning(void* pArg)
                                     (struct sockaddr *)&raddr, &socklen);
                 if (len < 0) {
                     ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-                    break;
                 }
-
-                // Receiving response
-                pRC->m_u32LastPingResponse = xTaskGetTickCount();
-                if (!pRC->m_bIsConnected)
-                {
-                    pRC->m_bIsConnected = true;
-                    ESP_LOGI(TAG, "received %d bytes", len);
-                    ESP_LOGI(TAG, "Connected to the ring");
+                else {
+                    // Receiving response
+                    pRC->m_u32LastPingResponse = xTaskGetTickCount();
+                    if (!pRC->m_bIsConnected)
+                    {
+                        pRC->m_bIsConnected = true;
+                        ESP_LOGI(TAG, "received %d bytes", len);
+                        ESP_LOGI(TAG, "Connected to the ring");
+                    }
                 }
             }
         }
@@ -113,8 +114,6 @@ void RingComm::TaskRunning(void* pArg)
                 // goto CLEAN_UP;
             }
         }
-
-        pRC->UnlockMutex();
         // 50 hz maximum
         vTaskDelay(pdMS_TO_TICKS(20));
     }
