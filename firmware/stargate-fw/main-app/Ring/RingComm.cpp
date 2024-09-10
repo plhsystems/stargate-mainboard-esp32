@@ -98,6 +98,8 @@ void RingComm::TaskRunning(void* pArg)
         {
             pRC->m_bIsConnected = false;
             ESP_LOGI(TAG, "Disconnected from the ring");
+            // Wait a moment before retrying.
+            vTaskDelay(pdMS_TO_TICKS(5000));
         }
 
         // Ping every seconds
