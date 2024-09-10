@@ -84,7 +84,7 @@ class Settings
         [(int)Settings::Entry::WSTASSID] =                NVSJSON_INITSTRING("WSTA.SSID",          "Wi-Fi (SSID)",                          "", NVSJSON_EFLAGS_NeedsReboot),
         [(int)Settings::Entry::WSTAPass] =                NVSJSON_INITSTRING_VAL("WSTA.Pass",      "Wi-Fi password",                        "", ValidateWifiPassword, (NVSJSON_EFLAGS)(NVSJSON_EFLAGS_Secret | NVSJSON_EFLAGS_NeedsReboot)),
 
-        [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITDOUBLE_RNG("Clamp.LockedPWM", "Servo motor locked PWM",               0.72f, 0.0f,   1.0f, NVSJSON_EFLAGS_None),
+        [(int)Settings::Entry::ClampLockedPWM] =          NVSJSON_INITDOUBLE_RNG("Clamp.LockedPWM", "Servo motor locked PWM",               0.78f, 0.0f,   1.0f, NVSJSON_EFLAGS_None),
         [(int)Settings::Entry::ClampReleasedPWM] =        NVSJSON_INITDOUBLE_RNG("Clamp.ReleasPWM", "Servo motor released PWM",             0.45f, 0.0f,   1.0f, NVSJSON_EFLAGS_None),
 
         [(int)Settings::Entry::RingSymbolLight] =         NVSJSON_INITINT32_RNG("SGUR.SymLight",   "Symbol brightness",                     15,    3,     50, NVSJSON_EFLAGS_None),

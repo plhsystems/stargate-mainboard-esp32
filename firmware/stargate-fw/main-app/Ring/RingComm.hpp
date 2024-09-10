@@ -48,7 +48,7 @@ class RingComm
 
     // Working delay
     static constexpr uint32_t PINGPONG_TIMEOUT_MS = 1500;
-    static constexpr uint32_t PINGPONG_INTERVAL_MS = 250;
+    static constexpr uint32_t PINGPONG_INTERVAL_MS = 500;
 
     // Task related
     TaskHandle_t m_sRingCommHandle;

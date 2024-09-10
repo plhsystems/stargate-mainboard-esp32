@@ -55,7 +55,7 @@ void RingComm::TaskRunning(void* pArg)
     {
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 100000,
+            .tv_usec = 200000,
         };
         fd_set rfds;
         FD_ZERO(&rfds);
