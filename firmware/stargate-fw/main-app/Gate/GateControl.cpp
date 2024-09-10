@@ -343,7 +343,13 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
         // Play the wormhole idling animation
         wm.Begin();
         wm.OpeningAnimation();
+        
+        const uint32_t start_ticks = xTaskGetTickCount();
         while(!m_bIsCancelAction) {
+            // 5 minutes
+            if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
+                break;
+            }
             wm.RunTicks();
         }
         // Turn-off all symbols before killing the wormhole
