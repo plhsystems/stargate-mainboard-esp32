@@ -103,18 +103,21 @@ void RingComm::TaskRunning(void* pArg)
         }
 
         // Ping every seconds
-        if ( pdTICKS_TO_MS(xTaskGetTickCount() - ttPingPongTicks) > PINGPONG_INTERVAL_MS ) {
+        if ( pdTICKS_TO_MS(xTaskGetTickCount() - ttPingPongTicks) > PINGPONG_INTERVAL_MS )
+        {
             ttPingPongTicks = xTaskGetTickCount();
             const SGUCommNS::SPingPongArg arg = { .u32PingPong = u32PingPong };
             uint8_t payloads[16];
             const uint32_t u32Length = SGUCommNS::SGUComm::EncPingPong(payloads, sizeof(payloads), &arg);
             u32PingPong++;
 
+            pRC->LockMutex();
             int err = sendto(pRC->m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&pRC->m_dest_addr, sizeof(pRC->m_dest_addr));
             if (err < 0) {
                 ESP_LOGE(TAG, "Error occurred during ping: errno %d", errno);
                 // goto CLEAN_UP;
             }
+            pRC->UnlockMutex();
         }
         // 50 hz maximum
         vTaskDelay(pdMS_TO_TICKS(20));
@@ -161,7 +164,7 @@ void RingComm::SendLightUpSymbol(uint8_t u8Symbol)
     {
         .sColor = { .u8Red = u8Bright, .u8Green = u8Bright, .u8Blue = u8Bright },
         .u8Lights = u8Lights,
-        .u8LightCount = sizeof(u8Lights) / sizeof(uint8_t)
+        .u8LightCount = sizeof(u8Lights) / sizeof(u8Lights[0])
     };
     const uint32_t u32Length = SGUCommNS::SGUComm::EncUpdateLight(payloads, sizeof(payloads), &arg);
     const int err = sendto(m_commSocket, payloads, u32Length, 0, (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
