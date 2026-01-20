@@ -13,17 +13,17 @@ extern "C" {
 #define TAG "MainApp"
 
 static App g_app;
-static PinkySGHW m_sPinkySGHW;
+static PinkySGHW m_pinky_sghw;
 
-static App::Config m_sConfig =
+static App::Config m_config =
 {
-  .pSGHWHal = &m_sPinkySGHW
+  .m_sghw_hal = &m_pinky_sghw
 };
 
 void app_main(void)
 {
   ESP_LOGI(TAG, "app-main init");
-  g_app.Init(&m_sConfig);
+  g_app.Init(&m_config);
   ESP_LOGI(TAG, "app-main init, done");
 
   while(true)

@@ -8,16 +8,16 @@ class App
     public:
     struct Config
     {
-        SGHW_HAL* pSGHWHal;
+        SGHW_HAL* m_sghw_hal;
     };
 
     public:
     App() = default;
 
-    void Init(Config* psConfig);
+    void Init(Config* config);
 
     void LoopTick();
 
     private:
-    Config* m_psConfig;
+    Config* m_config;
 };

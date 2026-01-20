@@ -18,15 +18,15 @@ class BaseGate
 {
     public:
     protected:
-    BaseGate(GateGalaxy eGateGalaxy, const char* szName);
+    BaseGate(GateGalaxy gate_galaxy, const char* name);
     public:
-    const GateGalaxy eGateGalaxy;
-    const char* szName;
+    const GateGalaxy gate_galaxy;
+    const char* name;
 
-    virtual const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const = 0;
+    virtual const GateSymbol& GetSymbol(uint8_t symbol_num) const = 0;
     virtual int32_t GetSymbolCount() const = 0;
 
-    virtual const GateAddress& GetAddress(uint32_t u32Index) const { return InvalidGateAddress; }
+    virtual const GateAddress& GetAddress(uint32_t index) const { return InvalidGateAddress; }
     virtual int32_t GetAddressCount() const { return 0; }
 
     static inline const GateSymbol InvalidSymbol{ };

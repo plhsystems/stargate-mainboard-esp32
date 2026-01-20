@@ -2,7 +2,7 @@
 #include "esp_log.h"
 #include "Gate/GateControl.hpp"
 #include "Audio/SoundFX.hpp"
-#include "Ring/RingComm.hpp"
+#include "Ring/RingBLEClient.hpp"
 #include "WifiMgr.hpp"
 #include "Settings.hpp"
 #include "HttpClient.hpp"
@@ -10,9 +10,9 @@
 
 #define TAG "MainApp"
 
-void App::Init(Config* psConfig)
+void App::Init(Config* config)
 {
-    m_psConfig = psConfig;
+    m_config = config;
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -30,24 +30,24 @@ void App::Init(Config* psConfig)
 
     // Initialize all modules
     ESP_LOGI(TAG, "Initialize gate control");
-    m_psConfig->pSGHWHal->Init();
+    m_config->m_sghw_hal->Init();
     ESP_LOGI(TAG, "Loading sound FX");
     SoundFX::getI().Init();
     ESP_LOGI(TAG, "Initialize WiFi Manager");
     WifiMgr::getI().Init();
     ESP_LOGI(TAG, "Initialize web server");
-    WebServer::getI().Init(m_psConfig->pSGHWHal);
+    WebServer::getI().Init(m_config->m_sghw_hal);
     ESP_LOGI(TAG, "Initialize gate control");
-    GateControl::getI().Init(psConfig->pSGHWHal);
-    ESP_LOGI(TAG, "Loading ring communication");
-    RingComm::getI().Init();
+    GateControl::getI().Init(config->m_sghw_hal);
+    ESP_LOGI(TAG, "Loading ring BLE communication");
+    RingBLEClient::getI().Init();
     ESP_LOGI(TAG, "HTTP Client for external calls");
     HttpClient::getI().Init();
 
     ESP_LOGI(TAG, "Starting Wi-Fi");
     WifiMgr::getI().Start();
-    ESP_LOGI(TAG, "Starting ring communication");
-    RingComm::getI().Start();
+    ESP_LOGI(TAG, "Starting ring BLE communication");
+    RingBLEClient::getI().Start();
     ESP_LOGI(TAG, "Starting sound FX");
     SoundFX::getI().Start();
     ESP_LOGI(TAG, "Starting gate control");
@@ -58,10 +58,10 @@ void App::Init(Config* psConfig)
     HttpClient::getI().Start();
 
     // For debug purpose ...
-    char* szAllTask = (char*)malloc(4096);
-    vTaskList(szAllTask);
-    ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", szAllTask);
-    free(szAllTask);
+    char* all_task = (char*)malloc(4096);
+    vTaskList(all_task);
+    ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", all_task);
+    free(all_task);
 
     // Autocalibrate as the default action
     // GateControl::getI().QueueAutoHome();
@@ -69,9 +69,9 @@ void App::Init(Config* psConfig)
 
 void App::LoopTick()
 {
-    bool bSanity = false;
+    bool sanity = false;
     // The least interesting task to ever exist.
-    m_psConfig->pSGHWHal->SetSanityLED(bSanity);
-    bSanity = !bSanity;
+    m_config->m_sghw_hal->SetSanityLED(sanity);
+    sanity = !sanity;
     vTaskDelay(pdMS_TO_TICKS(250));
 }

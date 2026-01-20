@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stargate Universe - Dial Device</title>
+    <link rel="stylesheet" href="dial.css">
+</head>
+<body>
+    <div class="device-container">
+        <!-- Device Frame -->
+        <div class="device-frame">
+            <!-- Top Display Panel -->
+            <div class="display-panel">
+                <!-- Status Indicators -->
+                <div class="status-bar">
+                    <div class="status-indicator active"></div>
+                    <div class="status-text">REMOTE DIALING DEVICE</div>
+                    <div class="status-indicator"></div>
+                </div>
+
+                <!-- Locked Glyphs Display -->
+                <div class="locked-glyphs">
+                    <div class="locked-glyph-slot" data-position="1">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="2">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="3">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="4">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="5">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="6">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="7">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="8">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                    <div class="locked-glyph-slot" data-position="9">
+                        <div class="glyph-placeholder"></div>
+                    </div>
+                </div>
+
+                <!-- Circular Glyph Selector -->
+                <div class="glyph-circle">
+                    <div class="circle-track"></div>
+
+                    <!-- Center Info Display -->
+                    <div class="center-display">
+                        <div class="destination-info">
+                            <div class="info-label">DESTINATION</div>
+                            <div class="info-value">UNKNOWN</div>
+                        </div>
+                        <div class="dial-progress">
+                            <div class="progress-label">ADDRESS</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <div class="progress-text">0 / 9</div>
+                        </div>
+                    </div>
+
+                    <!-- Glyphs arranged in circle -->
+                    <div class="glyph-ring">
+                        <!-- 36 glyphs will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="control-panel">
+                <button class="control-btn dial-btn" id="dialBtn">
+                    <span class="btn-icon">⚡</span>
+                    <span class="btn-label">DIAL</span>
+                </button>
+                <button class="control-btn book-btn" id="bookBtn">
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-label">BOOK</span>
+                </button>
+                <button class="control-btn clear-btn" id="clearBtn">
+                    <span class="btn-icon">✕</span>
+                    <span class="btn-label">CLEAR</span>
+                </button>
+                <button class="control-btn abort-btn" id="abortBtn">
+                    <span class="btn-icon">◼</span>
+                    <span class="btn-label">ABORT</span>
+                </button>
+            </div>
+
+            <!-- Status Message -->
+            <div class="status-message">
+                <div class="message-text">READY TO DIAL</div>
+            </div>
+        </div>
+
+        <!-- Address Book Modal -->
+        <div class="modal-overlay" id="addressBookModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>ADDRESS BOOK</h2>
+                    <button class="modal-close" id="closeBookBtn">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="address-hint" id="addressHint">Click on an address to load it</div>
+                    <div class="address-list" id="addressList">
+                        <!-- Addresses will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dial.js"></script>
+</body>
+</html>

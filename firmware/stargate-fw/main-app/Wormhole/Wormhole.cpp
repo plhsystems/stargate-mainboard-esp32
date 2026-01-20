@@ -7,40 +7,40 @@
 #include "freertos/task.h"
 #include "esp_random.h"
 
-Wormhole::Wormhole(SGHW_HAL* pHAL, EType eWormholeType) :
-    m_eWormholeType(eWormholeType),
-    m_pHAL(pHAL)
+Wormhole::Wormhole(SGHW_HAL* hal, EType wormhole_type) :
+    m_wormhole_type(wormhole_type),
+    m_hal(hal)
 {
-    m_u32MaxBrightness = Settings::getI().GetValueInt32(Settings::Entry::WormholeMaxLight);
+    m_max_brightness = Settings::getI().GetValueInt32(Settings::Entry::WormholeMaxLight);
 
     for(int i = 0; i < LEDEFFECT_COUNT; i++) {
-        SLedEffect* pLedEffect = &m_sLedEffects[i];
+        SLedEffect* led_effect = &m_led_effects[i];
 
-        pLedEffect->bIsUp = false;
-        pLedEffect->fOne = 0.0f;
+        led_effect->is_up = false;
+        led_effect->one = 0.0f;
     }
 }
 
 void Wormhole::Begin()
 {
     ClearAll();
-    m_bIsRunInitialized = false;
+    m_is_run_initialized = false;
 }
 
 void Wormhole::OpeningAnimation()
 {
     ClearAll();
-    IlluminateRing(ERing::Ring0, EDir::FadeIn);
+    Illuminatring(ERing::Ring0, EDir::FadeIn);
     ClearAll();
-    IlluminateRing(ERing::Ring1, EDir::FadeIn);
+    Illuminatring(ERing::Ring1, EDir::FadeIn);
     ClearAll();
-    IlluminateRing(ERing::Ring2, EDir::FadeIn);
+    Illuminatring(ERing::Ring2, EDir::FadeIn);
     ClearAll();
-    IlluminateRing(ERing::Ring3, EDir::FadeIn);
+    Illuminatring(ERing::Ring3, EDir::FadeIn);
     vTaskDelay(pdMS_TO_TICKS(150));
-    IlluminateRing(ERing::Ring2, EDir::FadeIn);
-    IlluminateRing(ERing::Ring1, EDir::FadeIn);
-    IlluminateRing(ERing::Ring0, EDir::FadeIn);
+    Illuminatring(ERing::Ring2, EDir::FadeIn);
+    Illuminatring(ERing::Ring1, EDir::FadeIn);
+    Illuminatring(ERing::Ring0, EDir::FadeIn);
 }
 
 void Wormhole::RunTicks()
@@ -48,49 +48,49 @@ void Wormhole::RunTicks()
     const float minF = 0.30f;
     const float maxF = 1.00f;
 
-    if (!m_bIsRunInitialized) {
+    if (!m_is_run_initialized) {
         // Random initialization
-        for(int i = 0; i < m_pHAL->GetWHPixelCount(); i++) {
-            SLedEffect* pLedEffect = &m_sLedEffects[i];
-            pLedEffect->fOne = minF + (((esp_random() % 100) * 0.01f) * (maxF - minF));
-            pLedEffect->bIsUp = (esp_random() % 2) != 0;
+        for(int i = 0; i < m_hal->GetWHPixelCount(); i++) {
+            SLedEffect* led_effect = &m_led_effects[i];
+            led_effect->one = minF + (((esp_random() % 100) * 0.01f) * (maxF - minF));
+            led_effect->is_up = (esp_random() % 2) != 0;
         }
-        m_bIsRunInitialized = true;
+        m_is_run_initialized = true;
     }
 
-    for(int i = 0; i < m_pHAL->GetWHPixelCount(); i++) {
-        SLedEffect* pLedEffect = &m_sLedEffects[i];
+    for(int i = 0; i < m_hal->GetWHPixelCount(); i++) {
+        SLedEffect* led_effect = &m_led_effects[i];
 
-        const float fInc = /*0.0025f +*/ ( 0.0005f * (esp_random() % 100) );
+        const float inc = /*0.0025f +*/ ( 0.0005f * (esp_random() % 100) );
 
-        pLedEffect->fOne += fInc * (pLedEffect->bIsUp ? 1.0f : -1.0f);
+        led_effect->one += inc * (led_effect->is_up ? 1.0f : -1.0f);
 
-        if (pLedEffect->fOne >= maxF) {
-            pLedEffect->fOne = maxF;
-            pLedEffect->bIsUp = false;
+        if (led_effect->one >= maxF) {
+            led_effect->one = maxF;
+            led_effect->is_up = false;
         }
-        else if (pLedEffect->fOne <= minF) {
-            pLedEffect->fOne = minF;
-            pLedEffect->bIsUp = true;
+        else if (led_effect->one <= minF) {
+            led_effect->one = minF;
+            led_effect->is_up = true;
         }
 
         // Linearize the output (from human perception POV)
-        float fCorrValue = MISCFA_LinearizeLEDOutput(pLedEffect->fOne);
+        float corr_value = MISCFA_LinearizeLEDOutput(led_effect->one);
 
         // Make the outer ring glowing less
-        constexpr float fltRingCorrValues[(int)Wormhole::ERing::Count] = { 0.1f, 0.6f, 0.9f, 1.0f };
-        fCorrValue *= fltRingCorrValues[(int)GetRing(i)];
+        constexpr float ring_corr_values[(int)Wormhole::ERing::Count] = { 0.1f, 0.6f, 0.9f, 1.0f };
+        corr_value *= ring_corr_values[(int)GetRing(i)];
 
-        const uint8_t u8PWM = (uint8_t)(fCorrValue*m_u32MaxBrightness);
+        const uint8_t pwm = (uint8_t)(corr_value*m_max_brightness);
 
-        if (m_eWormholeType == EType::NormalSG1) {
-            m_pHAL->SetWHPixel(i, MISCMACRO_MAX(u8PWM, 16), MISCMACRO_MAX(u8PWM, 16), MISCMACRO_MIN(16+u8PWM, m_u32MaxBrightness-16));
+        if (m_wormhole_type == EType::NormalSG1) {
+            m_hal->SetWHPixel(i, MISCMACRO_MAX(pwm, 16), MISCMACRO_MAX(pwm, 16), MISCMACRO_MIN(16+pwm, m_max_brightness-16));
         }
-        else if (m_eWormholeType == EType::NormalSGU) {
-            m_pHAL->SetWHPixel(i, u8PWM, u8PWM, u8PWM);
+        else if (m_wormhole_type == EType::NormalSGU) {
+            m_hal->SetWHPixel(i, pwm, pwm, pwm);
         }
     }
-    m_pHAL->RefreshWHPixels();
+    m_hal->RefreshWHPixels();
 
     // 50 HZ
     vTaskDelay(pdMS_TO_TICKS(20));
@@ -98,10 +98,10 @@ void Wormhole::RunTicks()
 
 void Wormhole::ClosingAnimation()
 {
-    IlluminateRing(ERing::Ring3, EDir::FadeOut);
-    IlluminateRing(ERing::Ring2, EDir::FadeOut);
-    IlluminateRing(ERing::Ring1, EDir::FadeOut);
-    IlluminateRing(ERing::Ring0, EDir::FadeOut);
+    Illuminatring(ERing::Ring3, EDir::FadeOut);
+    Illuminatring(ERing::Ring2, EDir::FadeOut);
+    Illuminatring(ERing::Ring1, EDir::FadeOut);
+    Illuminatring(ERing::Ring0, EDir::FadeOut);
 
     // Clear all pixels
     ClearAll();
@@ -114,37 +114,37 @@ void Wormhole::End()
 
 Wormhole::ERing Wormhole::GetRing(int zeroBasedIndex)
 {
-    for(int j = 0; j < sizeof(m_pRing0_OneBased)/sizeof(m_pRing0_OneBased[0]); j++)
-        if (m_pRing0_OneBased[j]-1 == zeroBasedIndex)
+    for(int j = 0; j < sizeof(m_ring0_one_based)/sizeof(m_ring0_one_based[0]); j++)
+        if (m_ring0_one_based[j]-1 == zeroBasedIndex)
             return Wormhole::ERing::Ring0;
-    for(int j = 0; j < sizeof(m_pRing1_OneBased)/sizeof(m_pRing1_OneBased[0]); j++)
-        if (m_pRing1_OneBased[j]-1 == zeroBasedIndex)
+    for(int j = 0; j < sizeof(m_ring1_one_based)/sizeof(m_ring1_one_based[0]); j++)
+        if (m_ring1_one_based[j]-1 == zeroBasedIndex)
             return Wormhole::ERing::Ring1;
-    for(int j = 0; j < sizeof(m_pRing2_OneBased)/sizeof(m_pRing2_OneBased[0]); j++)
-        if (m_pRing2_OneBased[j]-1 == zeroBasedIndex)
+    for(int j = 0; j < sizeof(m_ring2_one_based)/sizeof(m_ring2_one_based[0]); j++)
+        if (m_ring2_one_based[j]-1 == zeroBasedIndex)
             return Wormhole::ERing::Ring2;
-    for(int j = 0; j < sizeof(m_pRing3_OneBased)/sizeof(m_pRing3_OneBased[0]); j++)
-        if (m_pRing3_OneBased[j]-1 == zeroBasedIndex)
+    for(int j = 0; j < sizeof(m_ring3_one_based)/sizeof(m_ring3_one_based[0]); j++)
+        if (m_ring3_one_based[j]-1 == zeroBasedIndex)
             return Wormhole::ERing::Ring3;
     return Wormhole::ERing::Ring0;
 }
 
 void Wormhole::ClearAll()
 {
-    m_pHAL->ClearAllWHPixels();
-    m_pHAL->RefreshWHPixels();
+    m_hal->ClearAllWHPixels();
+    m_hal->RefreshWHPixels();
 }
 
-void Wormhole::IlluminateRing(Wormhole::ERing eRing, Wormhole::EDir dir)
+void Wormhole::Illuminatring(Wormhole::ERing ring, Wormhole::EDir dir)
 {
     for(int32_t s32 = 0; s32 <= 100; s32 += 10)
     {
         const float brig = ((dir == Wormhole::EDir::FadeOut) ? (100-s32) : s32) * 0.01f;
-        const SRingEntry* psRingEntries = &m_sRingEntries[(int)eRing];
-        for(int i = 0; i < psRingEntries->u32RingCount; i++) {
-            m_pHAL->SetWHPixel(psRingEntries->pRing[i]-1, (uint8_t)(m_u32MaxBrightness * brig), (uint8_t)(m_u32MaxBrightness * brig), (uint8_t)(m_u32MaxBrightness * brig));
+        const SRingEntry* ring_entries = &m_ring_entries[(int)ring];
+        for(int i = 0; i < ring_entries->ring_count; i++) {
+            m_hal->SetWHPixel(ring_entries->ring[i]-1, (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig));
         }
-        m_pHAL->RefreshWHPixels();
+        m_hal->RefreshWHPixels();
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }

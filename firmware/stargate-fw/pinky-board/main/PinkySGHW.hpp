@@ -6,21 +6,30 @@
 #include "freertos/semphr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_timer.h"
+#include "driver/mcpwm_prelude.h"
 
 class PinkySGHW : public SGHW_HAL
 {
-    
+
     #define STEPEND_BIT    0x01
     struct Stepper
     {
-        esp_timer_handle_t sSignalTimerHandle;
-        TaskHandle_t sTskControlHandle;
+        esp_timer_handle_t signal_timer_handle;
+        TaskHandle_t task_control_handle;
 
-        int32_t s32Period = 0;
+        int32_t period = 0;
         // Counter
-        bool bIsCCW;
-        int32_t s32Count = 0;
-        int32_t s32Target = 0;
+        bool is_ccw;
+        int32_t count = 0;
+        int32_t target = 0;
+    };
+
+    struct ServoControl
+    {
+        mcpwm_timer_handle_t timer;
+        mcpwm_oper_handle_t oper;
+        mcpwm_cmpr_handle_t comparator;
+        mcpwm_gen_handle_t generator;
     };
 
     public:
@@ -28,10 +37,10 @@ class PinkySGHW : public SGHW_HAL
 
     void Init() override;
 
-    void SetChevronLight(EChevron eChevron, bool bState) override;
+    void SetChevronLight(EChevron chevron, bool state) override;
 
     // Ramp light
-    void SetRampLight(double dPerc) override;
+    void SetRampLight(double perc) override;
 
     void PowerUpStepper() override;
     void StepStepperCW() override;
@@ -39,37 +48,38 @@ class PinkySGHW : public SGHW_HAL
     void PowerDownStepper() override;
 
     void PowerUpServo() override;
-    void SetServo(double dPosition) override;
+    void SetServo(double position) override;
     void PowerDownServo() override;
 
     // Wormhole related
     int32_t GetWHPixelCount() override;
-    void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue) override;
+    void SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue) override;
     void ClearAllWHPixels() override;
     void RefreshWHPixels() override;
 
-    void SetSanityLED(bool bState);
+    void SetSanityLED(bool state);
 
     bool GetIsHomeSensorActive() override;
 
     // Stepper
-    void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount) override;
-    void MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS) override;
+    void SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) override;
+    void MoveStepperTo(int32_t ticks, uint32_t timeout_ms) override;
 
     private:
-    bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_xMutexHandle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
-    void UnlockMutex() { xSemaphoreGive( m_xMutexHandle ); }
+    bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_mutex_handle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
+    void UnlockMutex() { xSemaphoreGive( m_mutex_handle ); }
 
     static void tmr_signal_callback(void* arg);
 
     private:
     Stepper m_stepper;
+    ServoControl m_servo;
 
     led_strip_handle_t led_strip;
 
-    double m_dLastServoPosition;
+    double m_last_servo_position;
 
     // Mutex
-    StaticSemaphore_t m_xMutexBuffer; // Define the buffer for the mutex's data structure
-    SemaphoreHandle_t m_xMutexHandle; // Declare a handle for the mutex
+    StaticSemaphore_t m_mutex_buffer; // Define the buffer for the mutex's data structure
+    SemaphoreHandle_t m_mutex_handle; // Declare a handle for the mutex
 };

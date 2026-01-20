@@ -38,14 +38,14 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
         goto ERROR;
     }
 
-    int n = httpd_req_recv(req, (char*)getI().m_u8Buffers, HTTPSERVER_BUFFERSIZE);
+    int n = httpd_req_recv(req, (char*)getI().m_buffers, HTTPSERVER_BUFFERSIZE);
     int binary_file_length = 0;
 
     while(n > 0)
     {
         ESP_LOGI(TAG, "OTAUploadPostHandler / receiving: %d bytes", (int)n);
 
-        err = esp_ota_write( update_handle, (const void *)getI().m_u8Buffers, n);
+        err = esp_ota_write( update_handle, (const void *)getI().m_buffers, n);
         if (err != ESP_OK)
         {
             esp_ota_abort(update_handle);
@@ -54,7 +54,7 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
         binary_file_length += n;
         ESP_LOGD(TAG, "Written image length %d", (int)binary_file_length);
 
-        n = httpd_req_recv(req, (char*)getI().m_u8Buffers, HTTPSERVER_BUFFERSIZE);
+        n = httpd_req_recv(req, (char*)getI().m_buffers, HTTPSERVER_BUFFERSIZE);
     }
 
     err = esp_ota_end(update_handle);

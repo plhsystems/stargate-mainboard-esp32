@@ -54,18 +54,18 @@ class Settings
     void Load();
     void Commit();
 
-    int32_t GetValueInt32(Settings::Entry eEntry);
-    NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, int32_t s32NewValue);
-    NVSJSON_ESETRET SetValueInt32(Settings::Entry eEntry, bool bIsDryRun, int32_t s32NewValue);
+    int32_t GetValueInt32(Settings::Entry entry);
+    NVSJSON_ESETRET SetValueInt32(Settings::Entry entry, int32_t new_value);
+    NVSJSON_ESETRET SetValueInt32(Settings::Entry entry, bool is_dry_run, int32_t new_value);
 
-    void GetValueString(Settings::Entry eEntry, char* out_value, size_t* length);
-    NVSJSON_ESETRET SetValueString(Settings::Entry eEntry, bool bIsDryRun, const char* szValue);
+    void GetValueString(Settings::Entry entry, char* out_value, size_t* length);
+    NVSJSON_ESETRET SetValueString(Settings::Entry entry, bool is_dry_run, const char* value);
 
-    double GetValueDouble(Settings::Entry eEntry);
-    NVSJSON_ESETRET SetValueDouble(Settings::Entry eEntry, bool bIsDryRun, double value);
-    NVSJSON_ESETRET SetValueDouble(Settings::Entry eEntry, double value);
+    double GetValueDouble(Settings::Entry entry);
+    NVSJSON_ESETRET SetValueDouble(Settings::Entry entry, bool is_dry_run, double value);
+    NVSJSON_ESETRET SetValueDouble(Settings::Entry entry, double value);
 
-    bool ImportJSON(const char* szJSON);
+    bool ImportJSON(const char* json);
     char* ExportJSON();
 
     // Instance
@@ -75,8 +75,8 @@ class Settings
         return instance;
     }
     private:
-    static bool ValidateWifiPassword(const NVSJSON_SSettingEntry* pSettingEntry, const char* szValue);
-    const NVSJSON_SSettingEntry m_sConfigEntries[(int)Settings::Entry::Count] =
+    static bool ValidateWifiPassword(const NVSJSON_SSettingEntry* setting_entry, const char* value);
+    const NVSJSON_SSettingEntry m_config_entries[(int)Settings::Entry::Count] =
     {
         // // WiFi Station related
     //                                                                                                                                      DEFAULT MIN MAX
@@ -110,7 +110,7 @@ class Settings
 
         [(int)Settings::Entry::GateGalaxy] =              NVSJSON_INITINT32_RNG("Gate.Gal",        "Galaxy type -1: None, 0: Milky-way, 1: Pegasus, 2: Universe",      -1,   -1, (int32_t)GateGalaxy::Count-1, NVSJSON_EFLAGS_None),
     };
-    NVSJSON_SHandle m_sSettingHandle;
-    const NVSJSON_SConfig m_sSettingConfig = { .szPartitionName = "nvs", .pSettingEntries = m_sConfigEntries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
+    NVSJSON_SHandle m_setting_handle;
+    const NVSJSON_SConfig m_setting_config = { .partition_name = "nvs", .setting_entries = m_config_entries, .setting_entry_count = (uint32_t)Settings::Entry::Count };
 };
 

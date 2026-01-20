@@ -12,7 +12,7 @@
 #include "../Gate/BaseGate.hpp"
 #include "../Gate/GateFactory.hpp"
 #include "../Gate/GateControl.hpp"
-#include "../Ring/RingComm.hpp"
+#include "../Ring/RingBLEClient.hpp"
 #include "../Audio/SoundFX.hpp"
 #include "../HttpClient.hpp"
 
@@ -24,42 +24,42 @@ extern const esp_app_desc_t esp_app_desc;
 esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
-    char* pExportJSON = NULL;
-    bool freeMem = true;
+    char* export_json = NULL;
+    bool free_mem = true;
 
     if (strcmp(req->uri, APIURL_GETSTATUS_URI) == 0) {
-        pExportJSON = getI().GetStatus();
+        export_json = getI().GetStatus();
     }
     else if (strcmp(req->uri, APIURL_GETSYSINFO_URI) == 0) {
-        pExportJSON = getI().GetSysInfo();
+        export_json = getI().GetSysInfo();
     }
     else if (strcmp(req->uri, APIURL_GETSOUNDLIST_URI) == 0) {
-        pExportJSON = getI().GetAllSoundLists();
+        export_json = getI().GetAllSoundLists();
     }
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
-        pExportJSON = Settings::getI().ExportJSON();
+        export_json = Settings::getI().ExportJSON();
     }
     else if (strcmp(req->uri, APIURL_GETFANGATELIST_MILKYWAY_URI) == 0) {
-        freeMem = false;
-        pExportJSON = (char*)HttpClient::getI().GetFanGateListString();
-        if (nullptr == pExportJSON) {
+        free_mem = false;
+        export_json = (char*)HttpClient::getI().GetFanGateListString();
+        if (nullptr == export_json) {
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Fan gate list isn't available yet");
             goto ERROR;
         }
     }
     else if (strcmp(req->uri, APIURL_GETFREERTOSDBGINFO_URI) == 0) {
         // According to the documentation, put a big buffer.
-        pExportJSON = (char*)malloc(4096);
-        vTaskList(pExportJSON);
+        export_json = (char*)malloc(4096);
+        vTaskList(export_json);
     }
     else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_MILKYWAY_URI) == 0) {
-        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
+        export_json = getI().GetGalaxyInfoJSON(GateGalaxy::MilkyWay);
     }
     else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_PEGASUS_URI) == 0) {
-        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Pegasus);
+        export_json = getI().GetGalaxyInfoJSON(GateGalaxy::Pegasus);
     }
     else if (strcmp(req->uri, APIURL_GALAXY_GETINFO_UNIVERSE_URI) == 0) {
-        pExportJSON = getI().GetGalaxyInfoJSON(GateGalaxy::Universe);
+        export_json = getI().GetGalaxyInfoJSON(GateGalaxy::Universe);
     }
     else {
         ESP_LOGE(TAG, "api_get_handler, url: %s", req->uri);
@@ -68,7 +68,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     }
 
     // Allocation error
-    if (pExportJSON == NULL) {
+    if (export_json == NULL) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Not enough memory");
         goto ERROR;
     }
@@ -76,7 +76,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     // Chunk file transfer
     httpd_resp_set_type(req, "application/json");
 
-    if (httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK) {
+    if (httpd_resp_send_chunk(req, export_json, strlen(export_json)) != ESP_OK) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
         goto ERROR;
     }
@@ -85,8 +85,8 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     err = ESP_FAIL;
     END:
     httpd_resp_set_hdr(req, "Connection", "close");
-    if (freeMem && pExportJSON != NULL) {
-        free(pExportJSON);
+    if (free_mem && export_json != NULL) {
+        free(export_json);
     }
     httpd_resp_send_chunk(req, NULL, 0);
     return err;
@@ -95,13 +95,13 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
 esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
-    cJSON* pRoot = nullptr;
+    cJSON* root = nullptr;
     WebServer& ws = WebServer::getI();
 
     // Get datas
     int n = 0;
     while(1) {
-        int reqN = httpd_req_recv(req, (char*)ws.m_u8Buffers + n, HTTPSERVER_BUFFERSIZE - n - 1);
+        int reqN = httpd_req_recv(req, (char*)ws.m_buffers + n, HTTPSERVER_BUFFERSIZE - n - 1);
         if (reqN <= 0)
         {
             ESP_LOGI(TAG, "api_post_handler, test: %d, reqN: %d", (int)n, (int)reqN);
@@ -109,13 +109,13 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         n += reqN;
     }
-    ws.m_u8Buffers[n] = '\0';
+    ws.m_buffers[n] = '\0';
 
     ESP_LOGI(TAG, "api_post_handler, url: %s", req->uri);
     if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         // ==============================================
         // Import the JSON setting file
-        if (!Settings::getI().ImportJSON((const char*)ws.m_u8Buffers)) {
+        if (!Settings::getI().ImportJSON((const char*)ws.m_buffers)) {
             ESP_LOGE(TAG, "Unable to import JSON");
             httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown request");
             goto ERROR;
@@ -123,7 +123,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     }
     else
     {
-        pRoot = cJSON_Parse((const char*)ws.m_u8Buffers);
+        root = cJSON_Parse((const char*)ws.m_buffers);
 
         // ==============================================
         // Gate control
@@ -134,27 +134,27 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
             GateControl::getI().QueueAutoCalibrate();
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_DIALADDRESS_URI) == 0) {
-            const cJSON* jItemAddrs = cJSON_GetObjectItem(pRoot, "addr");
-            if (nullptr == jItemAddrs ||
-                !cJSON_IsArray(jItemAddrs)) {
+            const cJSON* item_addrs = cJSON_GetObjectItem(root, "addr");
+            if (nullptr == item_addrs ||
+                !cJSON_IsArray(item_addrs)) {
                 goto ERROR;
             }
             // Check for symbols
-            uint8_t u8Symbols[GateAddress::SYMBOL_COUNT];
+            uint8_t symbols[GateAddress::SYMBOL_COUNT];
             uint8_t u8SymbolCount = 0;
-            if (cJSON_GetArraySize(jItemAddrs) > GateAddress::SYMBOL_COUNT) {
+            if (cJSON_GetArraySize(item_addrs) > GateAddress::SYMBOL_COUNT) {
                 goto ERROR;
             }
             const cJSON* cJSONItem = NULL;
-            cJSON_ArrayForEach(cJSONItem, jItemAddrs)
+            cJSON_ArrayForEach(cJSONItem, item_addrs)
             {
                 if (!cJSON_IsNumber(cJSONItem)) {
                     goto ERROR;
                 }
-                u8Symbols[u8SymbolCount] = (uint8_t)cJSONItem->valueint;
+                symbols[u8SymbolCount] = (uint8_t)cJSONItem->valueint;
                 u8SymbolCount++;
             }
-            GateAddress ga { u8Symbols, u8SymbolCount };
+            GateAddress ga { symbols, u8SymbolCount };
             GateControl::getI().QueueDialAddress(ga);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_ABORT_URI) == 0) {
@@ -162,26 +162,26 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         // Test control
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTRAMPLIGHT_URI) == 0) {
-            const cJSON* jItemValue = cJSON_GetObjectItem(pRoot, "value");
+            const cJSON* jItemValue = cJSON_GetObjectItem(root, "value");
             if (nullptr == jItemValue ||
                 !cJSON_IsNumber(jItemValue) ||
                 jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            ws.m_pSGHWHAL->SetRampLight(jItemValue->valuedouble);
+            ws.m_sghw_hal->SetRampLight(jItemValue->valuedouble);
         }
         else if (strcmp(req->uri, APIURL_POSTCONTROL_TESTSERVO_URI) == 0) {
-            const cJSON* jItemValue = cJSON_GetObjectItem(pRoot, "value");
+            const cJSON* jItemValue = cJSON_GetObjectItem(root, "value");
             if (nullptr == jItemValue ||
                 !cJSON_IsNumber(jItemValue) ||
                 jItemValue->valuedouble < 0.0d || jItemValue->valuedouble > 1.0d) {
                 goto ERROR;
             }
-            ws.m_pSGHWHAL->SetServo(jItemValue->valuedouble);
+            ws.m_sghw_hal->SetServo(jItemValue->valuedouble);
         }
         // Sounds
         else if (strcmp(req->uri, APIURL_PLAYSOUND_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(root, "id");
             if (nullptr == jItemAnim ||
                 !cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
@@ -192,7 +192,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         }
         // Wormhole manual wormhole mode
         else if (strcmp(req->uri, APIURL_POSTCONTROL_MANUALWORMHOLE_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(root, "id");
             if (nullptr == jItemAnim ||
                 !cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
@@ -207,19 +207,19 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
         // ==============================================
         // Ring control
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_POWEROFF_URI) == 0) {
-            RingComm::getI().SendPowerOff();
+            RingBLEClient::getI().SendPowerOff();
         }
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_TESTANIMATE_URI) == 0) {
-            const cJSON* jItemAnim = cJSON_GetObjectItem(pRoot, "id");
+            const cJSON* jItemAnim = cJSON_GetObjectItem(root, "id");
             if (nullptr == jItemAnim ||
                 !cJSON_IsNumber(jItemAnim) ||
                 jItemAnim->valueint < 0 || jItemAnim->valueint >= (int)SGUCommNS::EChevronAnimation::Count) {
                 goto ERROR;
             }
-            RingComm::getI().SendGateAnimation((SGUCommNS::EChevronAnimation)jItemAnim->valueint);
+            RingBLEClient::getI().SendGateAnimation((SGUCommNS::EChevronAnimation)jItemAnim->valueint);
         }
         else if (strcmp(req->uri, APIURL_POSTRINGCONTROL_GOTOFACTORY_URI) == 0) {
-            RingComm::getI().SendGotoFactory();
+            RingBLEClient::getI().SendGotoFactory();
         }
         else {
             ESP_LOGE(TAG, "api_post_handler, url: %s", req->uri);
@@ -233,8 +233,8 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
     ESP_LOGE(TAG, "api_post_handler, url: %s, execution failed", req->uri);
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unable to complete the request");
     END:
-    if (nullptr != pRoot) {
-        cJSON_Delete(pRoot);
+    if (nullptr != root) {
+        cJSON_Delete(root);
     }
 
     httpd_resp_set_hdr(req, "Connection", "close");
@@ -244,10 +244,10 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
 
 char* WebServer::GetStatus()
 {
-    cJSON* pRoot = NULL;
+    cJSON* root = NULL;
     {
-        pRoot = cJSON_CreateObject();
-        if (pRoot == NULL) {
+        root = cJSON_CreateObject();
+        if (root == NULL) {
             goto ERROR;
         }
 
@@ -256,14 +256,14 @@ char* WebServer::GetStatus()
         GateControl::UIState sState;
         GateControl::getI().GetState(sState);
 
-        cJSON_AddItemToObject(pStatusEntry, "text", cJSON_CreateString(sState.szStatusText));
-        cJSON_AddItemToObject(pStatusEntry, "cancel_request", cJSON_CreateBool(sState.bIsCancelRequested));
+        cJSON_AddItemToObject(pStatusEntry, "text", cJSON_CreateString(sState.status_text));
+        cJSON_AddItemToObject(pStatusEntry, "cancel_request", cJSON_CreateBool(sState.is_cancel_requested));
 
-        cJSON_AddItemToObject(pStatusEntry, "error_text", cJSON_CreateString(sState.szLastError));
-        cJSON_AddItemToObject(pStatusEntry, "is_error", cJSON_CreateBool(sState.bHasLastError));
+        cJSON_AddItemToObject(pStatusEntry, "error_text", cJSON_CreateString(sState.last_error));
+        cJSON_AddItemToObject(pStatusEntry, "is_error", cJSON_CreateBool(sState.has_last_error));
 
         cJSON* pRingEntry = cJSON_CreateObject();
-        RingComm& refRingComm = RingComm::getI();
+        RingBLEClient& refRingComm = RingBLEClient::getI();
         cJSON_AddItemToObject(pRingEntry, "is_connected", cJSON_CreateBool(refRingComm.GetIsConnected()));
         cJSON_AddItemToObject(pStatusEntry, "ring", pRingEntry);
 
@@ -277,29 +277,29 @@ char* WebServer::GetStatus()
         cJSON_AddItemToObject(pTimeEntry, "m", cJSON_CreateNumber(timeinfo.tm_min));
         cJSON_AddItemToObject(pStatusEntry, "time", pTimeEntry);
 
-        cJSON_AddItemToObject(pRoot, "status", pStatusEntry);
+        cJSON_AddItemToObject(root, "status", pStatusEntry);
 
-        char* pStr =  cJSON_PrintUnformatted(pRoot);
-        cJSON_Delete(pRoot);
+        char* pStr =  cJSON_PrintUnformatted(root);
+        cJSON_Delete(root);
         return pStr;
     }
     ERROR:
-    cJSON_Delete(pRoot);
+    cJSON_Delete(root);
     return NULL;
 }
 
 char* WebServer::GetSysInfo()
 {
-    cJSON* pRoot = NULL;
+    cJSON* root = NULL;
     {
         char buff[100];
         uint8_t u8Macs[6];
-        pRoot = cJSON_CreateObject();
-        if (pRoot == NULL)
+        root = cJSON_CreateObject();
+        if (root == NULL)
         {
             goto ERROR;
         }
-        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "infos");
+        cJSON* pEntries = cJSON_AddArrayToObject(root, "infos");
 
         // Firmware
         cJSON* pEntryJSON1 = cJSON_CreateObject();
@@ -410,40 +410,40 @@ char* WebServer::GetSysInfo()
         cJSON_AddItemToObject(pEntryUpTimeJSON, "value", cJSON_CreateNumber(esp_log_timestamp()/1000));
         cJSON_AddItemToArray(pEntries, pEntryUpTimeJSON);
 
-        char* pStr =  cJSON_PrintUnformatted(pRoot);
-        cJSON_Delete(pRoot);
+        char* pStr =  cJSON_PrintUnformatted(root);
+        cJSON_Delete(root);
         return pStr;
     }
     ERROR:
-    cJSON_Delete(pRoot);
+    cJSON_Delete(root);
     return NULL;
 }
 
 char* WebServer::GetAllSoundLists()
 {
-    cJSON* pRoot = NULL;
+    cJSON* root = NULL;
     {
-        pRoot = cJSON_CreateObject();
-        if (pRoot == NULL)
+        root = cJSON_CreateObject();
+        if (root == NULL)
             goto ERROR;
 
-        cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "files");
+        cJSON* pEntries = cJSON_AddArrayToObject(root, "files");
         for(int32_t i = 0; i < SoundFX::getI().GetFileCount(); i++)
         {
             const SoundFX::SoundFile* pFile = SoundFX::getI().GetFile((SoundFX::FileID)i);
 
             cJSON* pNewFile = cJSON_CreateObject();
             cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
-            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->szName));
-            cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->szDesc));
+            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->name));
+            cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->desc));
             cJSON_AddItemToArray(pEntries, pNewFile);
         }
-        char* pStr = cJSON_PrintUnformatted(pRoot);
-        cJSON_Delete(pRoot);
+        char* pStr = cJSON_PrintUnformatted(root);
+        cJSON_Delete(root);
         return pStr;
     }
     ERROR:
-    cJSON_Delete(pRoot);
+    cJSON_Delete(root);
     return NULL;
 }
 

@@ -11,7 +11,7 @@ class GateFactory
     GateFactory() = delete;
 
     public:
-    static BaseGate& Get(GateGalaxy eGateGalaxy);
+    static BaseGate& Get(GateGalaxy gate_galaxy);
 
     static UniverseGate& GetUniverseGate();
 

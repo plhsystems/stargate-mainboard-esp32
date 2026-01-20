@@ -17,13 +17,13 @@ void SoundFX::Start()
     // TODO: Create a task for i2s
 }
 
-bool SoundFX::PlaySound(FileID soundFile, bool bRepeat)
+bool SoundFX::PlaySound(FileID soundFile, bool repeat)
 {
-    const SoundFile* pSoundFile = GetFile(soundFile);
-    if (nullptr == pSoundFile) {
+    const SoundFile* sound_file = GetFile(soundFile);
+    if (nullptr == sound_file) {
         return false;
     }
-    ESP_LOGI(TAG, "TODO: Play sound file, name: %s", pSoundFile->szName);
+    ESP_LOGI(TAG, "TODO: Play sound file, name: %s", sound_file->name);
     // TODO: Fill this
     return true;
 }
