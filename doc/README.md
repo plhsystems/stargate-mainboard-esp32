@@ -6,7 +6,7 @@ This directory contains comprehensive documentation for the Stargate Mainboard E
 
 New to the project? Start here:
 1. [Architecture](architecture.md) - System overview and component description
-2. [ESP-IDF 5.3 Setup](#building-firmware) - How to build the firmware
+2. [Build Guide](build-guide.md) - Complete build and deployment instructions
 3. [API Reference](api-reference.md) - HTTP REST API documentation
 4. [Web Interface](webpage.md) - Web UI features
 
@@ -22,6 +22,16 @@ Complete system architecture covering:
 - Software layers and state machines
 - ESP-IDF 5.3 compatibility details
 - Memory management and partitions
+
+#### [Build Guide](build-guide.md)
+Comprehensive build and deployment guide:
+- Prerequisites and environment setup
+- Web assets generation (embeddedgen.py)
+- Building all firmware projects
+- Configuration requirements (Bluetooth, FreeRTOS)
+- Common build errors and solutions
+- Flash and deployment procedures
+- Quick reference commands
 
 #### [BLE Protocol](ble-protocol.md)
 Detailed BLE communication protocol between main controller and ring:
@@ -166,7 +176,13 @@ sudo apt install -y git wget flex bison gperf python3 python3-pip python3-venv \
 
 ### Build Commands
 
-**Main Controller (Pinky Board)**:
+**Regenerate Web Assets** (required after web UI changes):
+```bash
+cd firmware/stargate-fw
+python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/WebServer"
+```
+
+**Main Controller (Pinky Board - ESP32)**:
 ```bash
 cd firmware/stargate-fw/pinky-board
 . ~/esp/esp-idf-5.3/export.sh
@@ -174,7 +190,17 @@ idf.py build
 idf.py -p /dev/ttyUSB0 flash
 ```
 
-**Ring Controller**:
+**Main Controller (Pablo Board - ESP32-S3)**:
+```bash
+cd firmware/stargate-fw/pablo-board
+. ~/esp/esp-idf-5.3/export.sh
+# Add LED strip dependency if not present
+idf.py add-dependency "espressif/led_strip"
+idf.py build
+idf.py -p /dev/ttyUSB0 flash
+```
+
+**Ring Controller (ESP32)**:
 ```bash
 cd firmware/ring-fw
 . ~/esp/esp-idf-5.3/export.sh
@@ -182,7 +208,7 @@ idf.py build
 idf.py -p /dev/ttyUSB0 flash
 ```
 
-**Ring Factory Test**:
+**Ring Factory Test (ESP32)**:
 ```bash
 cd firmware/ring-factory
 . ~/esp/esp-idf-5.3/export.sh
@@ -194,6 +220,21 @@ idf.py -p /dev/ttyUSB0 flash
 ```bash
 idf.py -p /dev/ttyUSB0 monitor
 ```
+
+### Configuration Requirements
+
+**For Main Controllers (requires BLE for ring communication)**:
+- Bluetooth: Must be enabled (`CONFIG_BT_ENABLED=y`)
+- NimBLE Stack: Must be enabled (`CONFIG_BT_NIMBLE_ENABLED=y`)
+- Bluedroid: Must be disabled (`# CONFIG_BT_BLUEDROID_ENABLED is not set`)
+- FreeRTOS Trace: Required for task monitoring (`CONFIG_FREERTOS_USE_TRACE_FACILITY=y`)
+
+These settings are required for:
+- RingBLEClient to communicate with ring-fw
+- System API task list functionality (vTaskList)
+
+**Pablo Board Partition Warning**:
+The pablo-board firmware may exceed the default app partition size. If you encounter "app partition is too small" errors, increase the factory partition size in the partition table or reduce firmware size through optimization settings.
 
 ---
 
@@ -267,13 +308,33 @@ stargate-mainboard-esp32/
 - Ensure using ESP-IDF 5.3+
 - Check [Architecture](architecture.md) for API migration details
 
-**BLE header errors**:
-- Add `#undef min` and `#undef max` after NimBLE includes
-- Include all required headers (see [BLE Protocol](ble-protocol.md))
+**BLE header errors** (`esp_nimble_hci.h: No such file or directory`):
+- Enable Bluetooth in sdkconfig: `CONFIG_BT_ENABLED=y`
+- Enable NimBLE: `CONFIG_BT_NIMBLE_ENABLED=y`
+- Disable Bluedroid: `# CONFIG_BT_BLUEDROID_ENABLED is not set`
+- The `bt` component must be in the REQUIRES list in CMakeLists.txt
+
+**Missing `vTaskList` symbol** (undefined reference):
+- Enable FreeRTOS trace facility: `CONFIG_FREERTOS_USE_TRACE_FACILITY=y`
+- Enable run time stats: `CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y`
+
+**LED strip component not found**:
+- Add dependency: `idf.py add-dependency "espressif/led_strip"`
+- This creates `idf_component.yml` in the main component
+
+**App partition too small**:
+- Binary exceeds partition size (common on pablo-board with full features)
+- Solution 1: Increase app partition in partition table
+- Solution 2: Enable size optimization: `CONFIG_COMPILER_OPTIMIZATION_SIZE=y`
+- Solution 3: Disable unused features in sdkconfig
 
 **IRAM overflow**:
 - Change compiler optimization to `-Os` in sdkconfig
 - Use `CONFIG_COMPILER_OPTIMIZATION_SIZE=y`
+
+**Implicit function declaration** (`ble_advertise`):
+- Add forward declaration before first use
+- Example: `static void ble_advertise(void);` before the function is called
 
 ### Runtime Errors
 
@@ -320,6 +381,6 @@ See [Copyright](copyright.md) for licensing information.
 
 ---
 
-Last Updated: 2026-01-22
+Last Updated: 2026-01-26
 ESP-IDF Version: 5.3.1
 Firmware Version: 1.0.0

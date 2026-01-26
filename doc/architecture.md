@@ -63,8 +63,25 @@ The Stargate Mainboard ESP32 project is a multi-firmware embedded system that co
 - Chevron LEDs (individual control)
 - Ramp LED (PWM on GPIO 23)
 
-#### pablo-board (Not Ready)
-**Status**: Not yet ready to work. Currently a stub implementation with incomplete HAL.
+#### pablo-board (ESP32-S3 - In Development)
+**Files**:
+- `firmware/stargate-fw/pablo-board/main/PabloSGHW.hpp`
+- `firmware/stargate-fw/pablo-board/main/PabloSGHW.cpp`
+
+**Status**: Hardware implementation in progress. Firmware compiles successfully but requires:
+- ESP32-S3 target configuration
+- NimBLE Bluetooth stack (not Bluedroid)
+- FreeRTOS trace facility enabled
+- LED strip component from ESP component registry
+- Larger app partition (firmware size ~1.9MB vs default 1MB partition)
+
+**Hardware** (Similar to pinky-board with ESP32-S3 features):
+- Stepper motor control
+- Servo motor (MCPWM)
+- Hall sensor
+- WS2812B LED strips
+- Chevron LEDs
+- Enhanced processing power of ESP32-S3
 
 ---
 
@@ -435,6 +452,30 @@ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 
 **Why**: Size optimization (`-Os`) reduces IRAM usage and allows the firmware to fit within memory constraints.
 
+#### Bluetooth Stack (NimBLE Required)
+```
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+# CONFIG_BT_BLUEDROID_ENABLED is not set
+CONFIG_BT_NIMBLE_MEM_ALLOC_MODE_INTERNAL=y
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=3
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=y
+CONFIG_BT_NIMBLE_GATT_CLIENT=y
+```
+
+**Why**:
+- Main controller uses BLE to communicate with ring-fw
+- NimBLE stack is lighter and more efficient than Bluedroid
+- Must be BLE Central (Master) to initiate connection to ring
+- ESP32-S3 (pablo-board) requires NimBLE, Bluedroid not compatible
+- The `bt` component must be added to CMakeLists.txt REQUIRES list
+
+**CMakeLists.txt requirement**:
+```cmake
+# In main-app/CMakeLists.txt
+REQUIRES ... bt
+```
+
 #### Flash Size and Partitions
 ```
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
@@ -453,6 +494,21 @@ ota_1,    app,  ota_1,   ,        1900K,
 
 **Why**: Dual OTA partition scheme allows over-the-air firmware updates. 1900K per partition accommodates the ~1.7MB firmware binary with room for growth.
 
+### ESP-IDF Version Compatibility
+
+**Tested Versions**:
+- ESP-IDF 5.3.1 ✓ (Recommended - fully tested)
+- ESP-IDF 5.5.x ⚠️ (Experimental - build tested but not runtime validated)
+
+**Migration from 4.x to 5.3+**:
+The main breaking changes are in MCPWM API and component management. All firmware components have been updated for 5.3 compatibility. Testing on newer versions (5.4, 5.5) shows successful compilation but requires runtime verification.
+
+**Component Dependencies**:
+- `espressif/led_strip`: Required by pablo-board and pinky-board
+  - Install: `idf.py add-dependency "espressif/led_strip"`
+  - Version: 3.0.2 or compatible
+  - Creates `idf_component.yml` in main component directory
+
 ---
 
 ## Memory Management
@@ -467,7 +523,11 @@ ota_1,    app,  ota_1,   ,        1900K,
 | ota_0 | 1900 KB | OTA slot 1 (active partition) |
 | ota_1 | 1900 KB | OTA slot 2 (update partition) |
 
-**Current firmware size**: ~1.7 MB (8% free space per partition)
+**Current firmware sizes**:
+- pinky-board (ESP32): ~1.8 MB (only 3% free space remaining - nearly full)
+- pablo-board (ESP32-S3): ~1.9 MB (exceeds default 1MB partition, requires custom partition table)
+- ring-fw (ESP32): ~560 KB (45% free space)
+- ring-factory (ESP32): ~970 KB (31% free space)
 
 ### IRAM Usage
 - Critical functions placed in IRAM
