@@ -21,3 +21,7 @@ firmware/stargate-fw/pinky-board/sdkconfig.old
 *.claude
 firmware/nul
 firmware/ring-fw/nul
+firmware/ring-factory/dependencies.lock
+firmware/ring-fw/dependencies.lock
+firmware/stargate-fw/pablo-board/dependencies.lock
+firmware/stargate-fw/pinky-board/dependencies.lock
