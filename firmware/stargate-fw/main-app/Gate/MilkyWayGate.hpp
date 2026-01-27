@@ -7,22 +7,22 @@ class MilkyWayGate : public BaseGate
 {
     public:
     MilkyWayGate();
-    static const int32_t m_s32SymbolCount = 39;
+    static const int32_t m_symbol_count = 39;
 
-    inline const GateSymbol& GetSymbol(uint8_t u8SymbolNum) const override
+    inline const GateSymbol& GetSymbol(uint8_t symbol_num) const override
     {
-        if (u8SymbolNum < 1 || u8SymbolNum > m_s32SymbolCount)
+        if (symbol_num < 1 || symbol_num > m_symbol_count)
             return BaseGate::InvalidSymbol;
-        return m_symbols[u8SymbolNum-1];
+        return m_symbols[symbol_num-1];
     }
 
-    inline int32_t GetSymbolCount() const override { return m_s32SymbolCount; };
+    inline int32_t GetSymbolCount() const override { return m_symbol_count; };
 
-    inline const GateAddress& GetAddress(uint32_t u32Index) const override
+    inline const GateAddress& GetAddress(uint32_t index) const override
     {
-        if (u32Index >= GetAddressCount())
+        if (index >= GetAddressCount())
             return BaseGate::InvalidGateAddress;
-        return m_gateAddresses[u32Index];
+        return m_gateAddresses[index];
     }
     inline int32_t GetAddressCount() const override { return sizeof(m_gateAddresses)/sizeof(m_gateAddresses[0]); }
 
@@ -69,7 +69,7 @@ class MilkyWayGate : public BaseGate
         { "DESTINY", 6, 17, 21, 31, 35, 24, 5, 14, 1 },
     };
 
-    static inline const GateSymbol m_symbols[m_s32SymbolCount] =
+    static inline const GateSymbol m_symbols[m_symbol_count] =
     {
         { 1, "Point of origin (Giza)" },
         { 2, "Crater" },

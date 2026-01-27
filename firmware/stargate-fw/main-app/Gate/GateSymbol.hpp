@@ -4,18 +4,18 @@ class GateSymbol
 {
     public:
     GateSymbol() :
-        u8Number(0),
-        szName("")
+        number(0),
+        name("")
     {
 
     }
-    GateSymbol(uint8_t u8Number, const char* szName) :
-        u8Number(u8Number),
-        szName(szName)
+    GateSymbol(uint8_t number, const char* name) :
+        number(number),
+        name(name)
     {
 
     }
     public:
-    const uint8_t u8Number;
-    const char* szName;
+    const uint8_t number;
+    const char* name;
 };

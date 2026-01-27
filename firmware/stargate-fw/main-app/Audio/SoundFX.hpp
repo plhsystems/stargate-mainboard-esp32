@@ -21,14 +21,14 @@ class SoundFX
     class SoundFile
     {
         public:
-        SoundFile(const char* szName, const char* szDesc) :
-            szName(szName),
-            szDesc(szDesc)
+        SoundFile(const char* name, const char* desc) :
+            name(name),
+            desc(desc)
         {
 
         }
-        const char* szName;
-        const char* szDesc;
+        const char* name;
+        const char* desc;
     };
 
     private:
@@ -43,7 +43,7 @@ class SoundFX
     void Init();
     void Start();
 
-    bool PlaySound(FileID soundFile, bool bRepeat);
+    bool PlaySound(FileID soundFile, bool repeat);
     void StopSound();
 
     const SoundFile* GetFile(SoundFX::FileID file)

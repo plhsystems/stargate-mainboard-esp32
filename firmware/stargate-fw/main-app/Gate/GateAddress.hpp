@@ -7,108 +7,108 @@ class GateAddress
 {
     public:
     GateAddress() :
-        m_szName(""),
-        m_u32SymbolCount(0)
+        m_name(""),
+        m_symbol_count(0)
     {
-        memset(m_u8Symbols, 0, sizeof(m_u8Symbols));
+        memset(m_symbols, 0, sizeof(m_symbols));
     }
 
-    GateAddress(uint8_t u8Symbols[9], uint8_t u8SymbolCount) :
-        m_szName(""),
-        m_u32SymbolCount(u8SymbolCount)
+    GateAddress(uint8_t symbols[9], uint8_t symbol_count) :
+        m_name(""),
+        m_symbol_count(symbol_count)
     {
-        memcpy(m_u8Symbols, u8Symbols, sizeof(m_u8Symbols));
+        memcpy(m_symbols, symbols, sizeof(m_symbols));
     }
-    GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6) :
-        m_szName(szName),
-        m_u32SymbolCount(6)
+    GateAddress(const char* name, uint8_t sym1, uint8_t sym2, uint8_t sym3, uint8_t sym4, uint8_t sym5, uint8_t sym6) :
+        m_name(name),
+        m_symbol_count(6)
     {
-        m_u8Symbols[0] = u8Sym1;
-        m_u8Symbols[1] = u8Sym2;
-        m_u8Symbols[2] = u8Sym3;
+        m_symbols[0] = sym1;
+        m_symbols[1] = sym2;
+        m_symbols[2] = sym3;
 
-        m_u8Symbols[3] = u8Sym4;
-        m_u8Symbols[4] = u8Sym5;
-        m_u8Symbols[5] = u8Sym6;
+        m_symbols[3] = sym4;
+        m_symbols[4] = sym5;
+        m_symbols[5] = sym6;
 
-        m_u8Symbols[6] = 0;
-        m_u8Symbols[7] = 0;
-        m_u8Symbols[8] = 0;
-    }
-
-    GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6, uint8_t u8Sym7) :
-        m_szName(szName),
-        m_u32SymbolCount(7)
-    {
-        m_u8Symbols[0] = u8Sym1;
-        m_u8Symbols[1] = u8Sym2;
-        m_u8Symbols[2] = u8Sym3;
-
-        m_u8Symbols[3] = u8Sym4;
-        m_u8Symbols[4] = u8Sym5;
-        m_u8Symbols[5] = u8Sym6;
-
-        m_u8Symbols[6] = u8Sym7;
-        m_u8Symbols[7] = 0;
-        m_u8Symbols[8] = 0;
+        m_symbols[6] = 0;
+        m_symbols[7] = 0;
+        m_symbols[8] = 0;
     }
 
-    GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6, uint8_t u8Sym7, uint8_t u8Sym8) :
-        m_szName(szName),
-        m_u32SymbolCount(8)
+    GateAddress(const char* name, uint8_t sym1, uint8_t sym2, uint8_t sym3, uint8_t sym4, uint8_t sym5, uint8_t sym6, uint8_t sym7) :
+        m_name(name),
+        m_symbol_count(7)
     {
-        m_u8Symbols[0] = u8Sym1;
-        m_u8Symbols[1] = u8Sym2;
-        m_u8Symbols[2] = u8Sym3;
+        m_symbols[0] = sym1;
+        m_symbols[1] = sym2;
+        m_symbols[2] = sym3;
 
-        m_u8Symbols[3] = u8Sym4;
-        m_u8Symbols[4] = u8Sym5;
-        m_u8Symbols[5] = u8Sym6;
+        m_symbols[3] = sym4;
+        m_symbols[4] = sym5;
+        m_symbols[5] = sym6;
 
-        m_u8Symbols[6] = u8Sym7;
-        m_u8Symbols[7] = u8Sym8;
-        m_u8Symbols[8] = 0;
+        m_symbols[6] = sym7;
+        m_symbols[7] = 0;
+        m_symbols[8] = 0;
     }
-    GateAddress(const char* szName, uint8_t u8Sym1, uint8_t u8Sym2, uint8_t u8Sym3, uint8_t u8Sym4, uint8_t u8Sym5, uint8_t u8Sym6, uint8_t u8Sym7, uint8_t u8Sym8, uint8_t u8Sym9) :
-        m_szName(szName),
-        m_u32SymbolCount(9)
+
+    GateAddress(const char* name, uint8_t sym1, uint8_t sym2, uint8_t sym3, uint8_t sym4, uint8_t sym5, uint8_t sym6, uint8_t sym7, uint8_t sym8) :
+        m_name(name),
+        m_symbol_count(8)
     {
-        m_u8Symbols[0] = u8Sym1;
-        m_u8Symbols[1] = u8Sym2;
-        m_u8Symbols[2] = u8Sym3;
+        m_symbols[0] = sym1;
+        m_symbols[1] = sym2;
+        m_symbols[2] = sym3;
 
-        m_u8Symbols[3] = u8Sym4;
-        m_u8Symbols[4] = u8Sym5;
-        m_u8Symbols[5] = u8Sym6;
+        m_symbols[3] = sym4;
+        m_symbols[4] = sym5;
+        m_symbols[5] = sym6;
 
-        m_u8Symbols[6] = u8Sym7;
-        m_u8Symbols[7] = u8Sym8;
-        m_u8Symbols[8] = u8Sym9;
+        m_symbols[6] = sym7;
+        m_symbols[7] = sym8;
+        m_symbols[8] = 0;
+    }
+    GateAddress(const char* name, uint8_t sym1, uint8_t sym2, uint8_t sym3, uint8_t sym4, uint8_t sym5, uint8_t sym6, uint8_t sym7, uint8_t sym8, uint8_t sym9) :
+        m_name(name),
+        m_symbol_count(9)
+    {
+        m_symbols[0] = sym1;
+        m_symbols[1] = sym2;
+        m_symbols[2] = sym3;
+
+        m_symbols[3] = sym4;
+        m_symbols[4] = sym5;
+        m_symbols[5] = sym6;
+
+        m_symbols[6] = sym7;
+        m_symbols[7] = sym8;
+        m_symbols[8] = sym9;
     }
     public:
     static constexpr uint32_t ADDRESSTEXT_LEN = 40;
 
-    inline const char* GetName() const { return m_szName; }
-    inline uint8_t GetSymbol(uint8_t u8Index) const
+    inline const char* GetName() const { return m_name; }
+    inline uint8_t GetSymbol(uint8_t index) const
     {
-        if (u8Index >= m_u32SymbolCount)
+        if (index >= m_symbol_count)
             return 0;
-        return m_u8Symbols[u8Index];
+        return m_symbols[index];
     }
-    inline uint32_t GetSymbolCount() const { return m_u32SymbolCount; }
+    inline uint32_t GetSymbolCount() const { return m_symbol_count; }
 
-    inline uint32_t GetAddressText(char szText[ADDRESSTEXT_LEN+1])
+    inline uint32_t GetAddressText(char text[ADDRESSTEXT_LEN+1])
     {
-        return snprintf(szText, ADDRESSTEXT_LEN, "%d %d %d\t%d %d %d\t%d %d %d",
-            (int)m_u8Symbols[0], (int)m_u8Symbols[1], (int)m_u8Symbols[2],
-            (int)m_u8Symbols[3], (int)m_u8Symbols[4], (int)m_u8Symbols[5],
-            (int)m_u8Symbols[6], (int)m_u8Symbols[7], (int)m_u8Symbols[8]);
+        return snprintf(text, ADDRESSTEXT_LEN, "%d %d %d\t%d %d %d\t%d %d %d",
+            (int)m_symbols[0], (int)m_symbols[1], (int)m_symbols[2],
+            (int)m_symbols[3], (int)m_symbols[4], (int)m_symbols[5],
+            (int)m_symbols[6], (int)m_symbols[7], (int)m_symbols[8]);
     }
 
     static constexpr uint32_t SYMBOL_COUNT = 9;
     private:
 
-    const char* m_szName;
-    uint8_t m_u8Symbols[SYMBOL_COUNT] = {0};
-    uint32_t m_u32SymbolCount;
+    const char* m_name;
+    uint8_t m_symbols[SYMBOL_COUNT] = {0};
+    uint32_t m_symbol_count;
 };

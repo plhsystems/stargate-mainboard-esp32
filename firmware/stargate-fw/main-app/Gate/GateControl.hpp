@@ -40,38 +40,38 @@ class GateControl
 
     struct UIState
     {
-        ECmd eCmd;
+        ECmd cmd;
 
-        char szStatusText[ERROR_LEN+1];
+        char status_text[ERROR_LEN+1];
 
-        bool bHasLastError;
-        char szLastError[ERROR_LEN+1];
+        bool has_last_error;
+        char last_error[ERROR_LEN+1];
 
-        bool bIsCancelRequested;
+        bool is_cancel_requested;
     };
 
     private:
 
     struct SDialArg
     {
-        GateAddress sGateAddress;
-        Wormhole::EType eWormholeType;
+        GateAddress gate_address;
+        Wormhole::EType wormhole_type;
     };
 
     struct SManualWormholeArg
     {
-        Wormhole::EType eWormholeType;
+        Wormhole::EType wormhole_type;
     };
 
     struct SCmd
     {
-        ECmd eCmd;
-        SDialArg sDialAddress;
+        ECmd cmd;
+        SDialArg dial_address;
         struct
         {
-            uint8_t u8Key;
-        } sKeypress;
-        SManualWormholeArg sManualWormhole;
+            uint8_t key;
+        } keypress;
+        SManualWormholeArg manual_wormhole;
     };
 
     GateControl();
@@ -103,9 +103,9 @@ class GateControl
     private:
     void PriQueueAction(SCmd cmd);
 
-    void AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
-    void AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    void DialAddress(const SDialArg& sDialArg);
+    bool AutoCalibrate(const char** error_msg);   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
+    bool AutoHome(const char** error_msg);        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
+    bool DialAddress(const SDialArg& dial_arg, const char** error_msg);
 
     void AnimRampLight(bool bIsActive);
 
@@ -114,28 +114,28 @@ class GateControl
     private:
     static void TaskRunning(void* pArg);
 
-    TaskHandle_t m_sGateControlHandle;
+    TaskHandle_t m_gate_control_handle;
 
     // Control homing and encoder.
-    StaticSemaphore_t m_xSemaphoreCreateMutex;
-    SemaphoreHandle_t m_xSemaphoreHandle;
+    StaticSemaphore_t m_semaphore_create_mutex;
+    SemaphoreHandle_t m_semaphore_handle;
 
     // Actions
-    volatile bool m_bIsCancelAction;
-    SCmd m_sCurrCmd;
-    SCmd m_sNextCmd;
+    volatile bool m_is_cancel_action;
+    SCmd m_curr_cmd;
+    SCmd m_next_cmd;
 
     // Error management
-    char m_szErrors[ERROR_LEN+1] = {0};
-    bool m_bIsInError;
+    char m_errors[ERROR_LEN+1] = {0};
+    bool m_is_in_error;
 
     // Position
-    int32_t m_bIsHomingDone = false;
-    int32_t m_s32CurrentPositionTicks = 0;
+    int32_t m_is_homing_done = false;
+    int32_t m_current_position_ticks = 0;
 
-    SGHW_HAL* m_pSGHWHAL;
+    SGHW_HAL* m_sghw_hal;
 
-    inline static const char* m_szTexts[] =
+    inline static const char* m_texts[] =
     {
         [(int)ECmd::Idle]           = "Idle",
         [(int)ECmd::Stop]           = "Stopping",
@@ -145,8 +145,8 @@ class GateControl
         [(int)ECmd::DialAddress]    = "Dialing",
         [(int)ECmd::ManualWormhole] = "Manual wormhole",
     };
-    static_assert((int)ECmd::Count == (sizeof(m_szTexts)/sizeof(m_szTexts[0])), "Command text missmatch");
+    static_assert((int)ECmd::Count == (sizeof(m_texts)/sizeof(m_texts[0])), "Command text missmatch");
 
     public:
-    inline static const char* GetCmdText(ECmd eCmd) { return m_szTexts[(int)eCmd]; }
+    inline static const char* GetCmdText(ECmd eCmd) { return m_texts[(int)eCmd]; }
 };

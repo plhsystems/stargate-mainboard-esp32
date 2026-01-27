@@ -21,7 +21,7 @@ class WebServer
     void operator=(WebServer const&) = delete;
 
     public:
-    void Init(SGHW_HAL* pSGHWHal);
+    void Init(SGHW_HAL* sghw_hal);
 
     void Start();
 
@@ -43,27 +43,27 @@ class WebServer
     char* GetSysInfo();
     char* GetAllSoundLists();
 
-    char* GetGalaxyInfoJSON(GateGalaxy gateGalaxy);
+    char* GetGalaxyInfoJSON(GateGalaxy gate_galaxy);
 
-    static void ToHexString(char dstHexString[], const uint8_t* data, uint8_t len);
+    static void ToHexString(char dst_hex_string[], const uint8_t* data, uint8_t len);
 
     static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
 
-    static const EF_SFile* GetFile(const char* strFilename);
+    static const EF_SFile* GetFile(const char* filename);
 
     // Variable
     httpd_handle_t m_server;
     httpd_config_t m_config;
 
-    SGHW_HAL* m_pSGHWHAL = nullptr;
+    SGHW_HAL* m_sghw_hal = nullptr;
 
-    uint8_t m_u8Buffers[HTTPSERVER_BUFFERSIZE];
+    uint8_t m_buffers[HTTPSERVER_BUFFERSIZE];
 
-    httpd_uri_t m_sHttpUI;
-    httpd_uri_t m_sHttpGetAPI;
-    httpd_uri_t m_sHttpPostAPI;
-    // httpd_uri_t m_sGateControlAPIPost;
+    httpd_uri_t m_http_ui;
+    httpd_uri_t m_http_get_api;
+    httpd_uri_t m_http_post_api;
+    // httpd_uri_t m_gate_control_api_post;
 
-    httpd_uri_t m_sHttpOTAUploadPost;
+    httpd_uri_t m_http_ota_upload_post;
 };
 

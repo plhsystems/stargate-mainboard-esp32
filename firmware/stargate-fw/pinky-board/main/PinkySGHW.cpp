@@ -3,8 +3,7 @@
 #include "led_strip.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
+#include "driver/mcpwm_prelude.h"
 #include "driver/ledc.h"
 #include "freertos/task.h"
 #include "misc-macro.h"
@@ -40,13 +39,13 @@
 #define SERVO_PERCENT2PWM(x) ((float)x/100.0f*20000.0f)
 
 PinkySGHW::PinkySGHW()
-    : m_dLastServoPosition(0)
+    : m_last_servo_position(0)
 {
 }
 
 void PinkySGHW::Init()
 {
-    m_xMutexHandle = xSemaphoreCreateMutexStatic( &m_xMutexBuffer );
+    m_mutex_handle = xSemaphoreCreateMutexStatic( &m_mutex_buffer );
 
     //install gpio isr service
     gpio_install_isr_service(0);
@@ -67,18 +66,55 @@ void PinkySGHW::Init()
     gpio_set_direction(STEPPER_SLP_PIN, GPIO_MODE_OUTPUT);
     PowerDownStepper();
 
-    // Servo PIN
-    gpio_set_direction(SERVOMOTOR_PIN, GPIO_MODE_OUTPUT);
-    // Initialize motor driver
-    mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, SERVOMOTOR_PIN);
-    mcpwm_config_t servo_config;
-    servo_config.frequency = 50;  // Frequency = 50Hz,
-    servo_config.cmpr_a = 0;      // Duty cycle of PWMxA = 0
-    servo_config.cmpr_b = 0;      // Duty cycle of PWMxb = 0
-    servo_config.counter_mode = MCPWM_UP_COUNTER;
-    servo_config.duty_mode = MCPWM_DUTY_MODE_0;
-    mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_1, &servo_config);    // Configure PWM0A & PWM0B with above settings
-    // 2/20 ms * 0.5*0.5
+    // Servo PIN - Initialize MCPWM for servo control using new API
+    // Create timer (20ms period for 50Hz servo signal)
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,  // 1MHz, 1us per tick
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 20000,  // 20ms period (50Hz)
+        .flags = {}
+    };
+    ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &m_servo.timer));
+
+    // Create operator
+    mcpwm_operator_config_t operator_config = {
+        .group_id = 0,  // Same group as timer
+        .flags = {}
+    };
+    ESP_ERROR_CHECK(mcpwm_new_operator(&operator_config, &m_servo.oper));
+
+    // Connect operator to timer
+    ESP_ERROR_CHECK(mcpwm_operator_connect_timer(m_servo.oper, m_servo.timer));
+
+    // Create comparator
+    mcpwm_comparator_config_t comparator_config = {
+        .flags = {
+            .update_cmp_on_tez = true,
+        }
+    };
+    ESP_ERROR_CHECK(mcpwm_new_comparator(m_servo.oper, &comparator_config, &m_servo.comparator));
+
+    // Create generator
+    mcpwm_generator_config_t generator_config = {
+        .gen_gpio_num = SERVOMOTOR_PIN,
+        .flags = {}
+    };
+    ESP_ERROR_CHECK(mcpwm_new_generator(m_servo.oper, &generator_config, &m_servo.generator));
+
+    // Set generator actions
+    // On timer empty (start of period), set output high
+    ESP_ERROR_CHECK(mcpwm_generator_set_action_on_timer_event(m_servo.generator,
+        MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+    // On compare match, set output low
+    ESP_ERROR_CHECK(mcpwm_generator_set_action_on_compare_event(m_servo.generator,
+        MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, m_servo.comparator, MCPWM_GEN_ACTION_LOW)));
+
+    // Enable and start timer
+    ESP_ERROR_CHECK(mcpwm_timer_enable(m_servo.timer));
+    ESP_ERROR_CHECK(mcpwm_timer_start_stop(m_servo.timer, MCPWM_TIMER_START_NO_STOP));
+
     PowerDownServo(); // Don't piss off the servo motor
 
 
@@ -114,10 +150,14 @@ void PinkySGHW::Init()
     led_strip_config_t strip_config = {
         .strip_gpio_num = WORMHOLELEDS_PIN,
         .max_leds = WORMHOLELEDS_LEDCOUNT, // sanity LED + at least one LED on board
+        .led_pixel_format = LED_PIXEL_FORMAT_GRB,
+        .led_model = LED_MODEL_WS2812
     };
     led_strip_rmt_config_t rmt_config = {
+        .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
         .resolution_hz = 10 * 1000 * 1000, // 10MHz
-        .mem_block_symbols = 128
+        .mem_block_symbols = 128,
+        .flags = { .with_dma = false } // whether to enable the DMA feature
     };
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     /* Set all LED off to clear all pixels */
@@ -133,10 +173,10 @@ void PinkySGHW::Init()
     };
 
     /* Start the timers */
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.sSignalTimerHandle));
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &this->m_stepper.signal_timer_handle));
 }
 
-void PinkySGHW::SetChevronLight(EChevron eChevron, bool bState)
+void PinkySGHW::SetChevronLight(EChevron chevron, bool state)
 {
     // No such things on the pinky board.
 }
@@ -181,24 +221,27 @@ void PinkySGHW::PowerDownStepper()
 
 void PinkySGHW::PowerUpServo()
 {
-    SetServo(m_dLastServoPosition);
+    SetServo(m_last_servo_position);
 }
 
 void PinkySGHW::SetServo(double dPosition)
 {
     LockMutex();
-    const float v = 5.0f + dPosition * 5.0f;
-    mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, v);
-    mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
-    m_dLastServoPosition = dPosition;
-    ESP_LOGI(TAG, "value: %f pos: %f", v, (float)dPosition);
+    // Convert position (0.0 to 1.0) to pulse width
+    // Servo typically needs 1000us (1ms) to 2000us (2ms) pulse width
+    // Center is at 1500us (1.5ms)
+    const uint32_t pulse_width_us = 1000 + (uint32_t)(dPosition * 1000);
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(m_servo.comparator, pulse_width_us));
+    m_last_servo_position = dPosition;
+    ESP_LOGI(TAG, "pulse_width_us: %lu pos: %f", pulse_width_us, (float)dPosition);
     UnlockMutex();
 }
 
 void PinkySGHW::PowerDownServo()
 {
     LockMutex();
-    mcpwm_set_signal_low(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A);
+    // Set comparator to 0 to keep output low
+    ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(m_servo.comparator, 0));
     UnlockMutex();
 }
 
@@ -208,10 +251,10 @@ int32_t PinkySGHW::GetWHPixelCount()
     return WORMHOLELEDS_LEDCOUNT;
 }
 
-void PinkySGHW::SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
+void PinkySGHW::SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
     LockMutex();
-    led_strip_set_pixel(led_strip, u32Index, u8Red, u8Green, u8Blue);
+    led_strip_set_pixel(led_strip, index, red, green, blue);
     UnlockMutex();
 }
 
@@ -229,10 +272,10 @@ void PinkySGHW::RefreshWHPixels()
     UnlockMutex();
 }
 
-void PinkySGHW::SetSanityLED(bool bState)
+void PinkySGHW::SetSanityLED(bool state)
 {
     // The sanity LED is ground driven.
-    gpio_set_level(SANITY_PIN, !bState);
+    gpio_set_level(SANITY_PIN, !state);
 }
 
 bool PinkySGHW::GetIsHomeSensorActive()
@@ -240,63 +283,63 @@ bool PinkySGHW::GetIsHomeSensorActive()
     return !gpio_get_level(HOMESENSOR_PIN);
 }
 
-void PinkySGHW::SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount)
+void PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count)
 {
     TickType_t ttStart = xTaskGetTickCount();
-    bool bOldSensorState = GetIsHomeSensorActive();
+    bool old_sensor_state = GetIsHomeSensorActive();
 
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(u32TimeoutMS))
+    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(timeout_ms))
     {
         /*if (m_bIsCancelAction) {
             throw std::runtime_error("Cancelled by the user");
         }*/
 
-        const bool bNewHomeSensorState = GetIsHomeSensorActive();
+        const bool new_home_sensor_state = GetIsHomeSensorActive();
 
-        if (eSpinDirection == ESpinDirection::CCW) {
+        if (spin_direction == ESpinDirection::CCW) {
             StepStepperCCW();
-            if (ps32refTickCount != nullptr) {
-                (*ps32refTickCount)++;
+            if (ref_tick_count != nullptr) {
+                (*ref_tick_count)++;
             }
         }
-        if (eSpinDirection == ESpinDirection::CW) {
+        if (spin_direction == ESpinDirection::CW) {
             StepStepperCW();
-            if (ps32refTickCount != nullptr) {
-                (*ps32refTickCount)--;
+            if (ref_tick_count != nullptr) {
+                (*ref_tick_count)--;
             }
         }
 
-        const bool bIsRising = !bOldSensorState && bNewHomeSensorState;
-        const bool bIsFalling = bOldSensorState && !bNewHomeSensorState;
-        if (ETransition::Rising == eTransition && bIsRising)
+        const bool is_rising = !old_sensor_state && new_home_sensor_state;
+        const bool is_falling = old_sensor_state && !new_home_sensor_state;
+        if (ETransition::Rising == transition && is_rising)
         {
             ESP_LOGI(TAG, "Rising transition detected");
             return;
         }
-        else if (ETransition::Failing == eTransition && bIsFalling) {
+        else if (ETransition::Failing == transition && is_falling) {
             ESP_LOGI(TAG, "Failing transition detected");
             return;
         }
 
-        bOldSensorState = bNewHomeSensorState;
+        old_sensor_state = new_home_sensor_state;
         vTaskDelay(1);
     }
 
     throw std::runtime_error("Unable to complete the spin operation");
 }
 
-void PinkySGHW::MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS)
+void PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
 {
     // Setup the parameters
-    this->m_stepper.sTskControlHandle = xTaskGetCurrentTaskHandle();
-    this->m_stepper.s32Count = 0;
-    this->m_stepper.s32Target = abs(s32Ticks);
-    this->m_stepper.s32Period = 1;
-    this->m_stepper.bIsCCW = s32Ticks > 0;
+    this->m_stepper.task_control_handle = xTaskGetCurrentTaskHandle();
+    this->m_stepper.count = 0;
+    this->m_stepper.target = abs(ticks);
+    this->m_stepper.period = 1;
+    this->m_stepper.is_ccw = ticks > 0;
 
-    ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.sSignalTimerHandle, this->m_stepper.s32Period));
+    ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.signal_timer_handle, this->m_stepper.period));
 
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( u32TimeoutMS );
+    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( timeout_ms );
 
     /* Wait to be notified of an interrupt. */
     uint32_t ulNotifiedValue = 0;
@@ -307,7 +350,7 @@ void PinkySGHW::MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS)
         xMaxBlockTime );
 
     // No longer need to run the timer ...
-    esp_timer_stop(this->m_stepper.sSignalTimerHandle);
+    esp_timer_stop(this->m_stepper.signal_timer_handle);
 
     if( xResult != pdPASS )
     {
@@ -324,7 +367,7 @@ IRAM_ATTR void PinkySGHW::tmr_signal_callback(void* arg)
 
     xHigherPriorityTaskWoken = pdFALSE;
 
-    const int32_t s32 = MISCMACRO_MIN(abs(step->s32Count) , abs(step->s32Target - step->s32Count));
+    const int32_t s32 = MISCMACRO_MIN(abs(step->count) , abs(step->target - step->count));
     /* I just did some tests until I was satisfied */
     /* #1 (100, 1000), (1400, 300)
         a = -0.53846153846153846153846153846154
@@ -334,34 +377,34 @@ IRAM_ATTR void PinkySGHW::tmr_signal_callback(void* arg)
         b = 738.44 */
     const int32_t a = -400;
     const int32_t b = 1400000;
-    step->s32Period = (a * s32 + b)/1000;
+    step->period = (a * s32 + b)/1000;
 
     // I hoped it would reduce jitter.
-    step->s32Period = (step->s32Period / 50) * 50;
+    step->period = (step->period / 50) * 50;
 
-    if (step->s32Period < 600)
-        step->s32Period = 600;
-    if (step->s32Period > 1600)
-        step->s32Period = 1600;
+    if (step->period < 600)
+        step->period = 600;
+    if (step->period > 1600)
+        step->period = 1600;
 
     // Wait until the period go to low before considering it finished
-    if (step->s32Target == step->s32Count)
+    if (step->target == step->count)
     {
-        xTaskNotifyFromISR( step->sTskControlHandle,
+        xTaskNotifyFromISR( step->task_control_handle,
             STEPEND_BIT,
             eSetBits,
             &xHigherPriorityTaskWoken );
     }
     else {
         // Count every two
-        if (step->bIsCCW)
+        if (step->is_ccw)
             gc->StepStepperCCW();
         else
             gc->StepStepperCW();
 
-        step->s32Count++;
+        step->count++;
 
-        ESP_ERROR_CHECK(esp_timer_start_once(step->sSignalTimerHandle, step->s32Period));
+        ESP_ERROR_CHECK(esp_timer_start_once(step->signal_timer_handle, step->period));
     }
 
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );

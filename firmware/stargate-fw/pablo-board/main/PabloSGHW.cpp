@@ -8,7 +8,7 @@
 #include "freertos/task.h"
 
 PabloSGHW::PabloSGHW()
-    : m_dLastServoPosition(0)
+    : m_last_servo_position(0)
 {
      // TODO: Implements
 }
@@ -19,12 +19,12 @@ void PabloSGHW::Init()
      // TODO: Implements
 }
 
-void PabloSGHW::SetChevronLight(EChevron eChevron, bool bState)
+void PabloSGHW::SetChevronLight(EChevron chevron, bool state)
 {
     // No such things on the pinky board.
 }
 
-void PabloSGHW::SetRampLight(double dPerc)
+void PabloSGHW::SetRampLight(double perc)
 {
      // TODO: Implements
 
@@ -73,7 +73,7 @@ int32_t PabloSGHW::GetWHPixelCount()
     return 0;
 }
 
-void PabloSGHW::SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
+void PabloSGHW::SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
      // TODO: Implements
 }
@@ -88,7 +88,7 @@ void PabloSGHW::RefreshWHPixels()
      // TODO: Implements
 }
 
-void PabloSGHW::SetSanityLED(bool bState)
+void PabloSGHW::SetSanityLED(bool state)
 {
      // TODO: Implements
 }

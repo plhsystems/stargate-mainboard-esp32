@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stargate Control Interface - SGC</title>
+    <link rel="stylesheet" href="stargate.css">
+</head>
+<body>
+    <div class="interface-container">
+        <!-- Top Status Bar -->
+        <div class="status-bar">
+            <div class="status-indicators">
+                <span class="status-light active"></span>
+                <span class="status-glyph locked" data-glyph="1"><img src="glyphs/001.svg" alt="Glyph 1"></span>
+                <span class="status-glyph locked" data-glyph="2"><img src="glyphs/002.svg" alt="Glyph 2"></span>
+                <span class="status-glyph locked" data-glyph="3"><img src="glyphs/003.svg" alt="Glyph 3"></span>
+                <span class="status-glyph locked" data-glyph="4"><img src="glyphs/004.svg" alt="Glyph 4"></span>
+                <span class="status-glyph locked" data-glyph="5"><img src="glyphs/005.svg" alt="Glyph 5"></span>
+                <span class="status-glyph locked" data-glyph="6"><img src="glyphs/006.svg" alt="Glyph 6"></span>
+                <span class="status-glyph locked" data-glyph="7"><img src="glyphs/007.svg" alt="Glyph 7"></span>
+                <span class="status-glyph" data-glyph="8"><img src="glyphs/008.svg" alt="Glyph 8"></span>
+                <span class="status-glyph" data-glyph="9"><img src="glyphs/009.svg" alt="Glyph 9"></span>
+            </div>
+            <div class="status-text">
+                <div>STATUS: <span class="active-text">ACTIVE</span></div>
+                <div>SG-1: NOMINAL</div>
+            </div>
+        </div>
+
+        <div class="main-interface">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                <!-- SGC Logo -->
+                <div class="sgc-logo">
+                    <div class="logo-triangle">
+                        <div class="logo-inner">
+                            <div class="logo-text">SGC</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Binary Display -->
+                <div class="binary-display">
+                    <div class="binary-row">0 0 1 1 0</div>
+                    <div class="binary-row">1 0 0 1 0</div>
+                    <div class="binary-row">0 1 0 1 1</div>
+                    <div class="binary-row">1 0 0 1 1</div>
+                    <div class="binary-row">0 1 1 1 1</div>
+                    <div class="binary-row">0 0 0 0 1</div>
+                    <div class="binary-row">1 1 0 1 1</div>
+                </div>
+
+                <!-- Energy Meter -->
+                <div class="energy-meter">
+                    <div class="meter-label">100%</div>
+                    <div class="meter-label-bottom">STARGATE ENERGY</div>
+                    <div class="meter-bar">
+                        <div class="meter-fill"></div>
+                    </div>
+                    <div class="meter-label">0%</div>
+                </div>
+
+                <!-- Chevron Indicators -->
+                <div class="chevron-list">
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>1</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>2</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>3</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>4</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>5</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>6</span>
+                    </div>
+                    <div class="chevron-item active">
+                        <div class="chevron-bar"></div>
+                        <span>7</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center - Stargate -->
+            <div class="center-panel">
+                <div class="stargate">
+                    <!-- Chevrons -->
+                    <div class="chevron" style="--angle: 0deg">
+                        <div class="chevron-light active">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 51.4deg">
+                        <div class="chevron-light">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 102.8deg">
+                        <div class="chevron-light active">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 154.2deg">
+                        <div class="chevron-light">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 205.6deg">
+                        <div class="chevron-light active">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 257deg">
+                        <div class="chevron-light">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+                    <div class="chevron" style="--angle: 308.4deg">
+                        <div class="chevron-light active">
+                            <div class="chevron-number"></div>
+                        </div>
+                    </div>
+
+                    <!-- Ring -->
+                    <div class="ring-outer">
+                        <div class="ring-track"></div>
+                        <div class="ring-middle">
+                            <div class="ring-inner">
+                                <div class="ring-symbols">
+                                    <!-- 39 Stargate symbols positioned around the ring -->
+                                    <div class="ring-symbol" style="--symbol-angle: 0deg" data-glyph="1"><img src="glyphs/001.svg" alt="1"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 9.23deg" data-glyph="2"><img src="glyphs/002.svg" alt="2"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 18.46deg" data-glyph="3"><img src="glyphs/003.svg" alt="3"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 27.69deg" data-glyph="4"><img src="glyphs/004.svg" alt="4"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 36.92deg" data-glyph="5"><img src="glyphs/005.svg" alt="5"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 46.15deg" data-glyph="6"><img src="glyphs/006.svg" alt="6"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 55.38deg" data-glyph="7"><img src="glyphs/007.svg" alt="7"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 64.61deg" data-glyph="8"><img src="glyphs/008.svg" alt="8"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 73.84deg" data-glyph="9"><img src="glyphs/009.svg" alt="9"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 83.07deg" data-glyph="10"><img src="glyphs/010.svg" alt="10"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 92.30deg" data-glyph="11"><img src="glyphs/011.svg" alt="11"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 101.53deg" data-glyph="12"><img src="glyphs/012.svg" alt="12"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 110.76deg" data-glyph="13"><img src="glyphs/013.svg" alt="13"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 120deg" data-glyph="14"><img src="glyphs/014.svg" alt="14"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 129.23deg" data-glyph="15"><img src="glyphs/015.svg" alt="15"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 138.46deg" data-glyph="16"><img src="glyphs/016.svg" alt="16"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 147.69deg" data-glyph="17"><img src="glyphs/017.svg" alt="17"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 156.92deg" data-glyph="18"><img src="glyphs/018.svg" alt="18"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 166.15deg" data-glyph="19"><img src="glyphs/019.svg" alt="19"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 175.38deg" data-glyph="20"><img src="glyphs/020.svg" alt="20"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 184.61deg" data-glyph="21"><img src="glyphs/021.svg" alt="21"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 193.84deg" data-glyph="22"><img src="glyphs/022.svg" alt="22"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 203.07deg" data-glyph="23"><img src="glyphs/023.svg" alt="23"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 212.30deg" data-glyph="24"><img src="glyphs/024.svg" alt="24"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 221.53deg" data-glyph="25"><img src="glyphs/025.svg" alt="25"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 230.76deg" data-glyph="26"><img src="glyphs/026.svg" alt="26"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 240deg" data-glyph="27"><img src="glyphs/027.svg" alt="27"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 249.23deg" data-glyph="28"><img src="glyphs/028.svg" alt="28"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 258.46deg" data-glyph="29"><img src="glyphs/029.svg" alt="29"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 267.69deg" data-glyph="30"><img src="glyphs/030.svg" alt="30"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 276.92deg" data-glyph="31"><img src="glyphs/031.svg" alt="31"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 286.15deg" data-glyph="32"><img src="glyphs/032.svg" alt="32"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 295.38deg" data-glyph="33"><img src="glyphs/033.svg" alt="33"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 304.61deg" data-glyph="34"><img src="glyphs/034.svg" alt="34"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 313.84deg" data-glyph="35"><img src="glyphs/035.svg" alt="35"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 323.07deg" data-glyph="36"><img src="glyphs/036.svg" alt="36"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 332.30deg" data-glyph="37"><img src="glyphs/037.svg" alt="37"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 341.53deg" data-glyph="38"><img src="glyphs/038.svg" alt="38"></div>
+                                    <div class="ring-symbol" style="--symbol-angle: 350.76deg" data-glyph="39"><img src="glyphs/039.svg" alt="39"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inner ring base (static) -->
+                    <div class="ring-base"></div>
+
+                    <!-- Event Horizon -->
+                    <div class="event-horizon">
+                        <div class="horizon-glow"></div>
+                        <div class="wormhole-center"></div>
+                    </div>
+
+                    <!-- Lock Indicators -->
+                    <div class="lock-indicator" style="--angle: 45deg"></div>
+                    <div class="lock-indicator" style="--angle: 135deg"></div>
+                    <div class="lock-indicator" style="--angle: 225deg"></div>
+                    <div class="lock-indicator" style="--angle: 315deg"></div>
+                </div>
+
+                <!-- Status Text -->
+                <div class="gate-status">
+                    <div class="status-codes">
+                        <span>LST CODE #1</span>
+                        <span class="code-display">[ <span class="code-active">■ ■ ■ ■</span> ]</span>
+                        <span>LST CODE #2</span>
+                    </div>
+                    <div class="engaged-text">ENGAGED</div>
+                    <div class="auth-code">
+                        <div class="auth-label">AUTH CODE</div>
+                        <div class="auth-digits">
+                            <span>1</span><span>0</span><span>1</span><span>8</span><span>3</span><span>5</span><span>2</span><span>3</span><span>6</span><span>5</span><span>2</span><span class="separator">-</span><span>4</span><span>3</span><span>5</span><span>4</span><span>3</span><span>9</span><span>3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Glyphs -->
+            <div class="right-panel">
+                <div class="glyph-display active" data-glyph="1">
+                    <img src="glyphs/001.svg" alt="Glyph 1" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="2">
+                    <img src="glyphs/002.svg" alt="Glyph 2" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="3">
+                    <img src="glyphs/003.svg" alt="Glyph 3" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="4">
+                    <img src="glyphs/004.svg" alt="Glyph 4" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="5">
+                    <img src="glyphs/005.svg" alt="Glyph 5" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="6">
+                    <img src="glyphs/006.svg" alt="Glyph 6" class="glyph">
+                </div>
+                <div class="glyph-display active" data-glyph="7">
+                    <img src="glyphs/007.svg" alt="Glyph 7" class="glyph">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="stargate.js"></script>
+</body>
+</html>

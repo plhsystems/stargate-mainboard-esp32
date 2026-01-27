@@ -1,17 +1,9 @@
-/*  WiFi softAP Example
+/*  Ring Firmware - BLE Control
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+   This code controls the ring LEDs via BLE communication.
 */
 #include "fwconfig.h"
 #include <string.h>
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include <lwip/netdb.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -20,20 +12,17 @@
 #include "nvs_flash.h"
 #include "esp_pm.h"
 #include "sdkconfig.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
-#include "lwip/ip4_addr.h"
-#include "esp_system.h"
 #include "driver/gpio.h"
 #include "gpio.h"
 #include "SGUComm.hpp"
 #include "SGURing.hpp"
-#include "esp_now.h"
 #include "esp_crc.h"
-#include "esp_netif.h"
-#include "esp_wifi.h"
 #include "esp_ota_ops.h"
 #include "misc-formula.h"
+
+extern "C" {
+#include "ble_server.h"
+}
 
 using namespace SGUCommNS;
 
@@ -43,8 +32,6 @@ using namespace SGUCommNS;
 // 0.035 A x 45 * 160/255
 #define LED_OUTPUT_MAX (160)
 #define LED_OUTPUT_IDLE (100)
-
-static void InitESPNOW();
 
 static const char *TAG = "Main";
 
@@ -57,9 +44,6 @@ static int32_t m_s32ChevronAnim = -1;
 
 static esp_pm_lock_handle_t m_lockHandle;
 
-static int m_UdpCommSocket = -1;
-static struct sockaddr_storage m_source_addr; // Large enough for both IPv4 or IPv6
-
 extern "C" {
     void app_main();
 
@@ -69,7 +53,14 @@ extern "C" {
     static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg);
     static void SGUBRChevronsLightningHandler(const SChevronsLightningArg* psChevronLightningArg);
     static void SGUBRGotoFactory();
-    static void PingPongHandler(const SPingPongArg* psArg);
+
+    // BLE action handlers
+    static void BLE_HeartbeatHandler(void);
+    static void BLE_AnimationHandler(SGUCommNS::EChevronAnimation animation);
+    static void BLE_SymbolsHandler(const uint8_t symbol_bits[6]);
+    static void BLE_PowerOffHandler(void);
+    static void BLE_LightSymbolHandler(uint8_t symbol_index, uint8_t level_pwm);
+    static void BLE_GotoFactoryHandler(void);
 }
 
 static const SConfig m_sConfig =
@@ -79,70 +70,8 @@ static const SConfig m_sConfig =
     .fnUpdateLightHandler = SGUBRUpdateLightHandler,
     .fnChevronsLightningHandler = SGUBRChevronsLightningHandler,
     .fnGotoFactoryHandler = SGUBRGotoFactory,
-    .fnPingPongHandler = PingPongHandler,
+    .fnPingPongHandler = NULL,
 };
-
-static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-static void wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-
-static void InitESPNOW()
-{
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-
-    // Soft Access Point Mode
-    esp_netif_t* wifiSTA = esp_netif_create_default_wifi_sta();
-
-    esp_netif_ip_info_t ipInfoSTA;
-    IP4_ADDR(&ipInfoSTA.ip, 192, 168, 66, 250);
-	IP4_ADDR(&ipInfoSTA.gw, 192, 168, 66, 250);
-	IP4_ADDR(&ipInfoSTA.netmask, 255, 255, 255, 0);
-    esp_netif_dhcpc_stop(wifiSTA);
-	esp_netif_set_ip_info(wifiSTA, &ipInfoSTA);
-
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_EVENT_ANY_ID,
-                                                        &wifistation_event_handler,
-                                                        NULL,
-                                                        &instance_any_id));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                        IP_EVENT_STA_GOT_IP,
-                                                        &wifistation_event_handler,
-                                                        NULL,
-                                                        &instance_got_ip));
-
-    wifi_config_t wifi_configSTA = {
-        .sta = {
-            /* Setting a password implies station will connect to all security modes including WEP/WPA.
-             * However these modes are deprecated and not advisable to be used. Incase your Access point
-             * doesn't support WPA2, these mode can be enabled by commenting below line */
-            .pmf_cfg = {
-                .capable = true,
-                .required = false
-            },
-        },
-    };
-    strcpy((char*)wifi_configSTA.sta.ssid, FWCONFIG_MASTERBASE_SSID);
-
-    if (strlen(FWCONFIG_MASTERBASE_PASS) == 0)
-    {
-        wifi_configSTA.sta.threshold.authmode = WIFI_AUTH_OPEN;
-    }
-    else
-    {
-        wifi_configSTA.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-        strcpy((char*)wifi_configSTA.sta.password, FWCONFIG_MASTERBASE_PASS);
-    }
-
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_configSTA) );
-
-    // Start AP + STA
-    ESP_ERROR_CHECK(esp_wifi_start() );
-}
 
 static void LedRefreshTask(void *pvParameters)
 {
@@ -313,35 +242,6 @@ static void LedRefreshTask(void *pvParameters)
     }
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
-{
-    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
-        ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x join, AID=%d",
-            event->mac[0], event->mac[1],event->mac[2], event->mac[3],event->mac[4], event->mac[5],
-            (int)event->aid);
-    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-        ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x leave, AID=%d",
-            event->mac[0], event->mac[1],event->mac[2], event->mac[3],event->mac[4], event->mac[5],
-            (int)event->aid);
-    }
-}
-
-static void wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
-{
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        esp_wifi_connect();
-        ESP_LOGI(TAG, "retry to connect to the AP");
-        ESP_LOGI(TAG,"connect to the AP fail");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-    }
-}
-
 static void ResetAutoOffTicks()
 {
     m_lAutoOffTicks = xTaskGetTickCount();
@@ -365,7 +265,7 @@ static void SGUBRTurnOffHandler()
 
 static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg)
 {
-    ESP_LOGI(TAG, "BLE Update light received. Lights: %u", /*0*/(uint)psArg->u8LightCount);
+    ESP_LOGI(TAG, "BLE Update light received. Lights: %u", /*0*/(unsigned int)psArg->u8LightCount);
 
      // Keep chevrons dimly lit
     for(int32_t i = 0; i < psArg->u8LightCount; i++)
@@ -413,79 +313,91 @@ static void SGUBRGotoFactory()
     ResetAutoOffTicks();
 }
 
-static void PingPongHandler(const SPingPongArg* psArg)
-{
-    ESP_LOGI(TAG, "Ping received: %" PRIu32, psArg->u32PingPong);
-    if (m_UdpCommSocket < 0)
-        return;
+// BLE Action Handlers
 
-    uint8_t u8Payloads[128];
-    const int length = SGUComm::EncPingPong(u8Payloads, sizeof(u8Payloads), psArg);
-    int err = sendto(m_UdpCommSocket, u8Payloads, length, 0, (struct sockaddr *)&m_source_addr, sizeof(m_source_addr));
-    if (err < 0) {
-        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-        return;
-    }
-    ESP_LOGI(TAG, "Ping response sent");
+static void BLE_HeartbeatHandler(void)
+{
+    ESP_LOGI(TAG, "BLE Heartbeat received");
     ResetAutoOffTicks();
 }
 
-static void MainTask(void *pvParameters)
+static void BLE_AnimationHandler(SGUCommNS::EChevronAnimation animation)
 {
-    ESP_LOGI(TAG, "MainTask started ...");
-    uint16_t u16Port = 7827;
-    int sock = -1;
-    {
+    ESP_LOGI(TAG, "BLE Animation requested: %u", (unsigned int)animation);
+    m_s32ChevronAnim = (int32_t)animation;
+    ResetAutoOffTicks();
+}
 
-    struct sockaddr_in dest_addr_ip4;
-    dest_addr_ip4.sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4.sin_family = AF_INET;
-    dest_addr_ip4.sin_port = htons(u16Port);
+static void BLE_SymbolsHandler(const uint8_t symbol_bits[6])
+{
+    ESP_LOGI(TAG, "BLE Set symbols: %02X %02X %02X %02X %02X %02X",
+             symbol_bits[0], symbol_bits[1], symbol_bits[2],
+             symbol_bits[3], symbol_bits[4], symbol_bits[5]);
 
-    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock < 0)
-    {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-        goto ERROR;
+    // Turn off all symbols first
+    for (int32_t i = 0; i < HWCONFIG_WS1228B_LEDCOUNT; i++) {
+        if (!SGURingNS::IsLEDIndexChevron(i)) {
+            GPIO_SetPixel(i, 0, 0, 0);
+        }
     }
-    m_UdpCommSocket = sock;
-    ESP_LOGI(TAG, "Socket created");
 
-    int err = bind(sock, (struct sockaddr *)&dest_addr_ip4, sizeof(dest_addr_ip4));
-    if (err < 0) {
-        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        goto ERROR;
-    }
-    ESP_LOGI(TAG, "Socket bound, port %d", (int)u16Port);
-    /*struct timeval read_timeout;
-    read_timeout.tv_sec = 0;
-    read_timeout.tv_usec = 10;
-    setsockopt(pHandle->sock, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);*/
-    uint8_t u8Buffers[64];
-    SGUComm sSGUComm;
+    // Light up specified symbols (48 symbols total, 1 bit each)
+    for (int32_t symbol_idx = 0; symbol_idx < 48; symbol_idx++) {
+        // Check if this symbol bit is set
+        uint8_t byte_idx = symbol_idx / 8;
+        uint8_t bit_idx = symbol_idx % 8;
+        bool is_lit = (symbol_bits[byte_idx] & (1 << bit_idx)) != 0;
 
-    while(true)
-    {
-        socklen_t socklen = sizeof(m_source_addr);
-        int len = recvfrom(sock, u8Buffers, sizeof(u8Buffers), 0, (struct sockaddr *)&m_source_addr, &socklen);
-        if (len > 0)
-        {
-            ESP_LOGI(TAG, "Receiving data, len: %d", (int)len);
-            if (!SGUComm::Decode(m_sConfig, u8Buffers, len))
-            {
-                ESP_LOGE(TAG, "Unable to decode message");
+        if (is_lit && symbol_idx < HWCONFIG_WS1228B_LEDCOUNT) {
+            // Convert symbol index to LED index and light it up
+            int32_t led_idx = SGURingNS::SymbolToLedIndex(symbol_idx);
+            if (led_idx >= 0 && led_idx < HWCONFIG_WS1228B_LEDCOUNT) {
+                GPIO_SetPixel(led_idx, LED_OUTPUT_MAX, LED_OUTPUT_MAX, LED_OUTPUT_MAX);
             }
         }
-        // 50 HZ
-        vTaskDelay(pdMS_TO_TICKS(20));
     }
+
+    ResetAutoOffTicks();
+}
+
+static void BLE_PowerOffHandler(void)
+{
+    ESP_LOGI(TAG, "BLE Power Off received");
+    m_bIsSuicide = true;
+}
+
+static void BLE_LightSymbolHandler(uint8_t symbol_index, uint8_t level_pwm)
+{
+    ESP_LOGI(TAG, "BLE Light symbol %u", symbol_index);
+
+    // Convert symbol index to LED index and light it up
+    int32_t led_idx = SGURingNS::SymbolToLedIndex(symbol_index);
+    if (led_idx >= 0 && led_idx < HWCONFIG_WS1228B_LEDCOUNT) {
+        GPIO_SetPixel(led_idx, level_pwm, level_pwm, level_pwm);
+    } else {
+        ESP_LOGE(TAG, "Invalid symbol index: %u", symbol_index);
     }
-    ERROR:
-    if (sock != -1) {
-        ESP_LOGE(TAG, "Shutting down socket and restarting...");
-        shutdown(sock, 0);
-        close(sock);
+
+    ResetAutoOffTicks();
+}
+
+static void BLE_GotoFactoryHandler(void)
+{
+    ESP_LOGI(TAG, "BLE Goto factory mode");
+
+    const esp_partition_t* pFactoryPartition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+
+    if (pFactoryPartition == NULL)
+    {
+        ESP_LOGE(TAG, "Factory partition cannot be found");
+        return;
     }
+
+    ESP_LOGI(TAG, "Set boot partition to factory mode");
+    esp_ota_set_boot_partition(pFactoryPartition);
+    esp_restart();
+
+    ResetAutoOffTicks();
 }
 
 void app_main(void)
@@ -502,23 +414,26 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     GPIO_Init();
     GPIO_EnableHoldPowerPin(true);
 
-    InitESPNOW();
+    // Initialize BLE server with action callbacks
+    ble_action_callbacks_t ble_callbacks = {
+        .heartbeat_cb = BLE_HeartbeatHandler,
+        .animation_cb = BLE_AnimationHandler,
+        .symbols_cb = BLE_SymbolsHandler,
+        .poweroff_cb = BLE_PowerOffHandler,
+        .light_symbol_cb = BLE_LightSymbolHandler,
+        .goto_factory_cb = BLE_GotoFactoryHandler,
+    };
 
-    // Clear LED strip (turn off all LEDs)
-    //ESP_ERROR_CHECK(esp_pm_lock_acquire(lockHandle));
-    //ESP_ERROR_CHECK(esp_pm_lock_release(lockHandle));
+    if (ble_server_init(&ble_callbacks) != 0) {
+        ESP_LOGE(TAG, "Failed to initialize BLE server");
+    }
 
     xTaskCreatePinnedToCore(&LedRefreshTask, "RefreshLEDs", 4000, NULL, 10, NULL, 0);
-
-    // Create task on CPU one ... to not interfere with FastLED
-    // AppMain is created on task 0 by default.
-    xTaskCreatePinnedToCore(&MainTask, "MainTask", 4000, NULL, 10, NULL, 1);
 
     long switchTicks = 0;
     bool bLastIsSuicide = false;

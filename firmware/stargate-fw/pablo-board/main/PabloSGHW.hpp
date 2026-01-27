@@ -13,10 +13,10 @@ class PabloSGHW : public SGHW_HAL
 
     void Init() override;
 
-    void SetChevronLight(EChevron eChevron, bool bState) override;
+    void SetChevronLight(EChevron chevron, bool state) override;
 
     // Ramp light
-    void SetRampLight(double dPerc) override;
+    void SetRampLight(double perc) override;
 
     void PowerUpStepper() override;
     void StepStepperCW() override;
@@ -24,16 +24,16 @@ class PabloSGHW : public SGHW_HAL
     void PowerDownStepper() override;
 
     void PowerUpServo() override;
-    void SetServo(double dPosition) override;
+    void SetServo(double position) override;
     void PowerDownServo() override;
 
     // Wormhole related
     int32_t GetWHPixelCount() override;
-    void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue) override;
+    void SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue) override;
     void ClearAllWHPixels() override;
     void RefreshWHPixels() override;
 
-    void SetSanityLED(bool bState);
+    void SetSanityLED(bool state);
 
     bool GetIsHomeSensorActive() override;
 
@@ -44,7 +44,7 @@ class PabloSGHW : public SGHW_HAL
     private:
     led_strip_handle_t led_strip;
 
-    double m_dLastServoPosition;
+    double m_last_servo_position;
 
     // Mutex
     StaticSemaphore_t m_xMutexBuffer; // Define the buffer for the mutex's data structure

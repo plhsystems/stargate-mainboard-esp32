@@ -33,18 +33,18 @@ class SGHW_HAL
     virtual void Init() { }
 
     /*! @brief Set chevron lightning status
-        @param eChevron     Chevron number
-        @param bState       OFF or ON*/
-    virtual void SetChevronLight(EChevron eChevron, bool bState) { }
+        @param chevron     Chevron number
+        @param state       OFF or ON*/
+    virtual void SetChevronLight(EChevron chevron, bool state) { }
 
     /*! @brief Ramp lightning output, based on a PWM.
-        @param dPerc    PWM value between [0 and 1] */
-    virtual void SetRampLight(double dPerc) { };
+        @param perc    PWM value between [0 and 1] */
+    virtual void SetRampLight(double perc) { };
 
     /*! @brief EChevron motor control, each chevron have one motor.
-        @param eChevron     Chevron number
-        @param dPerc        PWM value between [0 and 1] */
-    virtual void MoveChevronMotor(EChevron eChevron, MotorDirection motorDir) { }
+        @param chevron     Chevron number
+        @param perc        PWM value between [0 and 1] */
+    virtual void MovchevronMotor(EChevron chevron, MotorDirection motor_dir) { }
 
     // Stepper.
     /*! @brief Active the power on the stepper driver and motor. */
@@ -60,8 +60,8 @@ class SGHW_HAL
     /*! @brief Active the power on the servo motor. */
     virtual void PowerUpServo() { }
     /*! @brief Change the servo position.
-        @param dPosition    New position between [0, 1] */
-    virtual void SetServo(double dPosition) { }
+        @param position    New position between [0, 1] */
+    virtual void SetServo(double position) { }
     /*! @brief Power down the servo motor, it could be noisy while powered up.. */
     virtual void PowerDownServo() { }
 
@@ -70,11 +70,11 @@ class SGHW_HAL
     virtual int32_t GetWHPixelCount() { return 0; }
 
     /*! @brief Set neopixel color on the led strip, by index.
-        @param u32Index LED index
-        @param u8Red    Red channel [0, 255]
-        @param u8Green  Green channel [0, 255]
-        @param u8Blue   Blue channel [0, 255] */
-    virtual void SetWHPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue) { }
+        @param index LED index
+        @param red    Red channel [0, 255]
+        @param green  Green channel [0, 255]
+        @param blue   Blue channel [0, 255] */
+    virtual void SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue) { }
 
     /*! @brief Clear all wormhole led strip pixels. */
     virtual void ClearAllWHPixels() { }
@@ -82,14 +82,14 @@ class SGHW_HAL
     virtual void RefreshWHPixels() { }
 
     /*! @brief Set sanity the LED status.
-        @param bState   false: light is off, true: light is on */
-    virtual void SetSanityLED(bool bState) { }
+        @param state   false: light is off, true: light is on */
+    virtual void SetSanityLED(bool state) { }
 
     /*! @brief Is home sensor active ? Meaning the magnet near the home point. */
     virtual bool GetIsHomeSensorActive() { return false; }
 
     // Stepper
-    virtual void SpinUntil(ESpinDirection eSpinDirection, ETransition eTransition, uint32_t u32TimeoutMS, int32_t* ps32refTickCount) { };
+    virtual void SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) { };
 
-    virtual void MoveStepperTo(int32_t s32Ticks, uint32_t u32TimeoutMS) { };
+    virtual void MoveStepperTo(int32_t ticks, uint32_t timeout_ms) { };
 };

@@ -1,8 +1,8 @@
 #include "GateFactory.hpp"
 
-BaseGate& GateFactory::Get(GateGalaxy eGateGalaxy)
+BaseGate& GateFactory::Get(GateGalaxy gate_galaxy)
 {
-    switch(eGateGalaxy)
+    switch(gate_galaxy)
     {
         case GateGalaxy::Pegasus:
             return m_pegasusGate;

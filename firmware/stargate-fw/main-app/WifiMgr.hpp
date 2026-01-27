@@ -42,7 +42,7 @@ class WifiMgr
     bool GetWiFiSoftAPIP(esp_netif_ip_info_t& outIP);
     int32_t GetWiFiSTAIPv6(esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES]);
 
-    inline EState GetWifiSTAState() const { return m_eWiFiSTAState; }
+    inline EState GetWifiSTAState() const { return m_wifi_sta_state; }
 
     static WifiMgr& getI()
     {
@@ -53,12 +53,12 @@ class WifiMgr
     private:
     static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     static void wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-    
+
     static void time_sync_notification_cb(struct timeval* tv);
 
-    esp_netif_t* m_pWifiSTA;
-    esp_netif_t* m_pWifiSoftAP;
+    esp_netif_t* m_wifi_sta;
+    esp_netif_t* m_wifi_soft_ap;
 
-    EState m_eWiFiSTAState = EState::Deactivated;
+    EState m_wifi_sta_state = EState::Deactivated;
 };
 

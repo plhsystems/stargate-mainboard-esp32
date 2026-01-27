@@ -17,7 +17,7 @@ static PabloSGHW m_sPabloSGHW;
 
 static App::Config m_sConfig =
 {
-  .pSGHWHal = &m_sPabloSGHW
+  .m_sghw_hal = &m_sPabloSGHW
 };
 
 void app_main(void)

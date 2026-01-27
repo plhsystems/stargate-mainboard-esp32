@@ -1,29 +1,27 @@
-#include <exception>
-#include <stdexcept>
 #include "GateControl.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../FWConfig.hpp"
 #include "misc-formula.h"
 #include "SGURing.hpp"
 #include "SGUComm.hpp"
-#include "../Ring/RingComm.hpp"
+#include "../Ring/RingBLEClient.hpp"
 
 #define TAG "GateControl"
 
 GateControl::GateControl() :
-    m_bIsCancelAction(false)
+    m_is_cancel_action(false)
 {
-    m_xSemaphoreHandle = xSemaphoreCreateMutexStatic(&m_xSemaphoreCreateMutex);
+    m_semaphore_handle = xSemaphoreCreateMutexStatic(&m_semaphore_create_mutex);
 }
 
-void GateControl::Init(SGHW_HAL* pSGHWHal)
+void GateControl::Init(SGHW_HAL* sghw_hal)
 {
-    m_pSGHWHAL = pSGHWHal;
+    m_sghw_hal = sghw_hal;
 }
 
 void GateControl::StartTask()
 {
-	if (xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_sGateControlHandle, FWCONFIG_GATECONTROL_COREID) != pdPASS )
+	if (xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_gate_control_handle, FWCONFIG_GATECONTROL_COREID) != pdPASS )
 	{
 		ESP_ERROR_CHECK(ESP_FAIL);
 	}
@@ -31,62 +29,62 @@ void GateControl::StartTask()
 
 void GateControl::QueueAutoHome()
 {
-    const SCmd sCmd = { .eCmd = ECmd::AutoHome };
-    PriQueueAction(sCmd);
+    const SCmd command = { .cmd = ECmd::AutoHome };
+    PriQueueAction(command);
 }
 
 void GateControl::QueueAutoCalibrate()
 {
-    const SCmd sCmd = { .eCmd = ECmd::AutoCalibrate };
-    PriQueueAction(sCmd);
+    const SCmd cmd = { .cmd = ECmd::AutoCalibrate };
+    PriQueueAction(cmd);
 }
 
 void GateControl::QueueDialAddress(GateAddress& ga)
 {
-    const SCmd sCmd =
+    const SCmd cmd =
     {
-        .eCmd = ECmd::DialAddress,
-        .sDialAddress = { .sGateAddress = ga, .eWormholeType = Wormhole::EType::NormalSGU }
+        .cmd = ECmd::DialAddress,
+        .dial_address = { .gate_address = ga, .wormhole_type = Wormhole::EType::NormalSGU }
     };
-    PriQueueAction(sCmd);
+    PriQueueAction(cmd);
 }
 
 void GateControl::QueueManualWormhole(Wormhole::EType type)
 {
-    const SCmd sCmd =
+    const SCmd cmd =
     {
-        .eCmd = ECmd::ManualWormhole,
-        .sManualWormhole = { .eWormholeType = type }
+        .cmd = ECmd::ManualWormhole,
+        .manual_wormhole = { .wormhole_type = type }
     };
-    PriQueueAction(sCmd);
+    PriQueueAction(cmd);
 }
 
 void GateControl::AbortAction()
 {
-    m_bIsCancelAction = true;
+    m_is_cancel_action = true;
 }
 
 void GateControl::PriQueueAction(SCmd cmd)
 {
-    m_sNextCmd = cmd;
+    m_next_cmd = cmd;
 }
 
-void GateControl::TaskRunning(void* pArg)
+void GateControl::TaskRunning(void* arg)
 {
-    GateControl* gc = (GateControl*)pArg;
+    GateControl* gc = (GateControl*)arg;
 
     ESP_LOGI(TAG, "Gatecontrol task started and ready.");
 
     // Dialing
     while(true)
     {
-        xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
-        gc->m_sCurrCmd = gc->m_sNextCmd;
-        gc->m_bIsCancelAction = false;
-        gc->m_sNextCmd.eCmd = ECmd::Idle;   // Reset the command "queue"
-        xSemaphoreGive(gc->m_xSemaphoreHandle);
+        xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
+        gc->m_curr_cmd = gc->m_next_cmd;
+        gc->m_is_cancel_action = false;
+        gc->m_next_cmd.cmd = ECmd::Idle;   // Reset the command "queue"
+        xSemaphoreGive(gc->m_semaphore_handle);
 
-        if (gc->m_sCurrCmd.eCmd == ECmd::Idle)
+        if (gc->m_curr_cmd.cmd == ECmd::Idle)
         {
             // TODO: Will be replaced by a manual event.
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -94,29 +92,40 @@ void GateControl::TaskRunning(void* pArg)
         }
 
         // Reset the receiving ..
-        xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
-        gc->m_szErrors[0] = '\0';
-        gc->m_bIsInError = false;
-        xSemaphoreGive(gc->m_xSemaphoreHandle);
+        xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
+        gc->m_errors[0] = '\0';
+        gc->m_is_in_error = false;
+        xSemaphoreGive(gc->m_semaphore_handle);
 
-        try
-        {
-            switch(gc->m_sCurrCmd.eCmd)
+        bool has_error = false;
+        const char* error_msg = "";
+
+        do {
+            switch(gc->m_curr_cmd.cmd)
             {
                 case ECmd::AutoCalibrate:
                 {
                     ESP_LOGI(TAG, "Autocalibrate in progress.");
-                    gc->AutoCalibrate();
+                    if (!gc->AutoCalibrate(&error_msg)) {
+                        has_error = true;
+                        break;
+                    }
                     // Will move it at it's home position, it should go very fast.
                     ESP_LOGI(TAG, "Autocalibrate succeeded.");
-                    gc->AutoHome();
+                    if (!gc->AutoHome(&error_msg)) {
+                        has_error = true;
+                        break;
+                    }
                     ESP_LOGI(TAG, "Auto-home succeeded.");
                     break;
                 }
                 case ECmd::AutoHome:
                 {
                     ESP_LOGI(TAG, "Auto-home started.");
-                    gc->AutoHome();
+                    if (!gc->AutoHome(&error_msg)) {
+                        has_error = true;
+                        break;
+                    }
                     ESP_LOGI(TAG, "Auto-home succeeded.");
                     break;
                 }
@@ -129,17 +138,20 @@ void GateControl::TaskRunning(void* pArg)
                 case ECmd::DialAddress:
                 {
                     ESP_LOGI(TAG, "Dialing ....");
-                    gc->DialAddress(gc->m_sCurrCmd.sDialAddress);
+                    if (!gc->DialAddress(gc->m_curr_cmd.dial_address, &error_msg)) {
+                        has_error = true;
+                        break;
+                    }
                     ESP_LOGI(TAG, "Dialing address succeeded.");
                     break;
                 }
                 case ECmd::ManualWormhole:
                 {
-                    ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_sCurrCmd.sManualWormhole.eWormholeType));
-                    Wormhole wm { gc->m_pSGHWHAL, gc->m_sCurrCmd.sManualWormhole.eWormholeType };
+                    ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_curr_cmd.manual_wormhole.wormhole_type));
+                    Wormhole wm { gc->m_sghw_hal, gc->m_curr_cmd.manual_wormhole.wormhole_type };
                     wm.Begin();
                     wm.OpeningAnimation();
-                    while(!gc->m_bIsCancelAction) {
+                    while(!gc->m_is_cancel_action) {
                         wm.RunTicks();
                     }
                     wm.ClosingAnimation();
@@ -150,194 +162,211 @@ void GateControl::TaskRunning(void* pArg)
                 case ECmd::Idle:
                     break;
             }
-        }
-        catch(const std::exception& e)
+        } while(false);
+
+        if (has_error && error_msg)
         {
-            ESP_LOGE(TAG, "Exception raised: %s", e.what());
+            ESP_LOGE(TAG, "Error occurred: %s", error_msg);
 
             // To be displayed into the web page.
-            xSemaphoreTake(gc->m_xSemaphoreHandle, portMAX_DELAY);
-            strncpy(gc->m_szErrors, e.what(), ERROR_LEN);
-            gc->m_bIsInError = true;
-            xSemaphoreGive(gc->m_xSemaphoreHandle);
+            xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
+            strncpy(gc->m_errors, error_msg, ERROR_LEN);
+            gc->m_is_in_error = true;
+            xSemaphoreGive(gc->m_semaphore_handle);
         }
 
         // Reset at the end, it's not really a queue
-        gc->m_bIsCancelAction = false;
-        gc->m_sCurrCmd.eCmd = ECmd::Idle;
+        gc->m_is_cancel_action = false;
+        gc->m_curr_cmd.cmd = ECmd::Idle;
     }
 }
 
-void GateControl::AutoCalibrate()
+bool GateControl::AutoCalibrate(const char** error_msg)
 {
-    const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
+    const uint32_t timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
+    bool success = false;
 
-    try
-    {
+    do {
         // We need two transitions from LOW to HIGH.
         // we give it 40s maximum to find the home.
-        m_pSGHWHAL->PowerUpStepper();
+        m_sghw_hal->PowerUpStepper();
         ReleaseClamp();
 
         ESP_LOGI(TAG, "Finding home in progress");
-        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
         ESP_LOGI(TAG, "Home has been found once");
-        int32_t s32NewStepsPerRotation = 0;
-        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, &s32NewStepsPerRotation);
+        int32_t new_steps_per_rotation = 0;
+        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation);
 
-        ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, s32NewStepsPerRotation);
+        ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, new_steps_per_rotation);
 
         // Find the gap.
         // Continue to move until it get out of the home range.
-        int32_t s32Gap = 0;
+        int32_t gap = 0;
 
-        m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Failing, u32Timeout, &s32Gap);
-        m_pSGHWHAL->SpinUntil(ESpinDirection::CW, ETransition::Rising, u32Timeout, &s32Gap);
+        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap);
+        m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap);
 
-        ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, s32NewStepsPerRotation, s32Gap);
+        ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, new_steps_per_rotation, gap);
 
         // Save the calibration result.
-        Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, s32NewStepsPerRotation);
-        Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, s32Gap);
+        Settings::getI().SetValueInt32(Settings::Entry::StepsPerRotation, new_steps_per_rotation);
+        Settings::getI().SetValueInt32(Settings::Entry::RingHomeGapRange, gap);
         Settings::getI().Commit();
 
         // Go into the other direction until it get out of the sensor
         LockClamp();
-        m_pSGHWHAL->PowerDownStepper();
-        m_pSGHWHAL->PowerDownServo();
-    }
-    catch(const std::exception& e)
-    {
-        // Go into the other direction until it get out of the sensor
-        m_pSGHWHAL->PowerDownStepper();
+        m_sghw_hal->PowerDownStepper();
+        m_sghw_hal->PowerDownServo();
+
+        success = true;
+    } while(false);
+
+    if (!success) {
+        // Cleanup on error
+        m_sghw_hal->PowerDownStepper();
         LockClamp();
-        throw;
     }
+
+    return success;
 }
 
-void GateControl::AutoHome()
+bool GateControl::AutoHome(const char** error_msg)
 {
-    try
-    {
-        m_pSGHWHAL->PowerUpStepper();
+    bool success = false;
+
+    do {
+        m_sghw_hal->PowerUpStepper();
         ReleaseClamp();
 
-        const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-        const int32_t s32Gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
-        if (s32NewStepsPerRotation == 0 || s32Gap == 0)
+        const int32_t new_steps_per_rotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+        const int32_t gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
+        if (new_steps_per_rotation == 0 || gap == 0)
         {
-            throw std::runtime_error("Auto-calibration needs to be done");
+            if (error_msg) *error_msg = "Auto-calibration needs to be done";
+            break;
         }
 
-        const uint32_t u32Timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
+        const uint32_t timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
         // If the ring is already near the home sensor, we just need to move a little bit.
-        if (m_pSGHWHAL->GetIsHomeSensorActive()) {
+        if (m_sghw_hal->GetIsHomeSensorActive()) {
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-            m_pSGHWHAL->SpinUntil(ESpinDirection::CW, ETransition::Failing, u32Timeout, nullptr);
-            m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+            m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr);
+            m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
         }
         else {
             ESP_LOGI(TAG, "Homing using the slow algorithm");
-            m_pSGHWHAL->SpinUntil(ESpinDirection::CCW, ETransition::Rising, u32Timeout, nullptr);
+            m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
         }
 
         // Move by half the deadband offset.
         // this is the real 0 position
-        const int32_t s32HalfDeadband = s32Gap / 2;
-        ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, s32HalfDeadband);
-        for(int i = 0; i < s32HalfDeadband; i++)
+        const int32_t half_deadband = gap / 2;
+        ESP_LOGI(TAG, "Moving a little bit to take care of the deadband, offset: %" PRId32, half_deadband);
+        for(int i = 0; i < half_deadband; i++)
         {
-            m_pSGHWHAL->StepStepperCCW();
+            m_sghw_hal->StepStepperCCW();
             vTaskDelay(1);
         }
 
-        m_s32CurrentPositionTicks = 0;
-        m_bIsHomingDone = true;
+        m_current_position_ticks = 0;
+        m_is_homing_done = true;
 
         LockClamp();
         // Go into the other direction until it get out of the sensor
-        m_pSGHWHAL->PowerDownStepper();
-    }
-    catch(const std::exception& e)
-    {
+        m_sghw_hal->PowerDownStepper();
+
+        success = true;
+    } while(false);
+
+    if (!success) {
         LockClamp();
         // Go into the other direction until it get out of the sensor
-        m_pSGHWHAL->PowerDownStepper();
-        throw;
+        m_sghw_hal->PowerDownStepper();
     }
+
+    return success;
 }
 
-void GateControl::DialAddress(const SDialArg& sDialArg)
+bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
 {
-    const int32_t s32NewStepsPerRotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+    const int32_t new_steps_per_rotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
+    bool success = false;
+    bool process_started = false;
 
-    auto endOfProcess = [&](bool bIsError) -> void
+    auto endOfProcess = [&](bool is_error) -> void
     {
         vTaskDelay(pdMS_TO_TICKS(500));
-        if (bIsError) {
-            RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
+        if (is_error) {
+            RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
         } else {
-            RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
+            RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
         AnimRampLight(false);
 
-        if (!bIsError) {
+        if (!is_error) {
             // If no error happened, just wait a little bit for the effect.
             vTaskDelay(pdMS_TO_TICKS(5000));
         }
         // Go back to home position
         ESP_LOGI(TAG, "Move near the home position");
-        const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, 0, s32NewStepsPerRotation);
-        m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
+        const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, 0, new_steps_per_rotation);
+        m_sghw_hal->MoveStepperTo(move_ticks, 30000);
         ESP_LOGI(TAG, "Confirm the home position");
-        AutoHome();
+        AutoHome(nullptr);
 
-        m_pSGHWHAL->PowerDownStepper();
+        m_sghw_hal->PowerDownStepper();
         LockClamp();
     };
 
-    try
-    {
-        Wormhole wm { m_pSGHWHAL, sDialArg.eWormholeType };
-        m_pSGHWHAL->PowerUpStepper();
+    do {
+        Wormhole wm { m_sghw_hal, dial_arg.wormhole_type };
+        m_sghw_hal->PowerUpStepper();
         ReleaseClamp();
+        process_started = true;
 
-        if (!m_bIsHomingDone) {
-            throw std::runtime_error("Homing need to be done");
+        if (!m_is_homing_done) {
+            if (error_msg) *error_msg = "Homing need to be done";
+            break;
         }
 
         AnimRampLight(true);
         vTaskDelay(pdMS_TO_TICKS(750));
-        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
+        RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
         vTaskDelay(pdMS_TO_TICKS(750));
 
         // const EChevron chevrons[] = { EChevron::Chevron1, EChevron::Chevron2, EChevron::Chevron3, EChevron::Chevron4, EChevron::Chevron5, EChevron::Chevron6, EChevron::Chevron7_Master, EChevron::Chevron8, EChevron::Chevron9 };
-        for(int32_t i = 0; i < sDialArg.sGateAddress.GetSymbolCount(); i++)
+        for(int32_t i = 0; i < dial_arg.gate_address.GetSymbolCount(); i++)
         {
-            if (m_bIsCancelAction) {
-                throw std::runtime_error("Cancelled by the user");
+            if (m_is_cancel_action) {
+                if (error_msg) *error_msg = "Cancelled by the user";
+                break;
             }
 
-            const uint8_t u8Symbol = sDialArg.sGateAddress.GetSymbol(i);
+            const uint8_t symbol = dial_arg.gate_address.GetSymbol(i);
 
             // Dial sequence ...
-            const int32_t s32LedIndex = SGURingNS::SymbolToLedIndex(u8Symbol);
-            const double dAngle = (SGURingNS::LEDIndexToDeg(s32LedIndex));
-            const int32_t s32SymbolToTicks = -1*(dAngle/360)*s32NewStepsPerRotation;
+            const int32_t led_index = SGURingNS::SymbolToLedIndex(symbol);
+            const double angle = (SGURingNS::LEDIndexToDeg(led_index));
+            const int32_t symbol_to_ticks = -1*(angle/360)*new_steps_per_rotation;
 
-            const int32_t s32MoveTicks = MISCFA_CircleDiffd32(m_s32CurrentPositionTicks, s32SymbolToTicks, s32NewStepsPerRotation);
+            const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, symbol_to_ticks, new_steps_per_rotation);
 
-            ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, s32LedIndex, dAngle, s32SymbolToTicks);
-            m_pSGHWHAL->MoveStepperTo(s32MoveTicks, 30000);
+            ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, led_index, angle, symbol_to_ticks);
+            m_sghw_hal->MoveStepperTo(move_ticks, 30000);
 
             vTaskDelay(pdMS_TO_TICKS(500));
-            RingComm::getI().SendLightUpSymbol(u8Symbol);
+            RingBLEClient::getI().SendLightUpSymbol(symbol);
             vTaskDelay(pdMS_TO_TICKS(750));
 
-            m_s32CurrentPositionTicks = s32SymbolToTicks;
+            m_current_position_ticks = symbol_to_ticks;
             vTaskDelay(pdMS_TO_TICKS(2000));
+        }
+
+        if (m_is_cancel_action) {
+            break;
         }
 
         // Play the wormhole idling animation
@@ -345,7 +374,7 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
         wm.OpeningAnimation();
 
         const uint32_t start_ticks = xTaskGetTickCount();
-        while(!m_bIsCancelAction) {
+        while(!m_is_cancel_action) {
             // 5 minutes
             if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
                 break;
@@ -353,67 +382,67 @@ void GateControl::DialAddress(const SDialArg& sDialArg)
             wm.RunTicks();
         }
         // Turn-off all symbols before killing the wormhole
-        RingComm::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
+        RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
         wm.ClosingAnimation();
         wm.End();
 
-        endOfProcess(false);
+        success = true;
+    } while(false);
+
+    if (process_started) {
+        endOfProcess(!success);
     }
-    catch(const std::exception& e)
-    {
-        endOfProcess(true);
-        throw;
-    }
+
+    return success;
 }
 
 
-void GateControl::AnimRampLight(bool bIsActive)
+void GateControl::AnimRampLight(bool is_active)
 {
-    const float fltPWMOn = (float)Settings::getI().GetValueInt32(Settings::Entry::RampOnPercent) / 100.0f;
-    const float fltInc = 0.005f;
+    const float pwm_on = (float)Settings::getI().GetValueInt32(Settings::Entry::RampOnPercent) / 100.0f;
+    const float inc = 0.005f;
 
-    if (bIsActive) {
-        for(float flt = 0.0f; flt <= 1.0f; flt += fltInc) {
+    if (is_active) {
+        for(float value = 0.0f; value <= 1.0f; value += inc) {
             // Log corrected
-            m_pSGHWHAL->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+            m_sghw_hal->SetRampLight(MISCFA_LinearizeLEDOutput(value)*pwm_on);
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
     else {
-        for(float flt = 1.0f; flt >= 0.0f; flt -= fltInc) {
-            m_pSGHWHAL->SetRampLight(MISCFA_LinearizeLEDOutput(flt)*fltPWMOn);
+        for(float value = 1.0f; value >= 0.0f; value -= inc) {
+            m_sghw_hal->SetRampLight(MISCFA_LinearizeLEDOutput(value)*pwm_on);
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
 }
 
-void GateControl::GetState(UIState& uiState)
+void GateControl::GetState(UIState& ui_state)
 {
-    xSemaphoreTake(m_xSemaphoreHandle, portMAX_DELAY);
-    uiState.eCmd = m_sCurrCmd.eCmd;
+    xSemaphoreTake(m_semaphore_handle, portMAX_DELAY);
+    ui_state.cmd = m_curr_cmd.cmd;
     // Last error
-    uiState.bHasLastError = m_bIsInError;
-    strcpy(uiState.szLastError, m_szErrors);
+    ui_state.has_last_error = m_is_in_error;
+    strcpy(ui_state.last_error, m_errors);
 
-    strcpy(uiState.szStatusText, GetCmdText(m_sCurrCmd.eCmd));
+    strcpy(ui_state.status_text, GetCmdText(m_curr_cmd.cmd));
 
-    uiState.bIsCancelRequested = m_bIsCancelAction;
-    xSemaphoreGive(m_xSemaphoreHandle);
+    ui_state.is_cancel_requested = m_is_cancel_action;
+    xSemaphoreGive(m_semaphore_handle);
 }
 
 void GateControl::ReleaseClamp()
 {
     // Release the clamp
-    m_pSGHWHAL->PowerUpServo();
-    m_pSGHWHAL->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampReleasedPWM));
+    m_sghw_hal->PowerUpServo();
+    m_sghw_hal->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampReleasedPWM));
     vTaskDelay(pdMS_TO_TICKS(500));
 }
 
 void GateControl::LockClamp()
 {
-    m_pSGHWHAL->PowerUpServo();
-    m_pSGHWHAL->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampLockedPWM));
+    m_sghw_hal->PowerUpServo();
+    m_sghw_hal->SetServo(Settings::getI().GetValueDouble(Settings::Entry::ClampLockedPWM));
     vTaskDelay(pdMS_TO_TICKS(500));
-    m_pSGHWHAL->PowerDownServo();
+    m_sghw_hal->PowerDownServo();
 }
-

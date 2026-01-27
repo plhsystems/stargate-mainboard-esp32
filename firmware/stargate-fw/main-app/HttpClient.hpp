@@ -21,7 +21,7 @@ class HttpClient
 
     const char* GetFanGateListString();
 
-    static void TaskRunning(void* pArg);
+    static void TaskRunning(void* arg);
 
     static HttpClient& getI()
     {
@@ -30,9 +30,9 @@ class HttpClient
     }
 
     private:
-    TaskHandle_t m_sTaskHTTPClientHandle;
+    TaskHandle_t m_task_http_client_handle;
 
     std::shared_ptr<char[]> m_fanGate;
-    uint32_t m_u32LastUpdateTicks;
+    uint32_t m_last_update_ticks;
 };
 

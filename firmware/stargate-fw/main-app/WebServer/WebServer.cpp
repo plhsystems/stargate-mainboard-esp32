@@ -18,40 +18,40 @@ WebServer::WebServer()
     : m_server(nullptr)
 {
     // API
-    m_sHttpGetAPI.uri       = "/api/*";
-    m_sHttpGetAPI.method    = HTTP_GET;
-    m_sHttpGetAPI.handler   = WebAPIGetHandler;
+    m_http_get_api.uri       = "/api/*";
+    m_http_get_api.method    = HTTP_GET;
+    m_http_get_api.handler   = WebAPIGetHandler;
     /* Let's pass response string in user
      * context to demonstrate it's usage */
-    m_sHttpGetAPI.user_ctx  = nullptr;
+    m_http_get_api.user_ctx  = nullptr;
 
-    m_sHttpPostAPI.uri       = "/api/*";
-    m_sHttpPostAPI.method    = HTTP_POST;
-    m_sHttpPostAPI.handler   = WebAPIPostHandler;
+    m_http_post_api.uri       = "/api/*";
+    m_http_post_api.method    = HTTP_POST;
+    m_http_post_api.handler   = WebAPIPostHandler;
     /* Let's pass response string in user
      * context to demonstrate it's usage */
-    m_sHttpPostAPI.user_ctx = nullptr;
+    m_http_post_api.user_ctx = nullptr;
 
     // OTA
-    m_sHttpOTAUploadPost.uri       = APIURL_POST_OTAUPLOAD_URI;
-    m_sHttpOTAUploadPost.method    = HTTP_POST;
-    m_sHttpOTAUploadPost.handler   = OTAUploadPostHandler;
+    m_http_ota_upload_post.uri       = APIURL_POST_OTAUPLOAD_URI;
+    m_http_ota_upload_post.method    = HTTP_POST;
+    m_http_ota_upload_post.handler   = OTAUploadPostHandler;
     /* Let's pass response string in user
      * context to demonstrate it's usage */
-    m_sHttpOTAUploadPost.user_ctx  = nullptr;
+    m_http_ota_upload_post.user_ctx  = nullptr;
 
     // Get web files
-    m_sHttpUI.uri       = "/*";
-    m_sHttpUI.method    = HTTP_GET;
-    m_sHttpUI.handler   = file_get_handler;
+    m_http_ui.uri       = "/*";
+    m_http_ui.method    = HTTP_GET;
+    m_http_ui.handler   = file_get_handler;
         /* Let's pass response string in user
         * context to demonstrate it's usage */
-    m_sHttpUI.user_ctx  = nullptr;
+    m_http_ui.user_ctx  = nullptr;
 }
 
-void WebServer::Init(SGHW_HAL* pSGHWHal)
+void WebServer::Init(SGHW_HAL* sghw_hal)
 {
-    m_pSGHWHAL = pSGHWHal;
+    m_sghw_hal = sghw_hal;
 
     m_config = HTTPD_DEFAULT_CONFIG();
     m_config.lru_purge_enable = true;
@@ -67,10 +67,10 @@ void WebServer::Start()
     if (httpd_start(&m_server, &m_config) == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
-        httpd_register_uri_handler(m_server, &m_sHttpOTAUploadPost);
-        httpd_register_uri_handler(m_server, &m_sHttpPostAPI);
-        httpd_register_uri_handler(m_server, &m_sHttpGetAPI);
-        httpd_register_uri_handler(m_server, &m_sHttpUI);
+        httpd_register_uri_handler(m_server, &m_http_ota_upload_post);
+        httpd_register_uri_handler(m_server, &m_http_post_api);
+        httpd_register_uri_handler(m_server, &m_http_get_api);
+        httpd_register_uri_handler(m_server, &m_http_ui);
     }
 }
 
@@ -128,16 +128,16 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "Opening file uri: %s", req->uri);
 
-    const EF_SFile* pFile = GetFile(req->uri+1);
-    if (pFile == NULL)
+    const EF_SFile* file = GetFile(req->uri+1);
+    if (file == NULL)
     {
         ESP_LOGE(TAG, "Failed to open file for reading");
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File does not exist");
         return ESP_FAIL;
     }
 
-    set_content_type_from_file(req, pFile->strFilename);
-    if (EF_ISFILECOMPRESSED(pFile->eFlags))
+    set_content_type_from_file(req, file->filename);
+    if (EF_ISFILECOMPRESSED(file->flags))
     {
         httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     }
@@ -145,15 +145,15 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
     // Static files have 1h cache by default
     httpd_resp_set_hdr(req, "Cache-Control", "public, max-age=3600");
 
-    uint32_t u32Index = 0;
+    uint32_t index = 0;
 
-    while(u32Index < pFile->u32Length)
+    while(index < file->length)
     {
-        const uint32_t n = MISCMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
+        const uint32_t n = MISCMACRO_MIN(file->length - index, HTTPSERVER_BUFFERSIZE);
 
         if (n > 0) {
-            /* Send the buffer contents as HTTP response m_u8Buffers */
-            if (httpd_resp_send_chunk(req, (char*)(pFile->pu8StartAddr + u32Index), n) != ESP_OK) {
+            /* Send the buffer contents as HTTP response m_buffers */
+            if (httpd_resp_send_chunk(req, (char*)(file->start_addr + index), n) != ESP_OK) {
                 ESP_LOGE(TAG, "File sending failed!");
                 /* Abort sending file */
                 httpd_resp_sendstr_chunk(req, NULL);
@@ -162,7 +162,7 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
                return ESP_FAIL;
            }
         }
-        u32Index += n;
+        index += n;
     }
 
     httpd_resp_set_hdr(req, "Connection", "close");
@@ -170,13 +170,13 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-const EF_SFile* WebServer::GetFile(const char* strFilename)
+const EF_SFile* WebServer::GetFile(const char* filename)
 {
     for(int i = 0; i < EF_EFILE_COUNT; i++)
     {
-        const EF_SFile* pFile = &EF_g_sFiles[i];
-        if (strcmp(pFile->strFilename, strFilename) == 0)
-            return pFile;
+        const EF_SFile* file = &EF_g_files[i];
+        if (strcmp(file->filename, filename) == 0)
+            return file;
     }
     return NULL;
 }
