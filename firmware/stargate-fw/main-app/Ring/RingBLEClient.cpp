@@ -188,19 +188,22 @@ int OnDiscoveryComplete(uint16_t conn_handle,
              chr->val_handle, chr->def_handle, chr->properties);
 
     // Store the characteristic handle (we want the WRITE characteristic)
-    // The ring-fw has only one characteristic with WRITE property
-    if (chr->properties & BLE_GATT_CHR_F_WRITE) {
-        ESP_LOGI(TAG, "Found WRITE characteristic, storing handle=%d", chr->val_handle);
-        // TODO: Fix this for real, ensure to use the right characteristic UUID instead
-        if (RingBLEClient::getI().m_char_discovered) {
-            ESP_LOGI(TAG, "Found WRITE characteristic (already found), storing handle=%d", chr->val_handle);
-        }
-        else {
+    // Verify it's the correct characteristic by comparing UUIDs
+    if (chr->properties & BLE_GATT_CHR_F_WRITE) 
+    {
+        ESP_LOGI(TAG, "Found WRITE characteristic, checking UUID...");
+
+        // Check if this is the correct characteristic by comparing UUIDs
+        if (ble_uuid_cmp(&chr->uuid.u, &CHAR_UUID.u) == 0) {
+            ESP_LOGI(TAG, "UUID matches! Storing handle=%d", chr->val_handle);
             RingBLEClient::getI().m_char_value_handle = chr->val_handle;
             RingBLEClient::getI().m_char_discovered = true;
 
             // Connection animation
             client->SendAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
+        }
+        else {
+            ESP_LOGI(TAG, "UUID does not match, skipping characteristic");
         }
     }
 
