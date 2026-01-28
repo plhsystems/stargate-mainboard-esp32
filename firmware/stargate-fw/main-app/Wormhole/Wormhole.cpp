@@ -145,6 +145,6 @@ void Wormhole::Illuminatring(Wormhole::ERing ring, Wormhole::EDir dir)
             m_hal->SetWHPixel(ring_entries->ring[i]-1, (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig));
         }
         m_hal->RefreshWHPixels();
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(15));
     }
 }

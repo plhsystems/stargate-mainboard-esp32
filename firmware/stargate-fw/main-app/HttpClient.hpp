@@ -3,6 +3,9 @@
 #include <memory>
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 class HttpClient
 {
@@ -19,7 +22,7 @@ class HttpClient
 
     void Start();
 
-    const char* GetFanGateListString();
+    std::shared_ptr<char[]> GetFanGateListString();
 
     static void TaskRunning(void* arg);
 
@@ -31,6 +34,8 @@ class HttpClient
 
     private:
     TaskHandle_t m_task_http_client_handle;
+
+    SemaphoreHandle_t m_fanGate_mutex;
 
     std::shared_ptr<char[]> m_fanGate;
     uint32_t m_last_update_ticks;

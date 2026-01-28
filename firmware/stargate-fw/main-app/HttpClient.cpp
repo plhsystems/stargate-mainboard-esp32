@@ -12,7 +12,7 @@ HttpClient::HttpClient()
     : m_fanGate(nullptr),
       m_last_update_ticks(0)
 {
-
+    m_fanGate_mutex = xSemaphoreCreateMutex();
 }
 
 void HttpClient::Init()
@@ -28,9 +28,14 @@ void HttpClient::Start()
 	}
 }
 
-const char* HttpClient::GetFanGateListString()
+std::shared_ptr<char[]> HttpClient::GetFanGateListString()
 {
-    return static_cast<const char*>(m_fanGate.get());
+    std::shared_ptr<char[]> result;
+    if (xSemaphoreTake(m_fanGate_mutex, portMAX_DELAY) == pdTRUE) {
+        result = m_fanGate;  // Safe copy
+        xSemaphoreGive(m_fanGate_mutex);
+    }
+    return result;
 }
 
 void HttpClient::TaskRunning(void* arg)
@@ -120,8 +125,12 @@ void HttpClient::TaskRunning(void* arg)
             ESP_LOGI(TAG, "URL: %s, size: %d / %d", url, offset, len);
 
             // Keep the data ...
-            http_client->m_fanGate = sptr_buffer;
-            http_client->m_last_update_ticks = xTaskGetTickCount();
+            // In TaskRunning, replace the assignment:
+            if (xSemaphoreTake(http_client->m_fanGate_mutex, portMAX_DELAY) == pdTRUE) {
+                http_client->m_fanGate = sptr_buffer;
+                http_client->m_last_update_ticks = xTaskGetTickCount();
+                xSemaphoreGive(http_client->m_fanGate_mutex);
+            }
 
         } while(false);
 

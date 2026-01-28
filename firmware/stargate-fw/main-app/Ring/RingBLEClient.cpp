@@ -198,6 +198,9 @@ int OnDiscoveryComplete(uint16_t conn_handle,
         else {
             RingBLEClient::getI().m_char_value_handle = chr->val_handle;
             RingBLEClient::getI().m_char_discovered = true;
+
+            // Connection animation
+            client->SendAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
         }
     }
 
@@ -208,14 +211,16 @@ int RingBLEClient::GapEventHandler(struct ble_gap_event *event, void *arg)
 {
     RingBLEClient* client = (RingBLEClient*)arg;
 
-    switch (event->type) {
+    switch (event->type)
+    {
         case BLE_GAP_EVENT_DISC:
         {
             // Device discovered during scan
             struct ble_hs_adv_fields fields;
             int rc = ble_hs_adv_parse_fields(&fields, event->disc.data, event->disc.length_data);
 
-            if (rc == 0 && fields.name != NULL) {
+            if (rc == 0 && fields.name != NULL)
+            {
                 // Check if this is the RingFW-BLE device
                 if (fields.name_len == 10 && memcmp(fields.name, "RingFW-BLE", 10) == 0) {
                     ESP_LOGI(TAG, "Found Ring device!");
@@ -374,8 +379,10 @@ void RingBLEClient::TaskRunning(void* arg)
         vTaskDelay(pdMS_TO_TICKS(100));
 
         // If not connected, try to scan/connect periodically
-        if (!client->m_is_connected) {
-            if (pdTICKS_TO_MS(xTaskGetTickCount() - last_scan_attempt) > SCAN_INTERVAL_MS) {
+        if (!client->m_is_connected)
+        {
+            if (pdTICKS_TO_MS(xTaskGetTickCount() - last_scan_attempt) > SCAN_INTERVAL_MS)
+            {
                 last_scan_attempt = xTaskGetTickCount();
 
                 if (!client->m_ring_found) {
@@ -387,9 +394,11 @@ void RingBLEClient::TaskRunning(void* arg)
                 }
             }
         }
-        else {
+        else
+        {
             // Send periodic heartbeat when connected
-            if (pdTICKS_TO_MS(xTaskGetTickCount() - last_heartbeat) > HEARTBEAT_INTERVAL_MS) {
+            if (pdTICKS_TO_MS(xTaskGetTickCount() - last_heartbeat) > HEARTBEAT_INTERVAL_MS)
+            {
                 last_heartbeat = xTaskGetTickCount();
                 client->SendHeartbeat();
             }
