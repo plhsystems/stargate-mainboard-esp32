@@ -7,6 +7,7 @@
 #include "driver/ledc.h"
 #include "freertos/task.h"
 #include "misc-macro.h"
+#include "driver/rmt_tx.h"
 
 #define TAG "PinkySGHW"
 

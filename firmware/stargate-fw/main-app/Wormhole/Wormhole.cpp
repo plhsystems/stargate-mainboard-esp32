@@ -92,8 +92,8 @@ void Wormhole::RunTicks()
     }
     m_hal->RefreshWHPixels();
 
-    // 40 HZ
-    vTaskDelay(pdMS_TO_TICKS(25));
+    // 30 HZ
+    vTaskDelay(pdMS_TO_TICKS(33));
 }
 
 void Wormhole::ClosingAnimation()
