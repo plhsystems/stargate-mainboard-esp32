@@ -396,12 +396,15 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         wm.OpeningAnimation();
 
         const uint32_t start_ticks = xTaskGetTickCount();
-        while(!m_is_cancel_action) {
+        while(!m_is_cancel_action) 
+        {
             // 5 minutes
             if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
                 break;
             }
-            wm.RunTicks();
+            if (!wm.RunTicks()) {
+                break;
+            }
         }
         // Turn-off all symbols before killing the wormhole
         RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);

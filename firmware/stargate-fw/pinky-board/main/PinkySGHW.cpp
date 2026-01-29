@@ -270,13 +270,15 @@ void PinkySGHW::ClearAllWHPixels()
     }
 }
 
-void PinkySGHW::RefreshWHPixels()
+bool PinkySGHW::RefreshWHPixels()
 {
     if (LockMutex())
     {
-        led_strip_refresh(led_strip);
+        const esp_err_t ret = led_strip_refresh(led_strip);
         UnlockMutex();
+        return ESP_OK == ret;
     }
+    return false;
 }
 
 void PinkySGHW::SetSanityLED(bool state)

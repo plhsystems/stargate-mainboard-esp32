@@ -79,7 +79,7 @@ class SGHW_HAL
     /*! @brief Clear all wormhole led strip pixels. */
     virtual void ClearAllWHPixels() { }
     /*! @brief Refresh the wormhole led strip. */
-    virtual void RefreshWHPixels() { }
+    virtual bool RefreshWHPixels() { return true; }
 
     /*! @brief Set sanity the LED status.
         @param state   false: light is off, true: light is on */

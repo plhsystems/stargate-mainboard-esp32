@@ -55,7 +55,7 @@ class PinkySGHW : public SGHW_HAL
     int32_t GetWHPixelCount() override;
     void SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue) override;
     void ClearAllWHPixels() override;
-    void RefreshWHPixels() override;
+    bool RefreshWHPixels() override;
 
     void SetSanityLED(bool state);
 

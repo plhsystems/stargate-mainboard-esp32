@@ -83,9 +83,10 @@ void PabloSGHW::ClearAllWHPixels()
      // TODO: Implements
 }
 
-void PabloSGHW::RefreshWHPixels()
+bool PabloSGHW::RefreshWHPixels()
 {
      // TODO: Implements
+     return false;
 }
 
 void PabloSGHW::SetSanityLED(bool state)

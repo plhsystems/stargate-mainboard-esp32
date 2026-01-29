@@ -6,6 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_random.h"
+#include "esp_log.h"
 
 Wormhole::Wormhole(SGHW_HAL* hal, EType wormhole_type) :
     m_wormhole_type(wormhole_type),
@@ -43,7 +44,7 @@ void Wormhole::OpeningAnimation()
     Illuminatring(ERing::Ring0, EDir::FadeIn);
 }
 
-void Wormhole::RunTicks()
+bool Wormhole::RunTicks()
 {
     const float minF = 0.30f;
     const float maxF = 1.00f;
@@ -58,7 +59,8 @@ void Wormhole::RunTicks()
         m_is_run_initialized = true;
     }
 
-    for(int i = 0; i < m_hal->GetWHPixelCount(); i++) {
+    for(int i = 0; i < m_hal->GetWHPixelCount(); i++) 
+    {
         SLedEffect* led_effect = &m_led_effects[i];
 
         const float inc = /*0.0025f +*/ ( 0.0005f * (esp_random() % 100) );
@@ -90,10 +92,16 @@ void Wormhole::RunTicks()
             m_hal->SetWHPixel(i, pwm, pwm, pwm);
         }
     }
-    m_hal->RefreshWHPixels();
 
-    // 30 HZ
-    vTaskDelay(pdMS_TO_TICKS(33));
+    if (!m_hal->RefreshWHPixels())
+    {
+        ESP_LOGW(TAG, "Error during refresh, may be caused by power instability");
+    }
+
+    // 50 HZ
+    vTaskDelay(pdMS_TO_TICKS(20));
+
+    return true;
 }
 
 void Wormhole::ClosingAnimation()
