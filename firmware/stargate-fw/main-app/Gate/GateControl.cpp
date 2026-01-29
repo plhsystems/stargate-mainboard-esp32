@@ -152,6 +152,7 @@ void GateControl::TaskRunning(void* arg)
                     wm.Begin();
                     wm.OpeningAnimation();
                     while(!gc->m_is_cancel_action) {
+                        // Unlimited time, it violate laws of physics! (AKA the needs of the plot)
                         wm.RunTicks();
                     }
                     wm.ClosingAnimation();

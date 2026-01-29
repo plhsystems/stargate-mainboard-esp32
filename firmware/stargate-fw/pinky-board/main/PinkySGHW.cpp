@@ -253,23 +253,29 @@ int32_t PinkySGHW::GetWHPixelCount()
 
 void PinkySGHW::SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
-    LockMutex();
-    led_strip_set_pixel(led_strip, index, red, green, blue);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_set_pixel(led_strip, index, red, green, blue);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::ClearAllWHPixels()
 {
-    LockMutex();
-    led_strip_clear(led_strip);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_clear(led_strip);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::RefreshWHPixels()
 {
-    LockMutex();
-    led_strip_refresh(led_strip);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_refresh(led_strip);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::SetSanityLED(bool state)

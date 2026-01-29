@@ -89,7 +89,7 @@ class SGHW_HAL
     virtual bool GetIsHomeSensorActive() { return false; }
 
     // Stepper
-    virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) { };
+    virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) { return false;};
 
-    virtual bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms) { };
+    virtual bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms) { return false;};
 };
