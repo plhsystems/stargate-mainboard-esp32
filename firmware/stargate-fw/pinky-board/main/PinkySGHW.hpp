@@ -62,8 +62,8 @@ class PinkySGHW : public SGHW_HAL
     bool GetIsHomeSensorActive() override;
 
     // Stepper
-    void SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) override;
-    void MoveStepperTo(int32_t ticks, uint32_t timeout_ms) override;
+    bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) override;
+    bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms) override;
 
     private:
     bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_mutex_handle, ( TickType_t ) pdMS_TO_TICKS(100) )); }

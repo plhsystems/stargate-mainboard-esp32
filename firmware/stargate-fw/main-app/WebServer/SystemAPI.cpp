@@ -39,6 +39,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
     else if (strcmp(req->uri, APIURL_GETPOST_SETTINGSJSON_URI) == 0) {
         export_json = Settings::getI().ExportJSON();
     }
+    /* TODO: Not ready
     else if (strcmp(req->uri, APIURL_GETFANGATELIST_MILKYWAY_URI) == 0) {
         free_mem = false;
         export_json = (char*)HttpClient::getI().GetFanGateListString();
@@ -46,7 +47,7 @@ esp_err_t WebServer::WebAPIGetHandler(httpd_req_t *req)
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Fan gate list isn't available yet");
             goto ERROR;
         }
-    }
+    }*/
     else if (strcmp(req->uri, APIURL_GETFREERTOSDBGINFO_URI) == 0) {
         // According to the documentation, put a big buffer.
         export_json = (char*)malloc(4096);

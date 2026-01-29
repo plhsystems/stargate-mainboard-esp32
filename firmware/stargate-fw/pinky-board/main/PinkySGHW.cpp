@@ -253,23 +253,29 @@ int32_t PinkySGHW::GetWHPixelCount()
 
 void PinkySGHW::SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
-    LockMutex();
-    led_strip_set_pixel(led_strip, index, red, green, blue);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_set_pixel(led_strip, index, red, green, blue);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::ClearAllWHPixels()
 {
-    LockMutex();
-    led_strip_clear(led_strip);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_clear(led_strip);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::RefreshWHPixels()
 {
-    LockMutex();
-    led_strip_refresh(led_strip);
-    UnlockMutex();
+    if (LockMutex())
+    {
+        led_strip_refresh(led_strip);
+        UnlockMutex();
+    }
 }
 
 void PinkySGHW::SetSanityLED(bool state)
@@ -283,7 +289,7 @@ bool PinkySGHW::GetIsHomeSensorActive()
     return !gpio_get_level(HOMESENSOR_PIN);
 }
 
-void PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count)
+bool PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count)
 {
     TickType_t ttStart = xTaskGetTickCount();
     bool old_sensor_state = GetIsHomeSensorActive();
@@ -291,7 +297,7 @@ void PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition,
     while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(timeout_ms))
     {
         /*if (m_bIsCancelAction) {
-            throw std::runtime_error("Cancelled by the user");
+            return false;
         }*/
 
         const bool new_home_sensor_state = GetIsHomeSensorActive();
@@ -314,21 +320,22 @@ void PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition,
         if (ETransition::Rising == transition && is_rising)
         {
             ESP_LOGI(TAG, "Rising transition detected");
-            return;
+            return true;
         }
         else if (ETransition::Failing == transition && is_falling) {
             ESP_LOGI(TAG, "Failing transition detected");
-            return;
+            return true;
         }
 
         old_sensor_state = new_home_sensor_state;
         vTaskDelay(1);
     }
 
-    throw std::runtime_error("Unable to complete the spin operation");
+    ESP_LOGE(TAG, "Unable to complete the spin operation - timeout reached");
+    return false;
 }
 
-void PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
+bool PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
 {
     // Setup the parameters
     this->m_stepper.task_control_handle = xTaskGetCurrentTaskHandle();
@@ -354,8 +361,10 @@ void PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
 
     if( xResult != pdPASS )
     {
-        throw std::runtime_error("Error, cannot reach it's destination with-in time ...");
+        ESP_LOGE(TAG, "Error, cannot reach it's destination with-in time ...");
+        return false;
     }
+    return true;
 }
 
 IRAM_ATTR void PinkySGHW::tmr_signal_callback(void* arg)

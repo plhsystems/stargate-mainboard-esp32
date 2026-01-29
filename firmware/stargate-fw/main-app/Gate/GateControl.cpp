@@ -152,6 +152,7 @@ void GateControl::TaskRunning(void* arg)
                     wm.Begin();
                     wm.OpeningAnimation();
                     while(!gc->m_is_cancel_action) {
+                        // Unlimited time, it violate laws of physics! (AKA the needs of the plot)
                         wm.RunTicks();
                     }
                     wm.ClosingAnimation();
@@ -193,10 +194,15 @@ bool GateControl::AutoCalibrate(const char** error_msg)
         ReleaseClamp();
 
         ESP_LOGI(TAG, "Finding home in progress");
-        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+            break;
+        }
+
         ESP_LOGI(TAG, "Home has been found once");
         int32_t new_steps_per_rotation = 0;
-        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation);
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation)) {
+            break;
+        }
 
         ESP_LOGI(TAG, "Home has been found a second time, step: %" PRId32, new_steps_per_rotation);
 
@@ -204,8 +210,12 @@ bool GateControl::AutoCalibrate(const char** error_msg)
         // Continue to move until it get out of the home range.
         int32_t gap = 0;
 
-        m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap);
-        m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap);
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap)) {
+            break;
+        }
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap)) {
+            break;
+        }
 
         ESP_LOGI(TAG, "Ticks per rotation: %" PRId32 ", time per rotation, gap: % " PRId32, new_steps_per_rotation, gap);
 
@@ -253,12 +263,18 @@ bool GateControl::AutoHome(const char** error_msg)
         if (m_sghw_hal->GetIsHomeSensorActive()) {
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-            m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr);
-            m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr)) {
+                break;
+            }
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+                break;
+            }
         }
         else {
             ESP_LOGI(TAG, "Homing using the slow algorithm");
-            m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr);
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+                break;
+            }
         }
 
         // Move by half the deadband offset.
@@ -313,7 +329,10 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         // Go back to home position
         ESP_LOGI(TAG, "Move near the home position");
         const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, 0, new_steps_per_rotation);
-        m_sghw_hal->MoveStepperTo(move_ticks, 30000);
+        if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+            return;
+        }
+
         ESP_LOGI(TAG, "Confirm the home position");
         AutoHome(nullptr);
 
@@ -321,7 +340,8 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         LockClamp();
     };
 
-    do {
+    do
+    {
         Wormhole wm { m_sghw_hal, dial_arg.wormhole_type };
         m_sghw_hal->PowerUpStepper();
         ReleaseClamp();
@@ -355,7 +375,9 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
             const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, symbol_to_ticks, new_steps_per_rotation);
 
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, led_index, angle, symbol_to_ticks);
-            m_sghw_hal->MoveStepperTo(move_ticks, 30000);
+            if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+                break;
+            }
 
             vTaskDelay(pdMS_TO_TICKS(500));
             RingBLEClient::getI().SendLightUpSymbol(symbol);
