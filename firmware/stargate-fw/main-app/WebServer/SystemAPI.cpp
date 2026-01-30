@@ -252,37 +252,37 @@ char* WebServer::GetStatus()
             goto ERROR;
         }
 
-         cJSON* pStatusEntry = cJSON_CreateObject();
+         cJSON* p_status_entry = cJSON_CreateObject();
 
-        GateControl::UIState sState;
-        GateControl::getI().GetState(sState);
+        GateControl::UIState state;
+        GateControl::getI().GetState(state);
 
-        cJSON_AddItemToObject(pStatusEntry, "text", cJSON_CreateString(sState.status_text));
-        cJSON_AddItemToObject(pStatusEntry, "cancel_request", cJSON_CreateBool(sState.is_cancel_requested));
+        cJSON_AddItemToObject(p_status_entry, "text", cJSON_CreateString(state.status_text));
+        cJSON_AddItemToObject(p_status_entry, "cancel_request", cJSON_CreateBool(state.is_cancel_requested));
 
-        cJSON_AddItemToObject(pStatusEntry, "error_text", cJSON_CreateString(sState.last_error));
-        cJSON_AddItemToObject(pStatusEntry, "is_error", cJSON_CreateBool(sState.has_last_error));
+        cJSON_AddItemToObject(p_status_entry, "error_text", cJSON_CreateString(state.last_error));
+        cJSON_AddItemToObject(p_status_entry, "is_error", cJSON_CreateBool(state.has_last_error));
 
-        cJSON* pRingEntry = cJSON_CreateObject();
+        cJSON* p_ring_entry = cJSON_CreateObject();
         RingBLEClient& refRingComm = RingBLEClient::getI();
-        cJSON_AddItemToObject(pRingEntry, "is_connected", cJSON_CreateBool(refRingComm.GetIsConnected()));
-        cJSON_AddItemToObject(pStatusEntry, "ring", pRingEntry);
+        cJSON_AddItemToObject(p_ring_entry, "is_connected", cJSON_CreateBool(refRingComm.GetIsConnected()));
+        cJSON_AddItemToObject(p_status_entry, "ring", p_ring_entry);
 
         time_t now = 0;
         struct tm timeinfo = { 0 };
         time(&now);
         localtime_r(&now, &timeinfo);
 
-        cJSON* pTimeEntry = cJSON_CreateObject();
-        cJSON_AddItemToObject(pTimeEntry, "h", cJSON_CreateNumber(timeinfo.tm_hour));
-        cJSON_AddItemToObject(pTimeEntry, "m", cJSON_CreateNumber(timeinfo.tm_min));
-        cJSON_AddItemToObject(pStatusEntry, "time", pTimeEntry);
+        cJSON* p_time_entry = cJSON_CreateObject();
+        cJSON_AddItemToObject(p_time_entry, "h", cJSON_CreateNumber(timeinfo.tm_hour));
+        cJSON_AddItemToObject(p_time_entry, "m", cJSON_CreateNumber(timeinfo.tm_min));
+        cJSON_AddItemToObject(p_status_entry, "time", p_time_entry);
 
-        cJSON_AddItemToObject(root, "status", pStatusEntry);
+        cJSON_AddItemToObject(root, "status", p_status_entry);
 
-        char* pStr =  cJSON_PrintUnformatted(root);
+        char* p_str =  cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
-        return pStr;
+        return p_str;
     }
     ERROR:
     cJSON_Delete(root);
@@ -300,20 +300,20 @@ char* WebServer::GetSysInfo()
         {
             goto ERROR;
         }
-        cJSON* pEntries = cJSON_AddArrayToObject(root, "infos");
+        cJSON* p_entries = cJSON_AddArrayToObject(root, "infos");
 
         // Firmware
         cJSON* pEntryJSON1 = cJSON_CreateObject();
         cJSON_AddItemToObject(pEntryJSON1, "name", cJSON_CreateString("Firmware"));
         cJSON_AddItemToObject(pEntryJSON1, "value", cJSON_CreateString(esp_app_desc.version));
-        cJSON_AddItemToArray(pEntries, pEntryJSON1);
+        cJSON_AddItemToArray(p_entries, pEntryJSON1);
 
         // Compile Time
         cJSON* pEntryJSON2 = cJSON_CreateObject();
         cJSON_AddItemToObject(pEntryJSON2, "name", cJSON_CreateString("Compile Time"));
         sprintf(buff, "%s %s", /*0*/esp_app_desc.date, /*0*/esp_app_desc.time);
         cJSON_AddItemToObject(pEntryJSON2, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON2);
+        cJSON_AddItemToArray(p_entries, pEntryJSON2);
 
         // SHA256
         cJSON* pEntryJSON3 = cJSON_CreateObject();
@@ -321,13 +321,13 @@ char* WebServer::GetSysInfo()
         char elfSHA256[sizeof(esp_app_desc.app_elf_sha256)*2 + 1] = {0,};
         ToHexString(elfSHA256, esp_app_desc.app_elf_sha256, sizeof(esp_app_desc.app_elf_sha256));
         cJSON_AddItemToObject(pEntryJSON3, "value", cJSON_CreateString(elfSHA256));
-        cJSON_AddItemToArray(pEntries, pEntryJSON3);
+        cJSON_AddItemToArray(p_entries, pEntryJSON3);
 
         // IDF
         cJSON* pEntryJSON4 = cJSON_CreateObject();
         cJSON_AddItemToObject(pEntryJSON4, "name", cJSON_CreateString("IDF"));
         cJSON_AddItemToObject(pEntryJSON4, "value", cJSON_CreateString(esp_app_desc.idf_ver));
-        cJSON_AddItemToArray(pEntries, pEntryJSON4);
+        cJSON_AddItemToArray(p_entries, pEntryJSON4);
 
         // Bluetooth (BT)
         cJSON* pEntryJSON7 = cJSON_CreateObject();
@@ -335,7 +335,7 @@ char* WebServer::GetSysInfo()
         esp_read_mac(u8Macs, ESP_MAC_BT);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
         cJSON_AddItemToObject(pEntryJSON7, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON7);
+        cJSON_AddItemToArray(p_entries, pEntryJSON7);
 
         // Station mode
         // WiFi-STA
@@ -344,7 +344,7 @@ char* WebServer::GetSysInfo()
         esp_read_mac(u8Macs, ESP_MAC_WIFI_STA);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
         cJSON_AddItemToObject(pEntryJSON6, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON6);
+        cJSON_AddItemToArray(p_entries, pEntryJSON6);
 
         // WiFi-station (IP address)
         cJSON* pEntryJSON9 = cJSON_CreateObject();
@@ -354,7 +354,7 @@ char* WebServer::GetSysInfo()
         WifiMgr::getI().GetWiFiSTAIP(wifiIpSta);
         sprintf(buff, IPSTR, IP2STR(&wifiIpSta.ip));
         cJSON_AddItemToObject(pEntryJSON9, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON9);
+        cJSON_AddItemToArray(p_entries, pEntryJSON9);
 
         esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES];
         memset(&if_ip6[0], 0, sizeof(if_ip6));
@@ -367,7 +367,7 @@ char* WebServer::GetSysInfo()
             cJSON* pEntryJSONIPv6 = cJSON_CreateObject();
             cJSON_AddItemToObject(pEntryJSONIPv6, "name", cJSON_CreateString("WiFi (STA IPv6)"));
             cJSON_AddItemToObject(pEntryJSONIPv6, "value", cJSON_CreateString(ipv6String));
-            cJSON_AddItemToArray(pEntries, pEntryJSONIPv6);
+            cJSON_AddItemToArray(p_entries, pEntryJSONIPv6);
         }
 
         // Soft Access point
@@ -377,7 +377,7 @@ char* WebServer::GetSysInfo()
         esp_read_mac(u8Macs, ESP_MAC_WIFI_SOFTAP);
         sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
         cJSON_AddItemToObject(pEntryJSON5, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON5);
+        cJSON_AddItemToArray(p_entries, pEntryJSON5);
 
         // WiFi-Soft AP (IP address)
         cJSON* pEntryJSON10 = cJSON_CreateObject();
@@ -387,33 +387,33 @@ char* WebServer::GetSysInfo()
         WifiMgr::getI().GetWiFiSoftAPIP(wifiIpSoftAP);
         sprintf(buff, IPSTR, IP2STR(&wifiIpSoftAP.ip));
         cJSON_AddItemToObject(pEntryJSON10, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryJSON10);
+        cJSON_AddItemToArray(p_entries, pEntryJSON10);
 
         // Memory
-        cJSON* pEntryMemoryJSON = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryMemoryJSON, "name", cJSON_CreateString("Memory"));
+        cJSON* p_entry_memory_json = cJSON_CreateObject();
+        cJSON_AddItemToObject(p_entry_memory_json, "name", cJSON_CreateString("Memory"));
         const int freeSize = heap_caps_get_free_size(MALLOC_CAP_8BIT);
         const int totalSize = heap_caps_get_total_size(MALLOC_CAP_8BIT);
 
         sprintf(buff, "%d / %d", /*0*/(totalSize - freeSize), /*1*/totalSize);
-        cJSON_AddItemToObject(pEntryMemoryJSON, "value", cJSON_CreateString(buff));
-        cJSON_AddItemToArray(pEntries, pEntryMemoryJSON);
+        cJSON_AddItemToObject(p_entry_memory_json, "value", cJSON_CreateString(buff));
+        cJSON_AddItemToArray(p_entries, p_entry_memory_json);
 
         // Current time
-        cJSON* pEntryCurrTimeJSON = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryCurrTimeJSON, "name", cJSON_CreateString("Time"));
-        cJSON_AddItemToObject(pEntryCurrTimeJSON, "value", cJSON_CreateString(esp_log_system_timestamp()));
-        cJSON_AddItemToArray(pEntries, pEntryCurrTimeJSON);
+        cJSON* p_entry_curr_time_json = cJSON_CreateObject();
+        cJSON_AddItemToObject(p_entry_curr_time_json, "name", cJSON_CreateString("Time"));
+        cJSON_AddItemToObject(p_entry_curr_time_json, "value", cJSON_CreateString(esp_log_system_timestamp()));
+        cJSON_AddItemToArray(p_entries, p_entry_curr_time_json);
 
         // Uptime (s)
-        cJSON* pEntryUpTimeJSON = cJSON_CreateObject();
-        cJSON_AddItemToObject(pEntryUpTimeJSON, "name", cJSON_CreateString("Uptime (s)"));
-        cJSON_AddItemToObject(pEntryUpTimeJSON, "value", cJSON_CreateNumber(esp_log_timestamp()/1000));
-        cJSON_AddItemToArray(pEntries, pEntryUpTimeJSON);
+        cJSON* p_entry_up_time_json = cJSON_CreateObject();
+        cJSON_AddItemToObject(p_entry_up_time_json, "name", cJSON_CreateString("Uptime (s)"));
+        cJSON_AddItemToObject(p_entry_up_time_json, "value", cJSON_CreateNumber(esp_log_timestamp()/1000));
+        cJSON_AddItemToArray(p_entries, p_entry_up_time_json);
 
-        char* pStr =  cJSON_PrintUnformatted(root);
+        char* p_str =  cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
-        return pStr;
+        return p_str;
     }
     ERROR:
     cJSON_Delete(root);
@@ -428,20 +428,20 @@ char* WebServer::GetAllSoundLists()
         if (root == NULL)
             goto ERROR;
 
-        cJSON* pEntries = cJSON_AddArrayToObject(root, "files");
+        cJSON* p_entries = cJSON_AddArrayToObject(root, "files");
         for(int32_t i = 0; i < SoundFX::getI().GetFileCount(); i++)
         {
-            const SoundFX::SoundFile* pFile = SoundFX::getI().GetFile((SoundFX::FileID)i);
+            const SoundFX::SoundFile* p_file = SoundFX::getI().GetFile((SoundFX::FileID)i);
 
-            cJSON* pNewFile = cJSON_CreateObject();
-            cJSON_AddItemToObject(pNewFile, "id", cJSON_CreateNumber(i));
-            cJSON_AddItemToObject(pNewFile, "name", cJSON_CreateString(pFile->name));
-            cJSON_AddItemToObject(pNewFile, "desc", cJSON_CreateString(pFile->desc));
-            cJSON_AddItemToArray(pEntries, pNewFile);
+            cJSON* p_new_file = cJSON_CreateObject();
+            cJSON_AddItemToObject(p_new_file, "id", cJSON_CreateNumber(i));
+            cJSON_AddItemToObject(p_new_file, "name", cJSON_CreateString(p_file->name));
+            cJSON_AddItemToObject(p_new_file, "desc", cJSON_CreateString(p_file->desc));
+            cJSON_AddItemToArray(p_entries, p_new_file);
         }
-        char* pStr = cJSON_PrintUnformatted(root);
+        char* p_str = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
-        return pStr;
+        return p_str;
     }
     ERROR:
     cJSON_Delete(root);

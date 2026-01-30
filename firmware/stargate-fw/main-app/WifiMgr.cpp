@@ -8,7 +8,7 @@ const char *TAG = "wifi";
 
 void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    WifiMgr* wifi_mgr = (WifiMgr*)arg;
+    // WifiMgr* wifi_mgr = (WifiMgr*)arg;
     if (event_id == WIFI_EVENT_AP_STACONNECTED) {
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x join, AID=%d",

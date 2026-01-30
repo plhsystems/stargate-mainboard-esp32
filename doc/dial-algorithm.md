@@ -76,3 +76,90 @@ double MISCFA_CircleDiff(double a, double b, double rotation)
     return fmod((a - b + rotation + halfRotation), rotation) - halfRotation;
 }
 ```
+
+## Error Handling During Dial Sequence
+
+### Stepper Movement Timeout
+
+Each stepper movement during the dial sequence has timeout protection:
+
+**MoveStepperTo Function Signature**:
+```cpp
+bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms);
+```
+
+**Parameters**:
+- `ticks`: Relative movement in stepper ticks (positive or negative)
+- `timeout_ms`: Maximum time to wait for movement completion (30000ms = 30 seconds)
+
+**Returns**:
+- `true`: Movement completed successfully
+- `false`: Timeout reached or movement failed
+
+### Dial Sequence Error Propagation
+
+The dial address sequence checks each movement for success:
+
+```cpp
+// Calculate movement for symbol
+const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks,
+                                                 symbol_to_ticks,
+                                                 new_steps_per_rotation);
+
+// Move stepper with error checking
+if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+    break;  // Abort dial sequence immediately
+}
+
+// If successful, continue with chevron lock and BLE command
+vTaskDelay(pdMS_TO_TICKS(500));
+RingBLEClient::getI().SendLightUpSymbol(symbol);
+```
+
+### Why Error Checking Matters
+
+**Prevents Incorrect Dialing**:
+- If stepper fails to reach symbol 3, system doesn't continue to symbol 4
+- Partial dial sequences are aborted rather than completed incorrectly
+- User gets clear indication that dial failed
+
+**Failure Scenarios**:
+- **Stepper motor jam**: Mechanical obstruction prevents movement
+- **Power issues**: Insufficient power to stepper driver
+- **Timing problems**: FreeRTOS task preemption or system overload
+- **Sensor errors**: Position tracking lost
+
+**User Experience**:
+- Dial command returns failure status
+- Gate state returns to Idle
+- User can investigate and retry
+- No false "successful dial" indication
+
+### Timeout Values
+
+All movements during dialing use consistent timeouts:
+- **Symbol alignment**: 30 seconds per symbol movement
+- **Return to home**: 30 seconds for final positioning
+- **Total dial time**: Up to 7 × 30 = 210 seconds maximum (3.5 minutes)
+- **Typical dial time**: ~30-60 seconds for 7-symbol address
+
+### Actual Implementation Note
+
+The real implementation in GateControl.cpp uses angular position calculation:
+
+```cpp
+// Convert symbol to LED index, then to angle
+const int32_t led_index = m_gate->SymbolToLedIndex(symbol);
+const float angle = m_gate->LEDIndexToDeg(led_index);
+
+// Convert angle to stepper ticks
+const int32_t symbol_to_ticks = -(angle/360.0) * new_steps_per_rotation;
+
+// Calculate shortest circular distance
+const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks,
+                                                 symbol_to_ticks,
+                                                 new_steps_per_rotation);
+```
+
+This is more sophisticated than the simplified `stepPerSymbolWidth` formula shown earlier, as it accounts for LED positioning and chevron spacing.
+```

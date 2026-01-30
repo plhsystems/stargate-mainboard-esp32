@@ -81,7 +81,7 @@ class GateControl
     GateControl(GateControl const&) = delete;
     void operator=(GateControl const&) = delete;
 
-    void Init(SGHW_HAL* pSGHWHal);
+    void Init(SGHW_HAL* p_sghw_hal);
 
     void StartTask();
 
@@ -107,12 +107,12 @@ class GateControl
     bool AutoHome(const char** error_msg);        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
     bool DialAddress(const SDialArg& dial_arg, const char** error_msg);
 
-    void AnimRampLight(bool bIsActive);
+    void AnimRampLight(bool is_active);
 
     void LockClamp();
     void ReleaseClamp();
     private:
-    static void TaskRunning(void* pArg);
+    static void TaskRunning(void* p_arg);
 
     TaskHandle_t m_gate_control_handle;
 
@@ -148,5 +148,5 @@ class GateControl
     static_assert((int)ECmd::Count == (sizeof(m_texts)/sizeof(m_texts[0])), "Command text missmatch");
 
     public:
-    inline static const char* GetCmdText(ECmd eCmd) { return m_texts[(int)eCmd]; }
+    inline static const char* GetCmdText(ECmd cmd) { return m_texts[(int)cmd]; }
 };

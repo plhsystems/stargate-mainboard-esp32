@@ -10,9 +10,9 @@ extern "C" {
 
 void GPIO_Init();
 
-void GPIO_EnableHoldPowerPin(bool bEnabled);
+void GPIO_EnableHoldPowerPin(bool enabled);
 
-void GPIO_SetPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue);
+void GPIO_SetPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue);
 void GPIO_ClearAllPixels();
 void GPIO_RefreshPixels();
 

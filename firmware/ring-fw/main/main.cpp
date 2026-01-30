@@ -279,7 +279,7 @@ static void SGUBRUpdateLightHandler(const SUpdateLightArg* psArg)
         }
 
         GPIO_SetPixel(u8LightIndex, psArg->sColor.u8Red, psArg->sColor.u8Green, psArg->sColor.u8Blue);
-        // ESP_LOGI(TAG, "Led index change: %d, Red: %d, Green: %d, Blue: %d", u8LightIndex, psArg->sRGB.u8Red, psArg->sRGB.u8Green, psArg->sRGB.u8Blue);
+        // ESP_LOGI(TAG, "Led index change: %d, Red: %d, Green: %d, Blue: %d", u8LightIndex, psArg->rgb.u8Red, psArg->rgb.u8Green, psArg->rgb.u8Blue);
     }
 
     ResetAutoOffTicks();
@@ -298,16 +298,16 @@ static void SGUBRGotoFactory()
 {
     ESP_LOGI(TAG, "Goto factory mode");
 
-    const esp_partition_t* pFactoryPartition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    const esp_partition_t* p_factory_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
 
-    if (pFactoryPartition == NULL)
+    if (p_factory_partition == NULL)
     {
         ESP_LOGE(TAG, "Factory partition cannot be found");
         return;
     }
 
     ESP_LOGI(TAG, "Set boot partition to factory mode");
-    esp_ota_set_boot_partition(pFactoryPartition);
+    esp_ota_set_boot_partition(p_factory_partition);
     esp_restart();
 
     ResetAutoOffTicks();
@@ -385,16 +385,16 @@ static void BLE_GotoFactoryHandler(void)
 {
     ESP_LOGI(TAG, "BLE Goto factory mode");
 
-    const esp_partition_t* pFactoryPartition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    const esp_partition_t* p_factory_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
 
-    if (pFactoryPartition == NULL)
+    if (p_factory_partition == NULL)
     {
         ESP_LOGE(TAG, "Factory partition cannot be found");
         return;
     }
 
     ESP_LOGI(TAG, "Set boot partition to factory mode");
-    esp_ota_set_boot_partition(pFactoryPartition);
+    esp_ota_set_boot_partition(p_factory_partition);
     esp_restart();
 
     ResetAutoOffTicks();
@@ -436,12 +436,12 @@ void app_main(void)
     xTaskCreatePinnedToCore(&LedRefreshTask, "RefreshLEDs", 4000, NULL, 10, NULL, 0);
 
     long switchTicks = 0;
-    bool bLastIsSuicide = false;
+    bool last_is_suicide = false;
 
     while(true)
     {
-        const bool bSwitchState = gpio_get_level((gpio_num_t)FWCONFIG_SWITCH_PIN);
-        if (!bSwitchState) // Up
+        const bool switch_state = gpio_get_level((gpio_num_t)FWCONFIG_SWITCH_PIN);
+        if (!switch_state) // Up
         {
             if (switchTicks == 0)
                 switchTicks = xTaskGetTickCount();
@@ -468,7 +468,7 @@ void app_main(void)
         // Means cutting to power to itself.
         if (m_bIsSuicide)
         {
-            if (!bLastIsSuicide)
+            if (!last_is_suicide)
             {
                 m_s32ChevronAnim = (int32_t)EChevronAnimation::Chevron_PoweringOff;
                 ESP_LOGW(TAG, "Suicide animation");
@@ -482,7 +482,7 @@ void app_main(void)
             ESP_LOGW(TAG, "Seems like we will live");
         }
 
-        bLastIsSuicide = m_bIsSuicide;
+        last_is_suicide = m_bIsSuicide;
         vTaskDelay(pdMS_TO_TICKS(250));
     }
 }

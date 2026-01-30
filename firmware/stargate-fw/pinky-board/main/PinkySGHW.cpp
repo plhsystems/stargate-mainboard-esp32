@@ -157,7 +157,7 @@ void PinkySGHW::Init()
     led_strip_rmt_config_t rmt_config = {
         .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
         .resolution_hz = 10 * 1000 * 1000, // 10MHz
-        .mem_block_symbols = 128,
+        .mem_block_symbols = 512,
         .flags = { .with_dma = false } // whether to enable the DMA feature
     };
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));

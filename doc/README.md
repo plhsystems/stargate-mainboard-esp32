@@ -353,6 +353,20 @@ stargate-mainboard-esp32/
 - Verify stepper driver power supply
 - Test with manual step command
 
+**Wormhole refresh errors** ("Error during refresh, may be caused by power instability"):
+- Usually caused by insufficient power supply current for 48 LEDs
+- Check power supply can provide enough current (48 × 60mA = ~3A at full brightness)
+- Verify power connections are secure (no loose wires)
+- Test with lower brightness settings
+- Error handling allows graceful degradation (wormhole aborts safely)
+- Recent firmware reduces refresh rate to 25Hz for better stability
+
+**Dial sequence aborts unexpectedly**:
+- Check for 30-second timeout errors in logs
+- Verify stepper motor is not jammed
+- Ensure hall sensor is properly aligned
+- Check power supply under load
+
 ---
 
 ## Contributing
@@ -381,6 +395,16 @@ See [Copyright](copyright.md) for licensing information.
 
 ---
 
-Last Updated: 2026-01-26
-ESP-IDF Version: 5.3.1
+Last Updated: 2026-01-30
+ESP-IDF Version: 5.5.1 (also compatible with 5.3.1)
 Firmware Version: 1.0.0
+
+## Recent Changes (2026-01)
+
+- **FreeRTOS tick rate**: Increased from 100Hz to 1000Hz for improved timing precision
+- **Wormhole refresh rate**: Reduced from 50Hz to 25Hz for power stability
+- **Error handling**: Functions now return bool instead of throwing exceptions
+- **Task priorities**: All tasks run at tskIDLE_PRIORITY for cooperative scheduling
+- **RMT configuration**: Increased memory blocks from 128 to 512 symbols
+- **BLE improvements**: Added UUID verification and connection animations
+- **Thread safety**: HttpClient now uses mutex protection for fan gate list

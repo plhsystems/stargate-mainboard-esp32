@@ -31,14 +31,14 @@ void GPIO_Init()
     led_strip_clear(led_strip);
 }
 
-void GPIO_EnableHoldPowerPin(bool bEnabled)
+void GPIO_EnableHoldPowerPin(bool enabled)
 {
-    gpio_set_level((gpio_num_t)FWCONFIG_HOLDPOWER_PIN, bEnabled);
+    gpio_set_level((gpio_num_t)FWCONFIG_HOLDPOWER_PIN, enabled);
 }
 
-void GPIO_SetPixel(uint32_t u32Index, uint8_t u8Red, uint8_t u8Green, uint8_t u8Blue)
+void GPIO_SetPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue)
 {
-    ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, u32Index, u8Red, u8Green, u8Blue));
+    ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, index, red, green, blue));
 }
 
 void GPIO_ClearAllPixels()
