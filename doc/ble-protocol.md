@@ -94,17 +94,20 @@ RingBLEClient::SendHeartbeat();
 **Direction**: Main → Ring
 **Payload**: 1 byte (animation type)
 
-**Animation Types** (EChevronAnimation enum):
+**Animation Types** (EChevronAnimation enum in SGUComm.hpp):
 ```cpp
 enum EChevronAnimation : uint8_t {
-    FadeIn = 0,           // Fade chevron LEDs in
-    FadeOut = 1,          // Fade chevron LEDs out
-    FadeInFadeOut = 2,    // Fade in then fade out
-    Locked = 3,           // Keep chevron lit
-    Invalid = 4,          // Error state (rapid flash)
-    None = 255            // No animation
+    Chevron_FadeIn = 0,         // Fade chevron LEDs in
+    Chevron_FadeOut = 1,        // Fade chevron LEDs out
+    Chevron_ErrorToWhite = 2,   // Error flash to white
+    Chevron_ErrorToOff = 3,     // Error flash to off
+    Chevron_AllSymbolsOn = 4,   // Turn all symbols on
+    Chevron_PoweringOff = 5,    // Power-off animation
+    Chevron_NoSymbols = 6       // Turn all symbols off
 };
 ```
+
+**Note**: `Chevron_FadeIn` is automatically sent when a successful BLE connection is established (UUID verification passed)
 
 **Implementation**:
 ```cpp
@@ -194,29 +197,40 @@ RingBLEClient::SendPowerOff();
 ---
 
 #### Action 4: Light Symbol
-**Purpose**: Light up a single symbol
+**Purpose**: Light up a single symbol with specified brightness
 **Direction**: Main → Ring
-**Payload**: 1 byte (symbol index 0-47)
+**Payload**: 2 bytes (symbol_index + level_pwm)
 
 **Implementation**:
 ```cpp
 // Main controller sends
-RingBLEClient::SendLightUpSymbol(23);  // Light symbol 24 (0-indexed)
+RingBLEClient::SendLightUpSymbol(uint8_t symbol_index, uint8_t brightness = 255);
 ```
 
 **BLE Frame**:
 ```
-[0x04] [0x01] [0x17]
-  ^      ^      ^
-  |      |      └─ Payload: Symbol index 23
-  |      └─ Length: 1 byte
+[0x04] [0x02] [0x17] [0xFF]
+  ^      ^      ^      ^
+  |      |      |      └─ Brightness (PWM level 0-255)
+  |      |      └─ Symbol index 23 (0-indexed, range 0-47)
+  |      └─ Length: 2 bytes
   └─ Action: Light Symbol
 ```
 
+**Parameters**:
+- **symbol_index**: Index of symbol to light (0-47 for 48-pixel ring)
+- **level_pwm**: Brightness level (0 = off, 255 = full brightness)
+
 **Ring Behavior**:
-- Turns on specified symbol LED
+- Turns on specified symbol LED at given brightness
 - All other symbols remain in current state
 - Immediate effect (no animation)
+
+**Example**:
+```cpp
+// Light symbol 12 at 50% brightness
+RingBLEClient::SendLightUpSymbol(11, 128);
+```
 
 ---
 
@@ -287,7 +301,7 @@ struct ble_gap_conn_params {
 
 **Connection Flow**:
 ```
-1. Main scans for "Ring" device
+1. Main scans for "RingFW-BLE" device
    │
    ▼
 2. Found device → Connect request
@@ -302,14 +316,36 @@ struct ble_gap_conn_params {
 5. Characteristic discovery (UUID: 12345678...f1)
    │
    ▼
-6. Save characteristic handle
+6. UUID verification (ensures correct characteristic)
    │
    ▼
-7. Start heartbeat timer (1000ms)
+7. Save characteristic handle
    │
    ▼
-8. Ready for commands
+8. Send Chevron_FadeIn animation (connection indicator)
+   │
+   ▼
+9. Start heartbeat timer (1000ms)
+   │
+   ▼
+10. Ready for commands
 ```
+
+**UUID Verification** (Recent Enhancement):
+The characteristic discovery now includes UUID verification to ensure the correct characteristic is selected:
+```cpp
+// Check if this is the correct characteristic by comparing UUIDs
+if (ble_uuid_cmp(&chr->uuid.u, &CHAR_UUID.u) == 0) {
+    ESP_LOGI(TAG, "UUID matches! Storing handle=%d", chr->val_handle);
+    m_char_value_handle = chr->val_handle;
+    m_char_discovered = true;
+
+    // Send connection animation to indicate successful pairing
+    client->SendAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
+}
+```
+
+This prevents accidentally using a wrong characteristic if multiple WRITE characteristics exist on the device.
 
 ### Disconnection Handling
 **Auto-Reconnect**:

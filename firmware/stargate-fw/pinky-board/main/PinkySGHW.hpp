@@ -55,11 +55,13 @@ class PinkySGHW : public SGHW_HAL
     int32_t GetWHPixelCount() override;
     void SetWHPixel(uint32_t index, uint8_t red, uint8_t green, uint8_t blue) override;
     void ClearAllWHPixels() override;
-    void RefreshWHPixels() override;
+    bool RefreshWHPixels() override;
 
     void SetSanityLED(bool state);
 
     bool GetIsHomeSensorActive() override;
+
+    void SendMp3PlayerCMD(const char* cmd) override;
 
     // Stepper
     bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) override;

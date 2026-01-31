@@ -108,29 +108,29 @@ static esp_err_t file_get_handler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "Opening file uri: %s", req->uri);
 
-    const EF_SFile* pFile = GetFile(req->uri+1);
-    if (pFile == NULL)
+    const EF_SFile* p_file = GetFile(req->uri+1);
+    if (p_file == NULL)
     {
         ESP_LOGE(TAG, "Failed to open file for reading");
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "FileID does not exist");
         return ESP_FAIL;
     }
 
-    set_content_type_from_file(req, pFile->strFilename);
-    if (EF_ISFILECOMPRESSED(pFile->eFlags))
+    set_content_type_from_file(req, p_file->strFilename);
+    if (EF_ISFILECOMPRESSED(p_file->eFlags))
     {
         httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     }
 
     uint32_t u32Index = 0;
 
-    while(u32Index < pFile->u32Length)
+    while(u32Index < p_file->u32Length)
     {
-        const uint32_t n = HELPERMACRO_MIN(pFile->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
+        const uint32_t n = HELPERMACRO_MIN(p_file->u32Length - u32Index, HTTPSERVER_BUFFERSIZE);
 
         if (n > 0) {
             /* Send the buffer contents as HTTP response m_u8Buffers */
-            if (httpd_resp_send_chunk(req, (char*)(pFile->pu8StartAddr + u32Index), n) != ESP_OK) {
+            if (httpd_resp_send_chunk(req, (char*)(p_file->pu8StartAddr + u32Index), n) != ESP_OK) {
                 ESP_LOGE(TAG, "FileID sending failed!");
                 /* Abort sending file */
                 httpd_resp_sendstr_chunk(req, NULL);
@@ -151,13 +151,13 @@ static esp_err_t api_get_handler(httpd_req_t *req)
 {
     esp_err_t err = ESP_OK;
 
-    char* pExportJSON = NULL;
+    char* p_export_json = NULL;
 
     if (strcmp(req->uri, API_GETSYSINFOJSON_URI) == 0)
     {
-        pExportJSON = GetSysInfo();
+        p_export_json = GetSysInfo();
 
-        if (pExportJSON == NULL || httpd_resp_send_chunk(req, pExportJSON, strlen(pExportJSON)) != ESP_OK)
+        if (p_export_json == NULL || httpd_resp_send_chunk(req, p_export_json, strlen(p_export_json)) != ESP_OK)
         {
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to send data");
             goto ERROR;
@@ -173,8 +173,8 @@ static esp_err_t api_get_handler(httpd_req_t *req)
     ERROR:
     err = ESP_FAIL;
     END:
-    if (pExportJSON != NULL)
-        free(pExportJSON);
+    if (p_export_json != NULL)
+        free(p_export_json);
 
     httpd_resp_set_hdr(req, "Connection", "close");
     httpd_resp_send_chunk(req, NULL, 0);
@@ -308,9 +308,9 @@ static const EF_SFile* GetFile(const char* strFilename)
 {
     for(int i = 0; i < EF_EFILE_COUNT; i++)
     {
-        const EF_SFile* pFile = &EF_g_sFiles[i];
-        if (strcmp(pFile->strFilename, strFilename) == 0)
-            return pFile;
+        const EF_SFile* p_file = &EF_g_sFiles[i];
+        if (strcmp(p_file->strFilename, strFilename) == 0)
+            return p_file;
     }
 
     return NULL;
@@ -318,28 +318,28 @@ static const EF_SFile* GetFile(const char* strFilename)
 
 static char* GetSysInfo()
 {
-    cJSON* pRoot = NULL;
+    cJSON* p_root = NULL;
 
     char buff[100];
-    pRoot = cJSON_CreateObject();
-    if (pRoot == NULL)
+    p_root = cJSON_CreateObject();
+    if (p_root == NULL)
     {
         goto ERROR;
     }
-    cJSON* pEntries = cJSON_AddArrayToObject(pRoot, "infos");
+    cJSON* p_entries = cJSON_AddArrayToObject(p_root, "infos");
 
     // Firmware
     cJSON* pEntryJSON1 = cJSON_CreateObject();
     cJSON_AddItemToObject(pEntryJSON1, "name", cJSON_CreateString("Firmware"));
     cJSON_AddItemToObject(pEntryJSON1, "value", cJSON_CreateString(esp_app_desc.version));
-    cJSON_AddItemToArray(pEntries, pEntryJSON1);
+    cJSON_AddItemToArray(p_entries, pEntryJSON1);
 
     // Compile Time
     cJSON* pEntryJSON2 = cJSON_CreateObject();
     cJSON_AddItemToObject(pEntryJSON2, "name", cJSON_CreateString("Compile Time"));
     sprintf(buff, "%s %s", /*0*/esp_app_desc.date, /*0*/esp_app_desc.time);
     cJSON_AddItemToObject(pEntryJSON2, "value", cJSON_CreateString(buff));
-    cJSON_AddItemToArray(pEntries, pEntryJSON2);
+    cJSON_AddItemToArray(p_entries, pEntryJSON2);
 
     // SHA256
     cJSON* pEntryJSON3 = cJSON_CreateObject();
@@ -347,13 +347,13 @@ static char* GetSysInfo()
     char elfSHA256[sizeof(esp_app_desc.app_elf_sha256)*2 + 1] = {0,};
     ToHexString(elfSHA256, esp_app_desc.app_elf_sha256, sizeof(esp_app_desc.app_elf_sha256));
     cJSON_AddItemToObject(pEntryJSON3, "value", cJSON_CreateString(elfSHA256));
-    cJSON_AddItemToArray(pEntries, pEntryJSON3);
+    cJSON_AddItemToArray(p_entries, pEntryJSON3);
 
     // IDF
     cJSON* pEntryJSON4 = cJSON_CreateObject();
     cJSON_AddItemToObject(pEntryJSON4, "name", cJSON_CreateString("IDF"));
     cJSON_AddItemToObject(pEntryJSON4, "value", cJSON_CreateString(esp_app_desc.idf_ver));
-    cJSON_AddItemToArray(pEntries, pEntryJSON4);
+    cJSON_AddItemToArray(p_entries, pEntryJSON4);
 
     // WiFi-AP
     cJSON* pEntryJSON5 = cJSON_CreateObject();
@@ -362,7 +362,7 @@ static char* GetSysInfo()
     esp_read_mac(u8Macs, ESP_MAC_WIFI_SOFTAP);
     sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
     cJSON_AddItemToObject(pEntryJSON5, "value", cJSON_CreateString(buff));
-    cJSON_AddItemToArray(pEntries, pEntryJSON5);
+    cJSON_AddItemToArray(p_entries, pEntryJSON5);
 
     // WiFi-STA
     cJSON* pEntryJSON6 = cJSON_CreateObject();
@@ -370,7 +370,7 @@ static char* GetSysInfo()
     esp_read_mac(u8Macs, ESP_MAC_WIFI_STA);
     sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
     cJSON_AddItemToObject(pEntryJSON6, "value", cJSON_CreateString(buff));
-    cJSON_AddItemToArray(pEntries, pEntryJSON6);
+    cJSON_AddItemToArray(p_entries, pEntryJSON6);
 
     // WiFi-BT
     cJSON* pEntryJSON7 = cJSON_CreateObject();
@@ -378,7 +378,7 @@ static char* GetSysInfo()
     esp_read_mac(u8Macs, ESP_MAC_BT);
     sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", /*0*/u8Macs[0], /*1*/u8Macs[1], /*2*/u8Macs[2], /*3*/u8Macs[3], /*4*/u8Macs[4], /*5*/u8Macs[5]);
     cJSON_AddItemToObject(pEntryJSON7, "value", cJSON_CreateString(buff));
-    cJSON_AddItemToArray(pEntries, pEntryJSON7);
+    cJSON_AddItemToArray(p_entries, pEntryJSON7);
 
     // Memory
     cJSON* pEntryJSON8 = cJSON_CreateObject();
@@ -388,13 +388,13 @@ static char* GetSysInfo()
 
     sprintf(buff, "%d / %d", /*0*/freeSize, /*1*/totalSize);
     cJSON_AddItemToObject(pEntryJSON8, "value", cJSON_CreateString(buff));
-    cJSON_AddItemToArray(pEntries, pEntryJSON8);
+    cJSON_AddItemToArray(p_entries, pEntryJSON8);
 
-    const char* pStr =  cJSON_PrintUnformatted(pRoot);
-    cJSON_Delete(pRoot);
-    return pStr;
+    const char* p_str =  cJSON_PrintUnformatted(p_root);
+    cJSON_Delete(p_root);
+    return p_str;
     ERROR:
-    cJSON_Delete(pRoot);
+    cJSON_Delete(p_root);
     return NULL;
 }
 

@@ -79,7 +79,7 @@ class SGHW_HAL
     /*! @brief Clear all wormhole led strip pixels. */
     virtual void ClearAllWHPixels() { }
     /*! @brief Refresh the wormhole led strip. */
-    virtual void RefreshWHPixels() { }
+    virtual bool RefreshWHPixels() { return true; }
 
     /*! @brief Set sanity the LED status.
         @param state   false: light is off, true: light is on */
@@ -87,6 +87,8 @@ class SGHW_HAL
 
     /*! @brief Is home sensor active ? Meaning the magnet near the home point. */
     virtual bool GetIsHomeSensorActive() { return false; }
+
+    virtual void SendMp3PlayerCMD(const char* cmd) { }
 
     // Stepper
     virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) { return false;};

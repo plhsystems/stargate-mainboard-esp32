@@ -258,7 +258,7 @@ public:
 │  │  Wormhole (LED Effects)                    │  │
 │  │  • 4-ring concentric structure              │  │
 │  │  • Gradient brightness effects              │  │
-│  │  • 50Hz refresh rate                        │  │
+│  │  • 25Hz refresh rate (40ms interval)        │  │
 │  └─────────────────────────────────────────────┘  │
 └─────────────────┬─────────────────────────────────┘
                   │
@@ -275,6 +275,9 @@ public:
 │  • Stepper (ESP Timer + GPIO)                     │
 │  • Servo (MCPWM - 50Hz PWM)                       │
 │  • LEDs (RMT peripheral for WS2812B)              │
+│    - 48 NeoPixels for wormhole effects            │
+│    - RMT with 512-symbol memory blocks            │
+│    - 10MHz resolution, mutex-protected            │
 │  • Hall Sensor (GPIO input with interrupts)       │
 │  • Audio (I2S DAC)                                │
 └─────────────────┬─────────────────────────────────┘
@@ -379,6 +382,87 @@ public:
 
 ---
 
+## Error Handling Strategy
+
+### Return Value Pattern
+
+The firmware uses a consistent error handling approach based on boolean return values rather than exceptions:
+
+**Function Signature Pattern**:
+```cpp
+// HAL functions return bool for success/failure
+virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition,
+                       uint32_t timeout_ms, int32_t* ref_tick_count);
+virtual bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms);
+virtual bool RefreshWHPixels();
+```
+
+**Error Propagation**:
+- Functions return `false` on timeout or failure
+- Functions return `true` on successful completion
+- Calling code checks return values and aborts operations on failure
+- No exceptions are thrown during normal operation
+
+**Example from GateControl**:
+```cpp
+// Dial sequence with error checking
+if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+    break;  // Abort dial sequence on timeout
+}
+```
+
+**Timeout Values**:
+- **Homing/Calibration**: 30-second timeout per operation
+- **Stepper movements**: 30-second timeout per movement
+- **Wormhole refresh**: Returns false on RMT peripheral errors (power instability)
+
+**Benefits**:
+- Predictable error handling without exception overhead
+- Clear success/failure indication at each step
+- Allows graceful degradation (continue or abort based on context)
+- Better suited for embedded real-time systems
+
+---
+
+## Thread Safety
+
+### Mutex Protection
+
+Critical sections are protected with FreeRTOS mutexes:
+
+**PinkySGHW Hardware Access**:
+```cpp
+// LED strip and servo operations protected by mutex
+bool LockMutex() {
+    return (pdTRUE == xSemaphoreTake(m_mutex_handle, pdMS_TO_TICKS(100)));
+}
+
+// All pixel operations check mutex before proceeding
+if (LockMutex()) {
+    led_strip_set_pixel(led_strip, index, red, green, blue);
+    UnlockMutex();
+}
+```
+
+**HttpClient Fan Gate List**:
+```cpp
+// Thread-safe access to shared fan gate data
+SemaphoreHandle_t m_fanGate_mutex;
+std::shared_ptr<char[]> m_fanGate;  // Protected resource
+
+// Reader acquires mutex before accessing
+if (xSemaphoreTake(m_fanGate_mutex, portMAX_DELAY) == pdTRUE) {
+    result = m_fanGate;  // Safe copy
+    xSemaphoreGive(m_fanGate_mutex);
+}
+```
+
+**RingBLEClient Write Operations**:
+- BLE write operations are mutex-protected within NimBLE stack
+- Single-writer pattern ensures command serialization
+
+---
+
 ## ESP-IDF 5.3 Compatibility
 
 The project has been migrated to ESP-IDF 5.3 with the following changes:
@@ -398,6 +482,52 @@ mcpwm_new_operator(&operator_config, &oper_handle);
 mcpwm_new_comparator(oper_handle, &comparator_config, &comparator);
 mcpwm_new_generator(oper_handle, &generator_config, &generator);
 ```
+
+### RMT (LED Strip) Configuration
+
+**Implementation** (PinkySGHW.cpp):
+```c
+led_strip_rmt_config_t rmt_config = {
+    .clk_src = RMT_CLK_SRC_DEFAULT,
+    .resolution_hz = 10 * 1000 * 1000,  // 10MHz
+    .mem_block_symbols = 512,            // Increased from 128 for stability
+    .flags = { .with_dma = false }
+};
+```
+
+**Key Configuration**:
+- **Memory Block Symbols**: 512 (increased from 128 in earlier versions)
+  - Provides larger RMT buffer for WS2812B timing sequences
+  - Reduces risk of underrun during LED refresh operations
+  - Each symbol represents one timing period in the RMT sequence
+- **Clock Resolution**: 10MHz provides precise WS2812B protocol timing
+- **DMA Disabled**: Mutex-based protection used instead for thread safety
+- **Error Handling**: `RefreshWHPixels()` returns `false` on `ESP_OK != ret`
+  - Typically caused by power supply instability
+  - Allows wormhole effect to abort gracefully on errors
+
+### Task Priorities
+
+All FreeRTOS tasks run at `tskIDLE_PRIORITY` for balanced execution:
+
+```cpp
+// FWConfig.hpp - Task priority definitions
+#define FWCONFIG_MAINTASK_PRIORITY_DEFAULT (tskIDLE_PRIORITY)
+#define FWCONFIG_WEBSERVERTASK_PRIORITY_DEFAULT (tskIDLE_PRIORITY)
+#define FWCONFIG_RINGCOMM_PRIORITY_DEFAULT (tskIDLE_PRIORITY)
+#define FWCONFIG_GATECONTROL_PRIORITY_DEFAULT (tskIDLE_PRIORITY)
+#define FWCONFIG_HTTPCLIENT_PRIORITY_DEFAULT (tskIDLE_PRIORITY)
+```
+
+**Task Assignment**:
+- **Core 0**: WebServer, Main task
+- **Core 1**: GateControl, RingBLEClient, HttpClient
+
+**Why Equal Priority**:
+- Cooperative task scheduling without preemption issues
+- Reduces priority inversion problems
+- Simplified debugging and predictable behavior
+- Tasks yield explicitly via delays and blocking calls
 
 ### NimBLE Header Changes
 **Required includes** for BLE functionality:
@@ -444,6 +574,19 @@ CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
 ```
 
 **Why**: Enables `vTaskList()` for debugging and system monitoring via web API.
+
+#### FreeRTOS Tick Rate
+```
+CONFIG_FREERTOS_HZ=1000
+```
+
+**Why**: 1000Hz tick rate (1ms resolution) provides precise timing for:
+- Stepper motor control (adaptive frequency 600-1600µs per step)
+- Wormhole LED refresh (40ms intervals require accurate timing)
+- BLE heartbeat intervals (1000ms)
+- Task delays and timeouts throughout the system
+
+**Note**: Previously used 100Hz (10ms resolution), upgraded to 1000Hz for improved timing accuracy.
 
 #### Compiler Optimization
 ```

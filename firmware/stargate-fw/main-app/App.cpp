@@ -32,7 +32,7 @@ void App::Init(Config* config)
     ESP_LOGI(TAG, "Initialize gate control");
     m_config->m_sghw_hal->Init();
     ESP_LOGI(TAG, "Loading sound FX");
-    SoundFX::getI().Init();
+    SoundFX::getI().Init(m_config->m_sghw_hal);
     ESP_LOGI(TAG, "Initialize WiFi Manager");
     WifiMgr::getI().Init();
     ESP_LOGI(TAG, "Initialize web server");

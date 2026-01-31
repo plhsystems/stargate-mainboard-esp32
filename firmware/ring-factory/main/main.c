@@ -179,8 +179,8 @@ void app_main(void)
     {
         if (!m_bIsSuicide)
         {
-            const bool bSwitchState = gpio_get_level(CONFIG_SWITCH_PIN);
-            if (!bSwitchState) // Up
+            const bool switch_state = gpio_get_level(CONFIG_SWITCH_PIN);
+            if (!switch_state) // Up
             {
                 if (switchTicks == 0)
                     switchTicks = xTaskGetTickCount();

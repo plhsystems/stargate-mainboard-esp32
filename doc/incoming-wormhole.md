@@ -1,8 +1,21 @@
 # Incoming Wormhole
 
+> **⚠️ IMPLEMENTATION STATUS: NOT YET IMPLEMENTED**
+>
+> This feature is documented as a specification for future implementation. The current firmware (as of 2026-01-30) **does NOT implement** incoming wormhole functionality.
+>
+> **Currently implemented**: Outgoing wormhole only (via `/api/control/dialaddress` and `/api/control/manualwormhole`)
+>
+> **Not implemented**:
+> - Receiving incoming dial requests from network
+> - Triggering incoming wormhole animations
+> - Sub-space network integration
+>
+> This documentation serves as a design specification for when this feature is developed.
+
 ## Overview
 
-An incoming wormhole occurs when a remote Stargate dials your gate's address. The receiving gate must display the incoming sequence differently based on the gate type. This document describes the visual and mechanical behavior for each Stargate variant.
+An incoming wormhole occurs when a remote Stargate dials your gate's address. The receiving gate must display the incoming sequence differently based on the gate type. This document describes the planned visual and mechanical behavior for each Stargate variant.
 
 ---
 

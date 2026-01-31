@@ -5,6 +5,8 @@
 class Wormhole
 {
     public:
+    static constexpr const char* TAG = "Wormhole";
+
     enum class EType
     {
         NormalSGU = 0,
@@ -49,7 +51,7 @@ class Wormhole
 
     void Begin();
     void OpeningAnimation();
-    void RunTicks();
+    bool RunTicks();
     void ClosingAnimation();
     void End();
 

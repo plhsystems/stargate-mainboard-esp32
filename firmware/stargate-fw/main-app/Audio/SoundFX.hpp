@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "../HW/SGHW_HAL.hpp"
+
 
 class SoundFX
 {
@@ -40,7 +42,7 @@ class SoundFX
     void operator=(SoundFX const&) = delete;
 
     public:
-    void Init();
+    void Init(SGHW_HAL* p_sghw_hal);
     void Start();
 
     bool PlaySound(FileID soundFile, bool repeat);
@@ -61,6 +63,8 @@ class SoundFX
         return instance;
     }
     private:
+    SGHW_HAL* m_sghw_hal;
+
     static inline const SoundFile m_soundFiles[] =
     {
         [(int)FileID::SGU_1_beginroll]    = { "1_beginroll.wav",  "The stargate begins dialing" },

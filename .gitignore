@@ -25,3 +25,6 @@ firmware/ring-factory/dependencies.lock
 firmware/ring-fw/dependencies.lock
 firmware/stargate-fw/pablo-board/dependencies.lock
 firmware/stargate-fw/pinky-board/dependencies.lock
+
+# Ignore all dependencies.lock files
+**/dependencies.lock
