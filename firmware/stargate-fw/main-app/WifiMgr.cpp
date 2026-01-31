@@ -4,7 +4,7 @@
 #include "esp_sntp.h"
 #include "misc-macro.h"
 
-const char *TAG = "wifi";
+static const char *TAG = "wifi";
 
 void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {

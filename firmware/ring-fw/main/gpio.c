@@ -1,6 +1,5 @@
 #include "gpio.h"
 #include "fwconfig.h"
-#include "driver/rmt.h"
 #include "led_strip.h"
 #include "esp_log.h"
 #include "driver/gpio.h"

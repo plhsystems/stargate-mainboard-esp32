@@ -2,8 +2,8 @@
 #include "led_strip.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
+// #include "driver/mcpwm.h"  // Legacy driver - commented out for ESP-IDF 6.1, not used yet
+// #include "soc/mcpwm_periph.h"  // Legacy driver - commented out for ESP-IDF 6.1, not used yet
 #include "driver/ledc.h"
 #include "freertos/task.h"
 

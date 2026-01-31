@@ -10,9 +10,6 @@
 /firmware/ring-factory/managed_components
 /firmware/ring-factory/main/assets/EmbeddedFiles.bin
 /firmware/ring-fw/sdkconfig.old
-/firmware/ring-fw/dependencies.lock
-/firmware/factory-fw/dependencies.lock
-/firmware/stargate-fw/dependencies.lock
 /firmware/stargate-fw/pinky-board/build
 /firmware/stargate-fw/pinky-board/managed_components
 /firmware/stargate-fw/pablo-board/build
@@ -21,10 +18,10 @@ firmware/stargate-fw/pinky-board/sdkconfig.old
 *.claude
 firmware/nul
 firmware/ring-fw/nul
-firmware/ring-factory/dependencies.lock
-firmware/ring-fw/dependencies.lock
-firmware/stargate-fw/pablo-board/dependencies.lock
-firmware/stargate-fw/pinky-board/dependencies.lock
 
 # Ignore all dependencies.lock files
 **/dependencies.lock
+
+firmware/stargate-fw/pinky-board/build_output.log
+firmware/stargate-fw/pablo-board/sdkconfig.old
+firmware/ring-factory/sdkconfig.old

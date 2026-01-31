@@ -8,6 +8,7 @@ Complete guide for building, deploying, and troubleshooting the Stargate Mainboa
 - [Web Assets](#web-assets)
 - [Firmware Projects](#firmware-projects)
 - [Configuration](#configuration)
+- [Migration from ESP-IDF 5.x](#migration-from-esp-idf-5x)
 - [Common Issues](#common-issues)
 
 ---
@@ -16,12 +17,12 @@ Complete guide for building, deploying, and troubleshooting the Stargate Mainboa
 
 ### Required Software
 
-1. **ESP-IDF 5.3.1** (Recommended)
+1. **ESP-IDF 6.1** (Current)
 ```bash
 mkdir -p ~/esp
 cd ~/esp
-git clone -b v5.3.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-5.3
-cd esp-idf-5.3
+git clone -b v6.1 --recursive https://github.com/espressif/esp-idf.git esp-idf
+cd esp-idf
 ./install.sh
 ```
 
@@ -61,12 +62,12 @@ stargate-mainboard-esp32/
 
 Source the ESP-IDF environment in each terminal session:
 ```bash
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf/export.sh
 ```
 
 To make this permanent, add to `~/.bashrc`:
 ```bash
-alias get_idf='. ~/esp/esp-idf-5.3/export.sh'
+alias get_idf='. ~/esp/esp-idf/export.sh'
 ```
 
 ### Step 2: Web Assets Generation
@@ -93,7 +94,7 @@ python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/
 #### Pinky Board (ESP32 - Production)
 ```bash
 cd firmware/stargate-fw/pinky-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf/export.sh
 idf.py build
 ```
 
@@ -102,7 +103,7 @@ idf.py build
 #### Pablo Board (ESP32-S3 - Development)
 ```bash
 cd firmware/stargate-fw/pablo-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf/export.sh
 
 # First time only: add LED strip dependency
 idf.py add-dependency "espressif/led_strip"
@@ -117,7 +118,7 @@ idf.py build
 #### Ring Controller
 ```bash
 cd firmware/ring-fw
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf/export.sh
 idf.py build
 ```
 
@@ -126,7 +127,7 @@ idf.py build
 #### Ring Factory Test
 ```bash
 cd firmware/ring-factory
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf/export.sh
 idf.py build
 ```
 
@@ -198,6 +199,133 @@ Navigate to:
 - `Component config → Bluetooth → NimBLE`
 - `Component config → FreeRTOS → Kernel`
 - `Compiler options → Optimization Level`
+
+---
+
+## Migration from ESP-IDF 5.x
+
+If you're upgrading from ESP-IDF 5.3.x to 6.1, the following changes have been made to the codebase:
+
+### Component Changes
+
+#### cJSON Component
+The `json` component has been replaced with `cjson` in ESP-IDF 6.1.
+
+**Changes made**:
+- Updated `esp32-components/nvsjson/CMakeLists.txt`: `json` → `cjson`
+- Updated all firmware projects' `main/CMakeLists.txt`: `json` → `cjson`
+- Added `espressif/cjson` dependency via `idf.py add-dependency "espressif/cjson"`
+
+### Driver API Changes
+
+#### Legacy RMT Driver
+The legacy `driver/rmt.h` has been removed and replaced with new driver APIs.
+
+**Changes made**:
+- Removed `#include "driver/rmt.h"` from `gpio.c` files (not needed as led_strip handles RMT internally)
+- Updated led_strip component dependencies to include `esp_driver_rmt` and `esp_driver_spi`
+
+#### Driver Component Split
+ESP-IDF 6.1 has split driver components into separate packages.
+
+**Required CMakeLists.txt updates**:
+```cmake
+# Old (ESP-IDF 5.x)
+REQUIRES driver
+
+# New (ESP-IDF 6.1)
+REQUIRES driver esp_driver_gpio esp_driver_rmt esp_driver_uart esp_driver_ledc
+```
+
+**Changes made across projects**:
+- pinky-board: Added `esp_driver_mcpwm`, `esp_driver_ledc`, `esp_driver_gpio`, `esp_driver_gptimer`
+- pablo-board: Added `esp_driver_ledc`, `esp_driver_gpio`
+- ring-fw: Added `esp_driver_gpio`, `esp_driver_rmt`
+- ring-factory: Added `esp_driver_gpio`
+- main-app: Added `esp_driver_uart`
+
+### Include Header Changes
+
+#### FreeRTOS Include Order
+ESP-IDF 6.1 strictly requires `FreeRTOS.h` to be included before other FreeRTOS headers.
+
+**Fix applied**:
+```cpp
+// Correct order (ESP-IDF 6.1)
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
+// Wrong order (causes compilation error)
+#include "freertos/semphr.h"
+#include "freertos/FreeRTOS.h"
+```
+
+**Files fixed**:
+- `pinky-board/main/PinkySGHW.hpp`
+- `pablo-board/main/PabloSGHW.hpp`
+
+#### LED Strip Component
+The led_strip component requires additional headers in ESP-IDF 6.1.
+
+**Fix applied** to `managed_components/espressif__led_strip/src/led_strip_spi_dev.c`:
+```c
+#include "esp_heap_caps.h"  // Added for MALLOC_CAP_* macros
+```
+
+### Configuration Changes
+
+#### Partition Table
+Pablo-board requires 4MB flash configuration instead of 2MB.
+
+**Changes made** to `pablo-board/sdkconfig`:
+```
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+```
+
+#### FreeRTOS Trace Facility
+All projects now explicitly enable FreeRTOS trace facility.
+
+**Added to all sdkconfig files**:
+```
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+```
+
+### Code Compatibility
+
+#### cJSON API Changes
+The `cJSON_PrintUnformatted` function now returns `const char*` instead of `char*`.
+
+**Fix applied** to `ring-factory/main/webserver.c`:
+```c
+// Old code
+const char* p_str = cJSON_PrintUnformatted(p_root);
+return p_str;  // Error: discards const qualifier
+
+// Fixed code
+char* p_str = (char*)cJSON_PrintUnformatted(p_root);
+return p_str;  // Cast away const for compatibility
+```
+
+### Migration Checklist
+
+When migrating your own fork or branch:
+
+- [ ] Update ESP-IDF to version 6.1
+- [ ] Initialize/update git submodules: `git submodule update --init --recursive`
+- [ ] Replace `json` with `cjson` in all CMakeLists.txt files
+- [ ] Add `espressif/cjson` dependency to all projects
+- [ ] Update led_strip component CMakeLists.txt with driver dependencies
+- [ ] Add `esp_heap_caps.h` to led_strip_spi_dev.c
+- [ ] Fix FreeRTOS include order (FreeRTOS.h before semphr.h)
+- [ ] Remove legacy `driver/rmt.h` includes from gpio.c files
+- [ ] Add new driver components (esp_driver_*) to CMakeLists.txt
+- [ ] Update sdkconfig files with FreeRTOS trace facility settings
+- [ ] For pablo-board: Update flash size to 4MB and enable custom partition table
+- [ ] Clean build all projects: `idf.py fullclean && idf.py build`
+- [ ] Test all firmware builds complete successfully
 
 ---
 
@@ -382,23 +510,23 @@ Before deploying to production hardware:
 
 **Pinky Board**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pinky-board && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pinky-board && . ~/esp/esp-idf/export.sh && idf.py build
 ```
 
 **Pablo Board**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pablo-board && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pablo-board && . ~/esp/esp-idf/export.sh && idf.py build
 ```
 
 **Ring FW**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/ring-fw && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/ring-fw && . ~/esp/esp-idf/export.sh && idf.py build
 ```
 
 **All Projects** (sequential):
 ```bash
 cd ~/stargate-mainboard-esp32/firmware && \
-  . ~/esp/esp-idf-5.3/export.sh && \
+  . ~/esp/esp-idf/export.sh && \
   (cd stargate-fw && python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/WebServer") && \
   (cd stargate-fw/pinky-board && idf.py build) && \
   (cd ring-fw && idf.py build) && \
@@ -412,10 +540,10 @@ cd ~/stargate-mainboard-esp32/firmware && \
 For issues and questions:
 - Check [Troubleshooting](README.md#troubleshooting) section
 - Review [Architecture](architecture.md) documentation
-- Check ESP-IDF documentation: https://docs.espressif.com/projects/esp-idf/en/v5.3.1/
+- Check ESP-IDF documentation: https://docs.espressif.com/projects/esp-idf/en/v6.1/
 - Report bugs: https://github.com/user/stargate-mainboard-esp32/issues
 
 ---
 
-Last Updated: 2026-01-26
-ESP-IDF Version: 5.3.1
+Last Updated: 2026-01-31
+ESP-IDF Version: 6.1

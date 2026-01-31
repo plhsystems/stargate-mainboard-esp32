@@ -390,7 +390,7 @@ static char* GetSysInfo()
     cJSON_AddItemToObject(pEntryJSON8, "value", cJSON_CreateString(buff));
     cJSON_AddItemToArray(p_entries, pEntryJSON8);
 
-    const char* p_str =  cJSON_PrintUnformatted(p_root);
+    char* p_str = (char*)cJSON_PrintUnformatted(p_root);
     cJSON_Delete(p_root);
     return p_str;
     ERROR:
