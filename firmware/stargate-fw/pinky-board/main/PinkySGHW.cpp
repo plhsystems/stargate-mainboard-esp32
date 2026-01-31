@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "misc-macro.h"
 #include "driver/rmt_tx.h"
+#include "driver/uart.h"
 
 #define TAG "PinkySGHW"
 
@@ -32,6 +33,13 @@
 #define WORMHOLELEDS_PIN GPIO_NUM_19
 #define WORMHOLELEDS_RMTCHANNEL RMT_CHANNEL_0
 #define WORMHOLELEDS_LEDCOUNT 48
+
+// Mp3 Player
+#define MP3PLAYER_PORT_NUM UART_NUM_2
+#define MP3PLAYER_BUFFSIZE 128
+#define MP3PLAYER_BAUDRATE 115200
+#define MP3PLAYER_RX2TXD GPIO_NUM_16
+#define MP3PLAYER_TX2RXD GPIO_NUM_17
 
 // Sanity led
 #define SANITY_PIN GPIO_NUM_5
@@ -66,6 +74,24 @@ void PinkySGHW::Init()
     gpio_set_direction(STEPPER_STEP_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction(STEPPER_SLP_PIN, GPIO_MODE_OUTPUT);
     PowerDownStepper();
+
+    // Mp3 player
+    uart_config_t uart_config =
+    {
+        .baud_rate = MP3PLAYER_BAUDRATE,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+    int intr_alloc_flags = 0;
+    #if CONFIG_UART_ISR_IN_IRAM
+    intr_alloc_flags = ESP_INTR_FLAG_IRAM;
+    #endif
+    ESP_ERROR_CHECK(uart_driver_install(MP3PLAYER_PORT_NUM, MP3PLAYER_BUFFSIZE * 2, 0, 0, NULL, intr_alloc_flags));
+    ESP_ERROR_CHECK(uart_param_config(MP3PLAYER_PORT_NUM, &uart_config));
+    ESP_ERROR_CHECK(uart_set_pin(MP3PLAYER_PORT_NUM, MP3PLAYER_TX2RXD, MP3PLAYER_RX2TXD, -1, -1));
 
     // Servo PIN - Initialize MCPWM for servo control using new API
     // Create timer (20ms period for 50Hz servo signal)
@@ -166,10 +192,11 @@ void PinkySGHW::Init()
 
 
     // Stepper control timer
-    const esp_timer_create_args_t periodic_timer_args = {
+    const esp_timer_create_args_t periodic_timer_args =
+    {
         .callback = &tmr_signal_callback,
         .arg = this,
-        .dispatch_method = ESP_TIMER_ISR,
+        .dispatch_method = ESP_TIMER_TASK,
         .name = "stepper_timer",
     };
 
@@ -292,6 +319,11 @@ bool PinkySGHW::GetIsHomeSensorActive()
     return !gpio_get_level(HOMESENSOR_PIN);
 }
 
+void PinkySGHW::SendMp3PlayerCMD(const char* cmd)
+{
+    uart_write_bytes(MP3PLAYER_PORT_NUM, (const char *)cmd, strlen(cmd));
+}
+
 bool PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count)
 {
     TickType_t ttStart = xTaskGetTickCount();
@@ -353,11 +385,13 @@ bool PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
 
     /* Wait to be notified of an interrupt. */
     uint32_t ulNotifiedValue = 0;
+    ESP_LOGI(TAG, "MoveStepperTo before");
     const BaseType_t xResult = xTaskNotifyWait(
         pdFALSE,          /* Don't clear bits on entry. */
         ULONG_MAX,        /* Clear all bits on exit. */
         &ulNotifiedValue, /* Stores the notified value. */
         xMaxBlockTime );
+    ESP_LOGI(TAG, "MoveStepperTo after");
 
     // No longer need to run the timer ...
     esp_timer_stop(this->m_stepper.signal_timer_handle);

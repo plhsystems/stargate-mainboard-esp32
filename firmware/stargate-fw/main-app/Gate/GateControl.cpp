@@ -5,6 +5,7 @@
 #include "SGURing.hpp"
 #include "SGUComm.hpp"
 #include "../Ring/RingBLEClient.hpp"
+#include "../Audio/SoundFX.hpp"
 
 #define TAG "GateControl"
 
@@ -320,6 +321,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         vTaskDelay(pdMS_TO_TICKS(500));
         if (is_error) {
             RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
+            SoundFX::getI().PlaySound(SoundFX::FileID::SGU_7_lockfail, false);
         } else {
             RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
@@ -346,6 +348,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
     do
     {
         Wormhole wm { m_sghw_hal, dial_arg.wormhole_type };
+        SoundFX::getI().StopSound();
         m_sghw_hal->PowerUpStepper();
         ReleaseClamp();
         process_started = true;
@@ -357,6 +360,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
 
         AnimRampLight(true);
         vTaskDelay(pdMS_TO_TICKS(750));
+        SoundFX::getI().PlaySound(SoundFX::FileID::SGU_1_beginroll, false);
         RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
         vTaskDelay(pdMS_TO_TICKS(750));
 
@@ -378,13 +382,16 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
             const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, symbol_to_ticks, new_steps_per_rotation);
 
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, led_index, angle, symbol_to_ticks);
+            SoundFX::getI().PlaySound(SoundFX::FileID::SGU_6_lggroll, true);
+            vTaskDelay(pdMS_TO_TICKS(250));
             if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
                 break;
             }
-
-            vTaskDelay(pdMS_TO_TICKS(500));
+            SoundFX::getI().StopSound();
+            SoundFX::getI().PlaySound(SoundFX::FileID::SGU_3_chevlck2, false);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            SoundFX::getI().PlaySound(SoundFX::FileID::SGU_2_chevlck, false);
             RingBLEClient::getI().SendLightUpSymbol(symbol);
-            vTaskDelay(pdMS_TO_TICKS(750));
 
             m_current_position_ticks = symbol_to_ticks;
             vTaskDelay(pdMS_TO_TICKS(2000));
@@ -395,6 +402,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         }
 
         // Play the wormhole idling animation
+        SoundFX::getI().PlaySound(SoundFX::FileID::SGU_5_gateopen, false);
         wm.Begin();
         wm.OpeningAnimation();
 
@@ -410,7 +418,9 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
             }
         }
         // Turn-off all symbols before killing the wormhole
+        SoundFX::getI().PlaySound(SoundFX::FileID::SGU_4_gateclos, false);
         RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_NoSymbols);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         wm.ClosingAnimation();
         wm.End();
 
