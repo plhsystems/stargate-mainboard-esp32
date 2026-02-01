@@ -28,3 +28,6 @@ firmware/stargate-fw/pinky-board/dependencies.lock
 
 # Ignore all dependencies.lock files
 **/dependencies.lock
+firmware/ring-factory/sdkconfig.old
+firmware/stargate-fw/pablo-board/sdkconfig.old
+firmware/stargate-fw/pinky-board/build_output.log

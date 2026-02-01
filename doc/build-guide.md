@@ -16,12 +16,12 @@ Complete guide for building, deploying, and troubleshooting the Stargate Mainboa
 
 ### Required Software
 
-1. **ESP-IDF 5.3.1** (Recommended)
+1. **ESP-IDF 5.5.1** (Recommended)
 ```bash
 mkdir -p ~/esp
 cd ~/esp
-git clone -b v5.3.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-5.3
-cd esp-idf-5.3
+git clone -b v5.5.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-5.5
+cd esp-idf-5.5
 ./install.sh
 ```
 
@@ -61,12 +61,12 @@ stargate-mainboard-esp32/
 
 Source the ESP-IDF environment in each terminal session:
 ```bash
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 ```
 
 To make this permanent, add to `~/.bashrc`:
 ```bash
-alias get_idf='. ~/esp/esp-idf-5.3/export.sh'
+alias get_idf='. ~/esp/esp-idf-5.5/export.sh'
 ```
 
 ### Step 2: Web Assets Generation
@@ -93,7 +93,7 @@ python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/
 #### Pinky Board (ESP32 - Production)
 ```bash
 cd firmware/stargate-fw/pinky-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 ```
 
@@ -102,7 +102,7 @@ idf.py build
 #### Pablo Board (ESP32-S3 - Development)
 ```bash
 cd firmware/stargate-fw/pablo-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 
 # First time only: add LED strip dependency
 idf.py add-dependency "espressif/led_strip"
@@ -117,7 +117,7 @@ idf.py build
 #### Ring Controller
 ```bash
 cd firmware/ring-fw
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 ```
 
@@ -126,7 +126,7 @@ idf.py build
 #### Ring Factory Test
 ```bash
 cd firmware/ring-factory
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 ```
 
@@ -382,23 +382,23 @@ Before deploying to production hardware:
 
 **Pinky Board**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pinky-board && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pinky-board && . ~/esp/esp-idf-5.5/export.sh && idf.py build
 ```
 
 **Pablo Board**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pablo-board && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/stargate-fw/pablo-board && . ~/esp/esp-idf-5.5/export.sh && idf.py build
 ```
 
 **Ring FW**:
 ```bash
-cd ~/stargate-mainboard-esp32/firmware/ring-fw && . ~/esp/esp-idf-5.3/export.sh && idf.py build
+cd ~/stargate-mainboard-esp32/firmware/ring-fw && . ~/esp/esp-idf-5.5/export.sh && idf.py build
 ```
 
 **All Projects** (sequential):
 ```bash
 cd ~/stargate-mainboard-esp32/firmware && \
-  . ~/esp/esp-idf-5.3/export.sh && \
+  . ~/esp/esp-idf-5.5/export.sh && \
   (cd stargate-fw && python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/WebServer") && \
   (cd stargate-fw/pinky-board && idf.py build) && \
   (cd ring-fw && idf.py build) && \
@@ -412,10 +412,10 @@ cd ~/stargate-mainboard-esp32/firmware && \
 For issues and questions:
 - Check [Troubleshooting](README.md#troubleshooting) section
 - Review [Architecture](architecture.md) documentation
-- Check ESP-IDF documentation: https://docs.espressif.com/projects/esp-idf/en/v5.3.1/
+- Check ESP-IDF documentation: https://docs.espressif.com/projects/esp-idf/en/v5.5.1/
 - Report bugs: https://github.com/user/stargate-mainboard-esp32/issues
 
 ---
 
-Last Updated: 2026-01-26
-ESP-IDF Version: 5.3.1
+Last Updated: 2026-01-31
+ESP-IDF Version: 5.5.1

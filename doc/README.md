@@ -20,7 +20,7 @@ Complete system architecture covering:
 - Hardware abstraction layer (HAL)
 - Communication protocols (BLE, WiFi, HTTP)
 - Software layers and state machines
-- ESP-IDF 5.3 compatibility details
+- ESP-IDF 5.5 compatibility details
 - Memory management and partitions
 
 #### [Build Guide](build-guide.md)
@@ -159,12 +159,12 @@ Legal and licensing information
 
 ### Prerequisites
 
-1. **Install ESP-IDF 5.3**:
+1. **Install ESP-IDF 5.5**:
 ```bash
 mkdir -p ~/esp
 cd ~/esp
-git clone -b v5.3.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-5.3
-cd esp-idf-5.3
+git clone -b v5.5.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-5.5
+cd esp-idf-5.5
 ./install.sh
 ```
 
@@ -185,7 +185,7 @@ python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/
 **Main Controller (Pinky Board - ESP32)**:
 ```bash
 cd firmware/stargate-fw/pinky-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 idf.py -p /dev/ttyUSB0 flash
 ```
@@ -193,7 +193,7 @@ idf.py -p /dev/ttyUSB0 flash
 **Main Controller (Pablo Board - ESP32-S3)**:
 ```bash
 cd firmware/stargate-fw/pablo-board
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 # Add LED strip dependency if not present
 idf.py add-dependency "espressif/led_strip"
 idf.py build
@@ -203,7 +203,7 @@ idf.py -p /dev/ttyUSB0 flash
 **Ring Controller (ESP32)**:
 ```bash
 cd firmware/ring-fw
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 idf.py -p /dev/ttyUSB0 flash
 ```
@@ -211,7 +211,7 @@ idf.py -p /dev/ttyUSB0 flash
 **Ring Factory Test (ESP32)**:
 ```bash
 cd firmware/ring-factory
-. ~/esp/esp-idf-5.3/export.sh
+. ~/esp/esp-idf-5.5/export.sh
 idf.py build
 idf.py -p /dev/ttyUSB0 flash
 ```
@@ -305,7 +305,7 @@ stargate-mainboard-esp32/
 ### Build Errors
 
 **MCPWM API errors**:
-- Ensure using ESP-IDF 5.3+
+- Ensure using ESP-IDF 5.5+
 - Check [Architecture](architecture.md) for API migration details
 
 **BLE header errors** (`esp_nimble_hci.h: No such file or directory`):
@@ -388,7 +388,7 @@ See [Copyright](copyright.md) for licensing information.
 
 ## External Resources
 
-- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/)
+- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/v5.5.1/)
 - [NimBLE Stack Documentation](https://mynewt.apache.org/latest/network/index.html)
 - [Stargate Fan Project Community](https://buildthestargateproject.com/)
 - [GitHub Repository](https://github.com/user/stargate-mainboard-esp32)
@@ -396,7 +396,7 @@ See [Copyright](copyright.md) for licensing information.
 ---
 
 Last Updated: 2026-01-30
-ESP-IDF Version: 5.5.1 (also compatible with 5.3.1)
+ESP-IDF Version: 5.5.1
 Firmware Version: 1.0.0
 
 ## Recent Changes (2026-01)
