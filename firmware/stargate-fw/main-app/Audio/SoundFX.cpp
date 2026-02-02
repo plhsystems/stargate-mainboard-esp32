@@ -18,11 +18,11 @@ void SoundFX::Start()
     // TODO: Create a task for i2s
 }
 
-bool SoundFX::PlaySound(FileID sound_file, bool repeat)
+SGResult SoundFX::PlaySound(FileID sound_file, bool repeat)
 {
     const SoundFile* p_sound_file = GetFile(sound_file);
     if (nullptr == p_sound_file) {
-        return false;
+        return SGResult::Sound_InvalidFileID;
     }
     ESP_LOGI(TAG, "TODO: Play sound file, name: %s", p_sound_file->name);
 
@@ -45,7 +45,7 @@ bool SoundFX::PlaySound(FileID sound_file, bool repeat)
     sprintf(buffers, "AT+PLAYNUM=%d\r\n", (int)real_index);
     m_sghw_hal->SendMp3PlayerCMD(buffers);
 
-    return true;
+    return SGResult::OK;
 }
 
 void SoundFX::StopSound()

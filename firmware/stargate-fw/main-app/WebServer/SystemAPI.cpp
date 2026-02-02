@@ -187,7 +187,7 @@ esp_err_t WebServer::WebAPIPostHandler(httpd_req_t *req)
                 !cJSON_IsNumber(jItemAnim)) {
                 goto ERROR;
             }
-            if (!SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint), false)) {
+            if (SoundFX::getI().PlaySound((SoundFX::FileID)(jItemAnim->valueint), false) != SGResult::OK) {
                 goto ERROR;
             }
         }

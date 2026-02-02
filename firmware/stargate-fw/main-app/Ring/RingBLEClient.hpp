@@ -5,6 +5,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "SGUComm.hpp"
+#include "../SGResult.hpp"
 #include "esp_nimble_hci.h"
 #include "host/ble_uuid.h"
 #include "host/ble_hs.h"
@@ -113,7 +114,7 @@ private:
     /**
      * @brief Write data to the characteristic
      */
-    bool WriteCharacteristic(const uint8_t* data, uint16_t len);
+    SGResult WriteCharacteristic(const uint8_t* data, uint16_t len);
 
     /**
      * @brief Start scanning for the ring

@@ -153,8 +153,9 @@ void GateControl::TaskRunning(void* arg)
                     wm.OpeningAnimation();
                     while(!gc->m_is_cancel_action) {
                         // Unlimited time, it violate laws of physics! (AKA the needs of the plot)
-                        if (!wm.RunTicks()) {
-                            result = SGResult::Wormhole_PowerInstability;
+                        SGResult wm_result = wm.RunTicks();
+                        if (wm_result != SGResult::OK) {
+                            result = wm_result;
                             break;
                         }
                     }
@@ -416,8 +417,9 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
             if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
                 break;
             }
-            if (!wm.RunTicks()) {
-                result = SGResult::Wormhole_PowerInstability;
+            SGResult wm_result = wm.RunTicks();
+            if (wm_result != SGResult::OK) {
+                result = wm_result;
                 break;
             }
         }
