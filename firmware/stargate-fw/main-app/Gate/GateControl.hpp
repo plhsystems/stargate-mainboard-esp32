@@ -15,6 +15,8 @@
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../HW/SGHW_HAL.hpp"
+#include "../Core/Result.hpp"
+#include "../Core/StateMachine.hpp"
 
 class GateControl
 {
@@ -41,10 +43,12 @@ class GateControl
     struct UIState
     {
         ECmd cmd;
+        GateState state;  // Formal state machine state
 
         char status_text[ERROR_LEN+1];
 
         bool has_last_error;
+        HWError last_error_code;  // Typed error code
         char last_error[ERROR_LEN+1];
 
         bool is_cancel_requested;
@@ -103,9 +107,9 @@ class GateControl
     private:
     void PriQueueAction(SCmd cmd);
 
-    bool AutoCalibrate(const char** error_msg);   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
-    bool AutoHome(const char** error_msg);        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    bool DialAddress(const SDialArg& dial_arg, const char** error_msg);
+    VoidResult AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
+    VoidResult AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
+    VoidResult DialAddress(const SDialArg& dial_arg);
 
     void AnimRampLight(bool is_active);
 
@@ -128,6 +132,10 @@ class GateControl
     // Error management
     char m_errors[ERROR_LEN+1] = {0};
     bool m_is_in_error;
+    HWError m_last_error_code = HWError::Ok;
+
+    // State machine
+    GateStateMachine m_state_machine;
 
     // Position
     int32_t m_is_homing_done = false;

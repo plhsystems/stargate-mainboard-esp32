@@ -96,38 +96,48 @@ void GateControl::TaskRunning(void* arg)
         xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
         gc->m_errors[0] = '\0';
         gc->m_is_in_error = false;
+        gc->m_last_error_code = HWError::Ok;
         xSemaphoreGive(gc->m_semaphore_handle);
 
-        bool has_error = false;
-        const char* error_msg = "";
+        VoidResult result = VoidResult::success();
 
         do {
             switch(gc->m_curr_cmd.cmd)
             {
                 case ECmd::AutoCalibrate:
                 {
+                    gc->m_state_machine.processEvent(GateEvent::CmdCalibrate);
                     ESP_LOGI(TAG, "Autocalibrate in progress.");
-                    if (!gc->AutoCalibrate(&error_msg)) {
-                        has_error = true;
+                    result = gc->AutoCalibrate();
+                    if (result.failed()) {
+                        gc->m_state_machine.processEvent(GateEvent::OperationFailed);
                         break;
                     }
                     // Will move it at it's home position, it should go very fast.
                     ESP_LOGI(TAG, "Autocalibrate succeeded.");
-                    if (!gc->AutoHome(&error_msg)) {
-                        has_error = true;
+                    gc->m_state_machine.processEvent(GateEvent::OperationComplete);
+
+                    gc->m_state_machine.processEvent(GateEvent::CmdHome);
+                    result = gc->AutoHome();
+                    if (result.failed()) {
+                        gc->m_state_machine.processEvent(GateEvent::OperationFailed);
                         break;
                     }
                     ESP_LOGI(TAG, "Auto-home succeeded.");
+                    gc->m_state_machine.processEvent(GateEvent::OperationComplete);
                     break;
                 }
                 case ECmd::AutoHome:
                 {
+                    gc->m_state_machine.processEvent(GateEvent::CmdHome);
                     ESP_LOGI(TAG, "Auto-home started.");
-                    if (!gc->AutoHome(&error_msg)) {
-                        has_error = true;
+                    result = gc->AutoHome();
+                    if (result.failed()) {
+                        gc->m_state_machine.processEvent(GateEvent::OperationFailed);
                         break;
                     }
                     ESP_LOGI(TAG, "Auto-home succeeded.");
+                    gc->m_state_machine.processEvent(GateEvent::OperationComplete);
                     break;
                 }
                 case ECmd::KeyPress:
@@ -138,16 +148,20 @@ void GateControl::TaskRunning(void* arg)
                 }
                 case ECmd::DialAddress:
                 {
+                    gc->m_state_machine.processEvent(GateEvent::CmdDial);
                     ESP_LOGI(TAG, "Dialing ....");
-                    if (!gc->DialAddress(gc->m_curr_cmd.dial_address, &error_msg)) {
-                        has_error = true;
+                    result = gc->DialAddress(gc->m_curr_cmd.dial_address);
+                    if (result.failed()) {
+                        gc->m_state_machine.processEvent(GateEvent::OperationFailed);
                         break;
                     }
                     ESP_LOGI(TAG, "Dialing address succeeded.");
+                    gc->m_state_machine.processEvent(GateEvent::OperationComplete);
                     break;
                 }
                 case ECmd::ManualWormhole:
                 {
+                    gc->m_state_machine.processEvent(GateEvent::CmdManualWormhole);
                     ESP_LOGI(TAG, "ManualWormhole, name: %s", Wormhole::GetTypeText(gc->m_curr_cmd.manual_wormhole.wormhole_type));
                     Wormhole wm { gc->m_sghw_hal, gc->m_curr_cmd.manual_wormhole.wormhole_type };
                     wm.Begin();
@@ -155,12 +169,16 @@ void GateControl::TaskRunning(void* arg)
                     while(!gc->m_is_cancel_action) {
                         // Unlimited time, it violate laws of physics! (AKA the needs of the plot)
                         if (!wm.RunTicks()) {
-                            has_error = true;
+                            result = HWError::HardwareFailure;
                             break;
                         }
                     }
                     wm.ClosingAnimation();
                     wm.End();
+                    if (gc->m_is_cancel_action) {
+                        gc->m_state_machine.processEvent(GateEvent::CmdAbort);
+                    }
+                    gc->m_state_machine.processEvent(GateEvent::OperationComplete);
                     break;
                 }
                 default:
@@ -169,13 +187,14 @@ void GateControl::TaskRunning(void* arg)
             }
         } while(false);
 
-        if (has_error && error_msg)
+        if (result.failed())
         {
-            ESP_LOGE(TAG, "Error occurred: %s", error_msg);
+            ESP_LOGE(TAG, "Error occurred: %s (code: %d)", result.errorString(), (int)result.error());
 
             // To be displayed into the web page.
             xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
-            strncpy(gc->m_errors, error_msg, ERROR_LEN);
+            strncpy(gc->m_errors, result.errorString(), ERROR_LEN);
+            gc->m_last_error_code = result.error();
             gc->m_is_in_error = true;
             xSemaphoreGive(gc->m_semaphore_handle);
         }
@@ -186,10 +205,10 @@ void GateControl::TaskRunning(void* arg)
     }
 }
 
-bool GateControl::AutoCalibrate(const char** error_msg)
+VoidResult GateControl::AutoCalibrate()
 {
     const uint32_t timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
-    bool success = false;
+    VoidResult result = HWError::Timeout;
 
     do {
         // We need two transitions from LOW to HIGH.
@@ -199,12 +218,16 @@ bool GateControl::AutoCalibrate(const char** error_msg)
 
         ESP_LOGI(TAG, "Finding home in progress");
         if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+            ESP_LOGE(TAG, "Calibration failed: timeout finding first home position");
+            result = HWError::Timeout;
             break;
         }
 
         ESP_LOGI(TAG, "Home has been found once");
         int32_t new_steps_per_rotation = 0;
         if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation)) {
+            ESP_LOGE(TAG, "Calibration failed: timeout finding second home position");
+            result = HWError::Timeout;
             break;
         }
 
@@ -215,9 +238,13 @@ bool GateControl::AutoCalibrate(const char** error_msg)
         int32_t gap = 0;
 
         if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap)) {
+            ESP_LOGE(TAG, "Calibration failed: timeout measuring gap (failing edge)");
+            result = HWError::Timeout;
             break;
         }
         if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap)) {
+            ESP_LOGE(TAG, "Calibration failed: timeout measuring gap (rising edge)");
+            result = HWError::Timeout;
             break;
         }
 
@@ -233,21 +260,21 @@ bool GateControl::AutoCalibrate(const char** error_msg)
         m_sghw_hal->PowerDownStepper();
         m_sghw_hal->PowerDownServo();
 
-        success = true;
+        result = VoidResult::success();
     } while(false);
 
-    if (!success) {
+    if (result.failed()) {
         // Cleanup on error
         m_sghw_hal->PowerDownStepper();
         LockClamp();
     }
 
-    return success;
+    return result;
 }
 
-bool GateControl::AutoHome(const char** error_msg)
+VoidResult GateControl::AutoHome()
 {
-    bool success = false;
+    VoidResult result = HWError::Timeout;
 
     do {
         m_sghw_hal->PowerUpStepper();
@@ -257,7 +284,8 @@ bool GateControl::AutoHome(const char** error_msg)
         const int32_t gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
         if (new_steps_per_rotation == 0 || gap == 0)
         {
-            if (error_msg) *error_msg = "Auto-calibration needs to be done";
+            ESP_LOGE(TAG, "Homing failed: calibration not done");
+            result = HWError::NotCalibrated;
             break;
         }
 
@@ -268,15 +296,21 @@ bool GateControl::AutoHome(const char** error_msg)
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
             if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr)) {
+                ESP_LOGE(TAG, "Homing failed: timeout exiting home zone");
+                result = HWError::Timeout;
                 break;
             }
             if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+                ESP_LOGE(TAG, "Homing failed: timeout re-entering home zone");
+                result = HWError::Timeout;
                 break;
             }
         }
         else {
             ESP_LOGI(TAG, "Homing using the slow algorithm");
             if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
+                ESP_LOGE(TAG, "Homing failed: timeout searching for home zone");
+                result = HWError::Timeout;
                 break;
             }
         }
@@ -298,22 +332,22 @@ bool GateControl::AutoHome(const char** error_msg)
         // Go into the other direction until it get out of the sensor
         m_sghw_hal->PowerDownStepper();
 
-        success = true;
+        result = VoidResult::success();
     } while(false);
 
-    if (!success) {
+    if (result.failed()) {
         LockClamp();
         // Go into the other direction until it get out of the sensor
         m_sghw_hal->PowerDownStepper();
     }
 
-    return success;
+    return result;
 }
 
-bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
+VoidResult GateControl::DialAddress(const SDialArg& dial_arg)
 {
     const int32_t new_steps_per_rotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
-    bool success = false;
+    VoidResult result = HWError::HardwareFailure;
     bool process_started = false;
 
     auto endOfProcess = [&](bool is_error) -> void
@@ -339,7 +373,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         }
 
         ESP_LOGI(TAG, "Confirm the home position");
-        AutoHome(nullptr);
+        AutoHome();
 
         m_sghw_hal->PowerDownStepper();
         LockClamp();
@@ -354,7 +388,8 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         process_started = true;
 
         if (!m_is_homing_done) {
-            if (error_msg) *error_msg = "Homing need to be done";
+            ESP_LOGE(TAG, "Dial failed: homing not done");
+            result = HWError::NotHomed;
             break;
         }
 
@@ -364,11 +399,14 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeIn);
         vTaskDelay(pdMS_TO_TICKS(750));
 
+        bool dial_loop_ok = true;
         // const EChevron chevrons[] = { EChevron::Chevron1, EChevron::Chevron2, EChevron::Chevron3, EChevron::Chevron4, EChevron::Chevron5, EChevron::Chevron6, EChevron::Chevron7_Master, EChevron::Chevron8, EChevron::Chevron9 };
         for(int32_t i = 0; i < dial_arg.gate_address.GetSymbolCount(); i++)
         {
             if (m_is_cancel_action) {
-                if (error_msg) *error_msg = "Cancelled by the user";
+                ESP_LOGW(TAG, "Dial cancelled by user at symbol %d", (int)i);
+                result = HWError::Cancelled;
+                dial_loop_ok = false;
                 break;
             }
 
@@ -385,6 +423,9 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
             SoundFX::getI().PlaySound(SoundFX::FileID::SGU_6_lggroll, true);
             vTaskDelay(pdMS_TO_TICKS(250));
             if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+                ESP_LOGE(TAG, "Dial failed: motor timeout at symbol %d", (int)i);
+                result = HWError::Timeout;
+                dial_loop_ok = false;
                 break;
             }
             SoundFX::getI().StopSound();
@@ -397,7 +438,10 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
             vTaskDelay(pdMS_TO_TICKS(2000));
         }
 
-        if (m_is_cancel_action) {
+        if (!dial_loop_ok || m_is_cancel_action) {
+            if (m_is_cancel_action && result.ok()) {
+                result = HWError::Cancelled;
+            }
             break;
         }
 
@@ -407,7 +451,7 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         wm.OpeningAnimation();
 
         const uint32_t start_ticks = xTaskGetTickCount();
-        while(!m_is_cancel_action) 
+        while(!m_is_cancel_action)
         {
             // 5 minutes
             if ( (xTaskGetTickCount() - start_ticks) > pdMS_TO_TICKS(5*60*1000) ) {
@@ -424,14 +468,14 @@ bool GateControl::DialAddress(const SDialArg& dial_arg, const char** error_msg)
         wm.ClosingAnimation();
         wm.End();
 
-        success = true;
+        result = VoidResult::success();
     } while(false);
 
     if (process_started) {
-        endOfProcess(!success);
+        endOfProcess(result.failed());
     }
 
-    return success;
+    return result;
 }
 
 
@@ -459,8 +503,10 @@ void GateControl::GetState(UIState& ui_state)
 {
     xSemaphoreTake(m_semaphore_handle, portMAX_DELAY);
     ui_state.cmd = m_curr_cmd.cmd;
+    ui_state.state = m_state_machine.getState();
     // Last error
     ui_state.has_last_error = m_is_in_error;
+    ui_state.last_error_code = m_last_error_code;
     strcpy(ui_state.last_error, m_errors);
 
     strcpy(ui_state.status_text, GetCmdText(m_curr_cmd.cmd));
