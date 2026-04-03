@@ -52,30 +52,38 @@ The web interface files (HTML, CSS, JavaScript, images) are embedded directly in
 
 ### Process
 
-The `embeddedgen.py` tool converts web assets into C arrays:
+The `embeddedgen.py` tool converts web assets into C arrays. It is invoked automatically by CMake at build time — no manual step needed.
+
+To run it manually:
 
 ```bash
 cd firmware/stargate-fw
-python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/WebServer"
+python3 ../tools/embeddedgen.py -i "./main-app/webserver-assets" -o "./main-app/WebServer" --compress-all
 ```
 
+The `--compress-all` flag gzip-compresses all text-based assets (HTML, CSS, JS, SVG, JSON, etc.) automatically. The HTTP server sets `Content-Encoding: gzip` when serving compressed files so browsers decompress them transparently.
+
 **Generated Files**:
-- `WebServer/EmbeddedFiles.c` - C array definitions with file contents
-- `WebServer/EmbeddedFiles.h` - Header with extern declarations
+- `WebServer/EmbeddedFiles.c` - C array definitions with file contents (may be gzip-compressed)
+- `WebServer/EmbeddedFiles.h` - Header with extern declarations and `EF_SFile` struct
 - `WebServer/EmbeddedFiles.bin` - Binary concatenation of all files
 - `WebServer/EmbeddedFiles.txt` - Text listing of all embedded files
+
+**`EF_SFile` struct fields**:
+- `filename` - relative path string
+- `length` - original (decompressed) file size in bytes
+- `compressed_length` - bytes sent over the wire (equals `length` when not compressed)
+- `flags` - `EF_EFLAGS_GZip` if compressed, `EF_EFLAGS_None` otherwise
+- `start_addr` - pointer into the `EF_g_blobs[]` array
 
 **When to Regenerate**:
 - After modifying any HTML, CSS, or JavaScript files
 - After adding/removing web assets
-- After updating glyph images or other resources
-- Before building firmware for deployment
+- CMake handles this automatically — a full build always regenerates if sources changed
 
 **Integration**:
-The `WebServer.cpp` uses these embedded files to serve HTTP requests without accessing external storage. Files are served directly from flash memory with appropriate MIME types.
+`WebServer.cpp` looks up files by path in `EF_g_files[]`, sets `Content-Encoding: gzip` if compressed, and sends exactly `compressed_length` bytes from `start_addr`.
 
 **Size Considerations**:
-- Embedded assets increase firmware binary size
-- Large images or assets should be optimized before embedding
-- Consider compression for text files (HTML, CSS, JS)
-- Monitor app partition size to avoid overflow
+- gzip compression reduces JS/CSS/HTML size by ~60–70%
+- Monitor app partition size; 1900 K OTA partitions leave comfortable headroom after compression

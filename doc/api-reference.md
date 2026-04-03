@@ -599,7 +599,37 @@ The following endpoints were documented previously but do **NOT** exist in the a
 - ❌ `/api/galaxy/list` (not implemented)
 - ❌ `/api/galaxy/addresses` (use galaxy-specific endpoints)
 - ❌ `/api/ota/status` (not implemented)
-- ❌ **WebSocket API** (`/ws`) - **NOT IMPLEMENTED**. Use polling of `/api/getstatus` instead.
+- ✅ **WebSocket API** (`/ws`) - **IMPLEMENTED**. See WebSocket section below.
+
+---
+
+## WebSocket API
+
+### WS /ws
+
+Real-time status subscription endpoint. Connect once and poll on demand instead of using repeated HTTP GETs.
+
+**URL**: `ws://<IP_ADDRESS>/ws`
+
+**Protocol**: Text frames only.
+
+#### Client → Server messages
+
+| Message     | Description                              |
+|-------------|------------------------------------------|
+| `get_status` | Request current status JSON (same payload as `GET /api/getstatus`) |
+
+#### Server → Client messages
+
+The server replies to `get_status` with a JSON text frame containing the same payload as `GET /api/getstatus`.
+
+**Example**:
+```
+→ get_status
+← {"status_text":"Idle","is_cancel_requested":false,"is_ring_connected":true,...}
+```
+
+The web interface polls at 4 Hz (250 ms interval) using this endpoint.
 
 ---
 
@@ -622,7 +652,7 @@ Most endpoints return HTTP status codes with JSON error messages on failure:
 ## API Usage Notes
 
 ### Polling Recommendations
-- **Status updates**: Poll `/api/getstatus` every 500ms during operations (web interface standard)
+- **Status updates**: Use the WebSocket (`/ws`) with `get_status` at 4 Hz (250 ms). Alternatively poll `GET /api/getstatus`.
 - **System info**: Poll `/api/getsysinfo` once on page load
 - **Ring connection**: Monitor `is_ring_connected` in status response
 
