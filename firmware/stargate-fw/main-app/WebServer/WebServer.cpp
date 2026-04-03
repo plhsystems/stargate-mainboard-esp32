@@ -5,6 +5,7 @@
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <algorithm>
 #include "esp_ota_ops.h"
 #include "cJSON.h"
 #include "../FWConfig.hpp"
@@ -47,6 +48,16 @@ WebServer::WebServer()
         /* Let's pass response string in user
         * context to demonstrate it's usage */
     m_http_ui.user_ctx  = nullptr;
+
+    // WebSocket
+    m_http_websocket.uri       = "/ws";
+    m_http_websocket.method    = HTTP_GET;
+    m_http_websocket.handler   = WebSocketHandler;
+    m_http_websocket.user_ctx  = nullptr;
+    m_http_websocket.is_websocket = true;
+
+    // Initialize WebSocket mutex
+    m_websocket_mutex = xSemaphoreCreateMutexStatic(&m_websocket_mutex_buffer);
 }
 
 void WebServer::Init(SGHW_HAL* sghw_hal)
@@ -70,6 +81,7 @@ void WebServer::Start()
         httpd_register_uri_handler(m_server, &m_http_ota_upload_post);
         httpd_register_uri_handler(m_server, &m_http_post_api);
         httpd_register_uri_handler(m_server, &m_http_get_api);
+        httpd_register_uri_handler(m_server, &m_http_websocket);
         httpd_register_uri_handler(m_server, &m_http_ui);
     }
 }
@@ -145,11 +157,12 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
     // Static files have 1h cache by default
     httpd_resp_set_hdr(req, "Cache-Control", "public, max-age=3600");
 
+    const uint32_t send_length = file->compressed_length;
     uint32_t index = 0;
 
-    while(index < file->length)
+    while(index < send_length)
     {
-        const uint32_t n = MISCMACRO_MIN(file->length - index, HTTPSERVER_BUFFERSIZE);
+        const uint32_t n = MISCMACRO_MIN(send_length - index, HTTPSERVER_BUFFERSIZE);
 
         if (n > 0) {
             /* Send the buffer contents as HTTP response m_buffers */
@@ -180,3 +193,108 @@ const EF_SFile* WebServer::GetFile(const char* filename)
     }
     return NULL;
 }
+
+// WebSocket handler
+esp_err_t WebServer::WebSocketHandler(httpd_req_t *req)
+{
+    if (HTTP_GET == req->method)
+    {
+        ESP_LOGI(TAG, "WebSocket handshake done, new connection opened");
+
+        // Add this client to our list
+        WebServer::getI().AddWebSocketClient(httpd_req_to_sockfd(req));
+        return ESP_OK;
+    }
+
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+
+    // First call to get frame length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ESP_OK != ret)
+    {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        return ret;
+    }
+
+    if (ws_pkt.len)
+    {
+        // Allocate buffer for frame payload
+        uint8_t *buf = (uint8_t*)calloc(1, ws_pkt.len + 1);
+        if (NULL == buf)
+        {
+            ESP_LOGE(TAG, "Failed to allocate memory for ws frame");
+            return ESP_ERR_NO_MEM;
+        }
+        ws_pkt.payload = buf;
+
+        // Receive the full frame
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ESP_OK != ret)
+        {
+            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            free(buf);
+            return ret;
+        }
+
+        // Handle close frame
+        if (HTTPD_WS_TYPE_CLOSE == ws_pkt.type)
+        {
+            ESP_LOGI(TAG, "WebSocket connection closed");
+            WebServer::getI().RemoveWebSocketClient(httpd_req_to_sockfd(req));
+            free(buf);
+            return ESP_OK;
+        }
+
+        // Handle text messages - respond with status
+        if (HTTPD_WS_TYPE_TEXT == ws_pkt.type)
+        {
+            ESP_LOGD(TAG, "Received WebSocket request: %s", ws_pkt.payload);
+
+            // Check if client is requesting status
+            if (0 == strncmp((char*)ws_pkt.payload, "get_status", 10))
+            {
+                // Get status and send it back
+                char* status_json = WebServer::getI().GetStatus();
+                if (NULL != status_json)
+                {
+                    httpd_ws_frame_t ws_resp;
+                    memset(&ws_resp, 0, sizeof(httpd_ws_frame_t));
+                    ws_resp.payload = (uint8_t*)status_json;
+                    ws_resp.len = strlen(status_json);
+                    ws_resp.type = HTTPD_WS_TYPE_TEXT;
+
+                    httpd_ws_send_frame(req, &ws_resp);
+                    free(status_json);
+                }
+            }
+        }
+
+        free(buf);
+    }
+
+    return ESP_OK;
+}
+
+// Add WebSocket client
+void WebServer::AddWebSocketClient(int fd)
+{
+    xSemaphoreTake(m_websocket_mutex, portMAX_DELAY);
+    m_websocket_clients.push_back(fd);
+    ESP_LOGI(TAG, "Added WebSocket client, fd=%d, total clients=%d", fd, (int)m_websocket_clients.size());
+    xSemaphoreGive(m_websocket_mutex);
+}
+
+// Remove WebSocket client
+void WebServer::RemoveWebSocketClient(int fd)
+{
+    xSemaphoreTake(m_websocket_mutex, portMAX_DELAY);
+    auto it = std::find(m_websocket_clients.begin(), m_websocket_clients.end(), fd);
+    if (m_websocket_clients.end() != it)
+    {
+        m_websocket_clients.erase(it);
+        ESP_LOGI(TAG, "Removed WebSocket client, fd=%d, remaining clients=%d", fd, (int)m_websocket_clients.size());
+    }
+    xSemaphoreGive(m_websocket_mutex);
+}
+

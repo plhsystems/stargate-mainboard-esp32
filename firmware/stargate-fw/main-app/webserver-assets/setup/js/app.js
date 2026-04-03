@@ -18,13 +18,19 @@ let currentData =
   selectedWormholeTypeID: null
 };
 
+// WebSocket connection
+let ws = null;
+let wsReconnectTimeout = null;
+let wsPollInterval = null;
+
 var currentApp = new Vue({
   el: '#app',
   data: currentData,
   mounted: function () {
     this.$nextTick(function () {
       console.log("page is fully loaded");
-      setTimeout(timerHandler, 500);
+      // Start WebSocket connection instead of polling
+      connectWebSocket();
 
       // Get system information
       console.log("loading system info");
@@ -79,26 +85,80 @@ var currentApp = new Vue({
   }
 })
 
-async function timerHandler() {
+function connectWebSocket() {
+  // Clear any existing reconnect timeout
+  if (wsReconnectTimeout) {
+    clearTimeout(wsReconnectTimeout);
+    wsReconnectTimeout = null;
+  }
 
-  // Get system informations
-  await fetch(apiControlURLs.get_status)
-      .then((response) => {
-          if (!response.ok) {
-              throw new Error('Unable to get status');
-          }
-          return response.json();
-      })
-      .then((data) =>
-      {
-        currentData.status = data;
+  // Clear any existing poll interval
+  if (wsPollInterval) {
+    clearInterval(wsPollInterval);
+    wsPollInterval = null;
+  }
+
+  // Determine WebSocket URL (ws:// or wss:// based on current protocol)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+  console.log('Connecting to WebSocket:', wsUrl);
+
+  try {
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = function(event) {
+      console.log('WebSocket connected');
+      currentData.is_connected = true;
+
+      // Start polling for status updates over WebSocket
+      // Send first request immediately
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send('get_status');
+      }
+
+      // Then poll every 250ms (4 Hz)
+      wsPollInterval = setInterval(function() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send('get_status');
+        }
+      }, 250);
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        // Update status with received data
+        currentData.status = data.status;
         currentData.is_connected = true;
-        setTimeout(timerHandler, 500);
-      })
-      .catch((ex) =>
-      {
-          setTimeout(timerHandler, 5000);
-          currentData.is_connected = false;
-          console.error('getstatus', ex);
-      });
+      } catch (ex) {
+        console.error('Failed to parse WebSocket message:', ex);
+      }
+    };
+
+    ws.onerror = function(error) {
+      console.error('WebSocket error:', error);
+      currentData.is_connected = false;
+    };
+
+    ws.onclose = function(event) {
+      console.log('WebSocket closed, reconnecting in 5 seconds...');
+      currentData.is_connected = false;
+      ws = null;
+
+      // Stop polling
+      if (wsPollInterval) {
+        clearInterval(wsPollInterval);
+        wsPollInterval = null;
+      }
+
+      // Attempt to reconnect after 5 seconds
+      wsReconnectTimeout = setTimeout(connectWebSocket, 5000);
+    };
+  } catch (ex) {
+    console.error('Failed to create WebSocket:', ex);
+    currentData.is_connected = false;
+    // Retry connection after 5 seconds
+    wsReconnectTimeout = setTimeout(connectWebSocket, 5000);
+  }
 }
