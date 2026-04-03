@@ -138,16 +138,16 @@ void RingBLEClient::SendGotoFactory()
     UnlockMutex();
 }
 
-bool RingBLEClient::WriteCharacteristic(const uint8_t* data, uint16_t len)
+SGResult RingBLEClient::WriteCharacteristic(const uint8_t* data, uint16_t len)
 {
     if (!m_char_discovered) {
         ESP_LOGE(TAG, "Characteristic not discovered, cannot write");
-        return false;
+        return SGResult::BLE_CharNotDiscovered;
     }
 
     if (!m_is_connected) {
         ESP_LOGE(TAG, "Not connected, cannot write");
-        return false;
+        return SGResult::BLE_NotConnected;
     }
 
     // Log the data being sent for debugging
@@ -159,11 +159,11 @@ bool RingBLEClient::WriteCharacteristic(const uint8_t* data, uint16_t len)
                                    data, len, NULL, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to write characteristic: rc=%d (0x%x)", rc, rc);
-        return false;
+        return SGResult::BLE_WriteFailed;
     }
 
     ESP_LOGD(TAG, "Write initiated successfully");
-    return true;
+    return SGResult::OK;
 }
 
 int OnDiscoveryComplete(uint16_t conn_handle,

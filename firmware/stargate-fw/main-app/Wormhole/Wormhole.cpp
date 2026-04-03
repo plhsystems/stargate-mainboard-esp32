@@ -44,7 +44,7 @@ void Wormhole::OpeningAnimation()
     Illuminatring(ERing::Ring0, EDir::FadeIn);
 }
 
-bool Wormhole::RunTicks()
+SGResult Wormhole::RunTicks()
 {
     const float minF = 0.30f;
     const float maxF = 1.00f;
@@ -96,13 +96,13 @@ bool Wormhole::RunTicks()
     if (!m_hal->RefreshWHPixels())
     {
         ESP_LOGW(TAG, "Error during refresh, may be caused by power instability");
-        return false;
+        return SGResult::Wormhole_PowerInstability;
     }
 
     // 25 HZ
     vTaskDelay(pdMS_TO_TICKS(40));
 
-    return true;
+    return SGResult::OK;
 }
 
 void Wormhole::ClosingAnimation()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../HW/SGHW_HAL.hpp"
+#include "../SGResult.hpp"
 
 class Wormhole
 {
@@ -51,7 +52,7 @@ class Wormhole
 
     void Begin();
     void OpeningAnimation();
-    bool RunTicks();
+    SGResult RunTicks();
     void ClosingAnimation();
     void End();
 
