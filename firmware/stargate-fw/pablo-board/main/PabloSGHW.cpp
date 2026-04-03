@@ -2,9 +2,7 @@
 #include "led_strip.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "driver/mcpwm.h"
-#include "soc/mcpwm_periph.h"
-#include "driver/ledc.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 PabloSGHW::PabloSGHW()
@@ -15,7 +13,7 @@ PabloSGHW::PabloSGHW()
 
 void PabloSGHW::Init()
 {
-    m_xMutexHandle = xSemaphoreCreateMutexStatic( &m_xMutexBuffer );
+    m_mutex_handle = xSemaphoreCreateMutexStatic(&m_mutex_buffer);
      // TODO: Implements
 }
 

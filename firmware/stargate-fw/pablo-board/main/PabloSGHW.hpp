@@ -3,8 +3,8 @@
 #include <cstdint>
 #include "HW/SGHW_HAL.hpp"
 #include "led_strip.h"
-#include "freertos/semphr.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 class PabloSGHW : public SGHW_HAL
 {
@@ -38,15 +38,21 @@ class PabloSGHW : public SGHW_HAL
     bool GetIsHomeSensorActive() override;
 
     private:
-    bool LockMutex() { return (pdTRUE == xSemaphoreTake( m_xMutexHandle, ( TickType_t ) pdMS_TO_TICKS(100) )); }
-    void UnlockMutex() { xSemaphoreGive( m_xMutexHandle ); }
+    bool LockMutex()
+    {
+        return (pdTRUE == xSemaphoreTake(m_mutex_handle, (TickType_t)pdMS_TO_TICKS(100)));
+    }
+    void UnlockMutex()
+    {
+        xSemaphoreGive(m_mutex_handle);
+    }
 
     private:
-    led_strip_handle_t led_strip;
+    led_strip_handle_t m_led_strip;
 
     double m_last_servo_position;
 
     // Mutex
-    StaticSemaphore_t m_xMutexBuffer; // Define the buffer for the mutex's data structure
-    SemaphoreHandle_t m_xMutexHandle; // Declare a handle for the mutex
+    StaticSemaphore_t m_mutex_buffer;
+    SemaphoreHandle_t m_mutex_handle;
 };

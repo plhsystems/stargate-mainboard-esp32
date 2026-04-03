@@ -6,6 +6,10 @@
 #include "APIURL.hpp"
 #include "./Gate/BaseGate.hpp"
 #include "HW/SGHW_HAL.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include <vector>
 
 class WebServer
 {
@@ -37,6 +41,7 @@ class WebServer
     static esp_err_t WebAPIGetHandler(httpd_req_t *req);
     static esp_err_t WebAPIPostHandler(httpd_req_t *req);
     static esp_err_t GateControlAPIPostHandler(httpd_req_t *req);
+    static esp_err_t WebSocketHandler(httpd_req_t *req);
 
     // Get API
     char* GetStatus();
@@ -50,6 +55,10 @@ class WebServer
     static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filename);
 
     static const EF_SFile* GetFile(const char* filename);
+
+    // WebSocket management
+    void AddWebSocketClient(int fd);
+    void RemoveWebSocketClient(int fd);
 
     // Variable
     httpd_handle_t m_server;
@@ -65,5 +74,11 @@ class WebServer
     // httpd_uri_t m_gate_control_api_post;
 
     httpd_uri_t m_http_ota_upload_post;
+    httpd_uri_t m_http_websocket;
+
+    // WebSocket clients
+    std::vector<int> m_websocket_clients;
+    SemaphoreHandle_t m_websocket_mutex;
+    StaticSemaphore_t m_websocket_mutex_buffer;
 };
 

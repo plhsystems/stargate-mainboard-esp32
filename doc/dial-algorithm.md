@@ -98,7 +98,7 @@ bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms);
 
 ### Dial Sequence Error Propagation
 
-The dial address sequence checks each movement for success:
+`DialAddress()` returns `SGResult`. Each movement is checked individually:
 
 ```cpp
 // Calculate movement for symbol
@@ -108,11 +108,18 @@ const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks,
 
 // Move stepper with error checking
 if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+    result = SGResult::Timeout;
     break;  // Abort dial sequence immediately
 }
 
+// If cancelled mid-sequence
+if (m_is_cancel_action) {
+    result = SGResult::Cancelled;
+    break;
+}
+
 // If successful, continue with chevron lock and BLE command
-vTaskDelay(pdMS_TO_TICKS(500));
+vTaskDelay(pdMS_TO_TICKS(1000));
 RingBLEClient::getI().SendLightUpSymbol(symbol);
 ```
 
@@ -149,11 +156,11 @@ The real implementation in GateControl.cpp uses angular position calculation:
 
 ```cpp
 // Convert symbol to LED index, then to angle
-const int32_t led_index = m_gate->SymbolToLedIndex(symbol);
-const float angle = m_gate->LEDIndexToDeg(led_index);
+const int32_t led_index = SGURingNS::SymbolToLedIndex(symbol);
+const double angle = SGURingNS::LEDIndexToDeg(led_index);
 
 // Convert angle to stepper ticks
-const int32_t symbol_to_ticks = -(angle/360.0) * new_steps_per_rotation;
+const int32_t symbol_to_ticks = -1 * (angle / 360.0) * new_steps_per_rotation;
 
 // Calculate shortest circular distance
 const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks,

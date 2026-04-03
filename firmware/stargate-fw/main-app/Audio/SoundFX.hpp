@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "../HW/SGHW_HAL.hpp"
+#include "../SGResult.hpp"
 
 
 class SoundFX
@@ -45,7 +46,7 @@ class SoundFX
     void Init(SGHW_HAL* p_sghw_hal);
     void Start();
 
-    bool PlaySound(FileID soundFile, bool repeat);
+    SGResult PlaySound(FileID soundFile, bool repeat);
     void StopSound();
 
     const SoundFile* GetFile(SoundFX::FileID file)

@@ -111,6 +111,6 @@ class Settings
         [(int)Settings::Entry::GateGalaxy] =              NVSJSON_INITINT32_RNG("Gate.Gal",        "Galaxy type -1: None, 0: Milky-way, 1: Pegasus, 2: Universe",      -1,   -1, (int32_t)GateGalaxy::Count-1, NVSJSON_EFLAGS_None),
     };
     NVSJSON_SHandle m_setting_handle;
-    const NVSJSON_SConfig m_setting_config = { .partition_name = "nvs", .setting_entries = m_config_entries, .setting_entry_count = (uint32_t)Settings::Entry::Count };
+    const NVSJSON_SConfig m_setting_config = { .szPartitionName = "nvs", .pSettingEntries = m_config_entries, .u32SettingEntryCount = (uint32_t)Settings::Entry::Count };
 };
 

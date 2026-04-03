@@ -15,8 +15,8 @@
 #include "../Settings.hpp"
 #include "../Wormhole/Wormhole.hpp"
 #include "../HW/SGHW_HAL.hpp"
-#include "../Core/Result.hpp"
 #include "../Core/StateMachine.hpp"
+#include "../SGResult.hpp"
 
 class GateControl
 {
@@ -48,7 +48,7 @@ class GateControl
         char status_text[ERROR_LEN+1];
 
         bool has_last_error;
-        HWError last_error_code;  // Typed error code
+        SGResult last_error_code;
         char last_error[ERROR_LEN+1];
 
         bool is_cancel_requested;
@@ -85,7 +85,7 @@ class GateControl
     GateControl(GateControl const&) = delete;
     void operator=(GateControl const&) = delete;
 
-    void Init(SGHW_HAL* p_sghw_hal);
+    void Init(SGHW_HAL* sghw_hal);
 
     void StartTask();
 
@@ -107,16 +107,16 @@ class GateControl
     private:
     void PriQueueAction(SCmd cmd);
 
-    VoidResult AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
-    VoidResult AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
-    VoidResult DialAddress(const SDialArg& dial_arg);
+    SGResult AutoCalibrate();   /*!< @brief This procedure will find how many step are necessary to complete a full ring rotation. */
+    SGResult AutoHome();        /*!< @brief Do the homing sequence, it will spin until it find it's home position. */
+    SGResult DialAddress(const SDialArg& dial_arg);
 
     void AnimRampLight(bool is_active);
 
     void LockClamp();
     void ReleaseClamp();
     private:
-    static void TaskRunning(void* p_arg);
+    static void TaskRunning(void* arg);
 
     TaskHandle_t m_gate_control_handle;
 
@@ -132,7 +132,7 @@ class GateControl
     // Error management
     char m_errors[ERROR_LEN+1] = {0};
     bool m_is_in_error;
-    HWError m_last_error_code = HWError::Ok;
+    SGResult m_last_error_code = SGResult::OK;
 
     // State machine
     GateStateMachine m_state_machine;
