@@ -1,7 +1,5 @@
 favicon.ico
 setup/index.html
-setup/settings.html
-setup/js/settings.js
 setup/js/app.js
 common/js/vue.min.js
 common/js/apiurl.js
