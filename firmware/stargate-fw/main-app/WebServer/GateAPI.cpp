@@ -7,11 +7,13 @@
 
 char* WebServer::GetGalaxyInfoJSON(GateGalaxy gate_galaxy)
 {
-    cJSON* root = NULL;
+    cJSON* root = nullptr;
     {
         root = cJSON_CreateObject();
-        if (root == NULL)
+        if (nullptr == root)
+        {
             goto ERROR;
+        }
 
         BaseGate& bg = GateFactory::Get(gate_galaxy);
         // TODO: Add a cache expiration value
@@ -42,7 +44,8 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy gate_galaxy)
             cJSON_AddItemToObject(new_file, "name", cJSON_CreateString(gate_addr.GetName()));
             // Address
             cJSON* address_entries = cJSON_AddArrayToObject(new_file, "address");
-            for(int i = 0; i < gate_addr.GetSymbolCount(); i++) {
+            for(int i = 0; i < gate_addr.GetSymbolCount(); i++)
+            {
                 const uint8_t symbol_num = gate_addr.GetSymbol(i);
                 cJSON_AddItemToArray(address_entries, cJSON_CreateNumber(symbol_num));
             }
@@ -51,7 +54,8 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy gate_galaxy)
 
         // ------------------------------
         // Ring (animations)
-        if (GateGalaxy::Universe == gate_galaxy) {
+        if (GateGalaxy::Universe == gate_galaxy)
+        {
             // There is no possible ring animation on other gates
             cJSON* ring_animation_entries = cJSON_AddArrayToObject(root, "ring_animations");
             for(int i = 0; i < (int)SGUCommNS::EChevronAnimation::Count; i++)
@@ -82,5 +86,5 @@ char* WebServer::GetGalaxyInfoJSON(GateGalaxy gate_galaxy)
     }
     ERROR:
     cJSON_Delete(root);
-    return NULL;
+    return nullptr;
 }

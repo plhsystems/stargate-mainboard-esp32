@@ -14,7 +14,8 @@ Wormhole::Wormhole(SGHW_HAL* hal, EType wormhole_type) :
 {
     m_max_brightness = Settings::getI().GetValueInt32(Settings::Entry::WormholeMaxLight);
 
-    for(int i = 0; i < LEDEFFECT_COUNT; i++) {
+    for(int i = 0; i < LEDEFFECT_COUNT; i++)
+    {
         SLedEffect* led_effect = &m_led_effects[i];
 
         led_effect->is_up = false;
@@ -46,15 +47,17 @@ void Wormhole::OpeningAnimation()
 
 SGResult Wormhole::RunTicks()
 {
-    const float minF = 0.30f;
-    const float maxF = 1.00f;
+    const float min_f = 0.30f;
+    const float max_f = 1.00f;
 
-    if (!m_is_run_initialized) {
+    if (!m_is_run_initialized)
+    {
         // Random initialization
-        for(int i = 0; i < m_hal->GetWHPixelCount(); i++) {
+        for(int i = 0; i < m_hal->GetWHPixelCount(); i++)
+        {
             SLedEffect* led_effect = &m_led_effects[i];
-            led_effect->one = minF + (((esp_random() % 100) * 0.01f) * (maxF - minF));
-            led_effect->is_up = (esp_random() % 2) != 0;
+            led_effect->one = min_f + (((esp_random() % 100) * 0.01f) * (max_f - min_f));
+            led_effect->is_up = 0 != (esp_random() % 2);
         }
         m_is_run_initialized = true;
     }
@@ -67,12 +70,14 @@ SGResult Wormhole::RunTicks()
 
         led_effect->one += inc * (led_effect->is_up ? 1.0f : -1.0f);
 
-        if (led_effect->one >= maxF) {
-            led_effect->one = maxF;
+        if (led_effect->one >= max_f)
+        {
+            led_effect->one = max_f;
             led_effect->is_up = false;
         }
-        else if (led_effect->one <= minF) {
-            led_effect->one = minF;
+        else if (led_effect->one <= min_f)
+        {
+            led_effect->one = min_f;
             led_effect->is_up = true;
         }
 
@@ -85,10 +90,12 @@ SGResult Wormhole::RunTicks()
 
         const uint8_t pwm = (uint8_t)(corr_value*m_max_brightness);
 
-        if (m_wormhole_type == EType::NormalSG1) {
+        if (EType::NormalSG1 == m_wormhole_type)
+        {
             m_hal->SetWHPixel(i, MISCMACRO_MAX(pwm, 16), MISCMACRO_MAX(pwm, 16), MISCMACRO_MIN(16+pwm, m_max_brightness-16));
         }
-        else if (m_wormhole_type == EType::NormalSGU) {
+        else if (EType::NormalSGU == m_wormhole_type)
+        {
             m_hal->SetWHPixel(i, pwm, pwm, pwm);
         }
     }
@@ -121,19 +128,19 @@ void Wormhole::End()
     ClearAll();
 }
 
-Wormhole::ERing Wormhole::GetRing(int zeroBasedIndex)
+Wormhole::ERing Wormhole::GetRing(int zero_based_index)
 {
     for(int j = 0; j < sizeof(m_ring0_one_based)/sizeof(m_ring0_one_based[0]); j++)
-        if (m_ring0_one_based[j]-1 == zeroBasedIndex)
+        if (m_ring0_one_based[j]-1 == zero_based_index)
             return Wormhole::ERing::Ring0;
     for(int j = 0; j < sizeof(m_ring1_one_based)/sizeof(m_ring1_one_based[0]); j++)
-        if (m_ring1_one_based[j]-1 == zeroBasedIndex)
+        if (m_ring1_one_based[j]-1 == zero_based_index)
             return Wormhole::ERing::Ring1;
     for(int j = 0; j < sizeof(m_ring2_one_based)/sizeof(m_ring2_one_based[0]); j++)
-        if (m_ring2_one_based[j]-1 == zeroBasedIndex)
+        if (m_ring2_one_based[j]-1 == zero_based_index)
             return Wormhole::ERing::Ring2;
     for(int j = 0; j < sizeof(m_ring3_one_based)/sizeof(m_ring3_one_based[0]); j++)
-        if (m_ring3_one_based[j]-1 == zeroBasedIndex)
+        if (m_ring3_one_based[j]-1 == zero_based_index)
             return Wormhole::ERing::Ring3;
     return Wormhole::ERing::Ring0;
 }
@@ -146,11 +153,12 @@ void Wormhole::ClearAll()
 
 void Wormhole::Illuminatring(Wormhole::ERing ring, Wormhole::EDir dir)
 {
-    for(int32_t s32 = 0; s32 <= 100; s32 += 10)
+    for(int32_t step = 0; step <= 100; step += 10)
     {
-        const float brig = ((dir == Wormhole::EDir::FadeOut) ? (100-s32) : s32) * 0.01f;
+        const float brig = ((Wormhole::EDir::FadeOut == dir) ? (100-step) : step) * 0.01f;
         const SRingEntry* ring_entries = &m_ring_entries[(int)ring];
-        for(int i = 0; i < ring_entries->ring_count; i++) {
+        for(int i = 0; i < ring_entries->ring_count; i++)
+        {
             m_hal->SetWHPixel(ring_entries->ring[i]-1, (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig), (uint8_t)(m_max_brightness * brig));
         }
         m_hal->RefreshWHPixels();

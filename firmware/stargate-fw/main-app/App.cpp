@@ -15,9 +15,10 @@ void App::Init(Config* config)
     m_config = config;
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
+    if (ESP_ERR_NVS_NO_FREE_PAGES == ret || ESP_ERR_NVS_NEW_VERSION_FOUND == ret)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
     }
 
     ESP_ERROR_CHECK(esp_netif_init());
@@ -58,7 +59,7 @@ void App::Init(Config* config)
     HttpClient::getI().Start();
 
     // For debug purpose ...
-    char* all_task = (char*)malloc(4096);
+    char* const all_task = (char*)malloc(4096);
     vTaskList(all_task);
     ESP_LOGI(TAG, "vTaskList: \r\n\r\n%s", all_task);
     free(all_task);

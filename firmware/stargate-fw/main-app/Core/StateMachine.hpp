@@ -49,7 +49,7 @@ enum class GateEvent : uint8_t
 /**
  * @brief Get human-readable string for a state
  */
-inline const char* GateStateToString(GateState state)
+inline const char* gateStateToString(GateState state)
 {
     switch (state)
     {
@@ -68,7 +68,7 @@ inline const char* GateStateToString(GateState state)
 /**
  * @brief Get human-readable string for an event
  */
-inline const char* GateEventToString(GateEvent event)
+inline const char* gateEventToString(GateEvent event)
 {
     switch (event)
     {
@@ -116,19 +116,19 @@ public:
     {
         GateState new_state = getNextState(m_current_state, event);
 
-        if (new_state == m_current_state && !isValidSelfTransition(event))
+        if (m_current_state == new_state && !isValidSelfTransition(event))
         {
             // Invalid transition
             ESP_LOGW("StateMachine", "Invalid transition: %s + %s",
-                     GateStateToString(m_current_state),
-                     GateEventToString(event));
+                     gateStateToString(m_current_state),
+                     gateEventToString(event));
             return false;
         }
 
         ESP_LOGI("StateMachine", "Transition: %s -> %s (event: %s)",
-                 GateStateToString(m_current_state),
-                 GateStateToString(new_state),
-                 GateEventToString(event));
+                 gateStateToString(m_current_state),
+                 gateStateToString(new_state),
+                 gateEventToString(event));
 
         m_current_state = new_state;
         return true;
@@ -142,20 +142,20 @@ public:
     /**
      * @brief Check if currently in idle state
      */
-    bool isIdle() const { return m_current_state == GateState::Idle; }
+    bool isIdle() const { return GateState::Idle == m_current_state; }
 
     /**
      * @brief Check if currently in error state
      */
-    bool isError() const { return m_current_state == GateState::Error; }
+    bool isError() const { return GateState::Error == m_current_state; }
 
     /**
      * @brief Check if a wormhole is currently active
      */
     bool isWormholeActive() const
     {
-        return m_current_state == GateState::WormholeOpen ||
-               m_current_state == GateState::ManualWormhole;
+        return GateState::WormholeOpen == m_current_state ||
+               GateState::ManualWormhole == m_current_state;
     }
 
     /**
@@ -163,8 +163,8 @@ public:
      */
     bool isBusy() const
     {
-        return m_current_state != GateState::Idle &&
-               m_current_state != GateState::Error;
+        return GateState::Idle != m_current_state &&
+               GateState::Error != m_current_state;
     }
 
     /**
@@ -172,7 +172,7 @@ public:
      */
     void forceState(GateState state)
     {
-        ESP_LOGW("StateMachine", "Forcing state to: %s", GateStateToString(state));
+        ESP_LOGW("StateMachine", "Forcing state to: %s", gateStateToString(state));
         m_current_state = state;
     }
 
@@ -235,7 +235,7 @@ private:
 
         for (size_t i = 0; i < sizeof(transitions) / sizeof(transitions[0]); ++i)
         {
-            if (transitions[i].from == current && transitions[i].event == event)
+            if (current == transitions[i].from && event == transitions[i].event)
             {
                 return transitions[i].to;
             }
@@ -252,6 +252,6 @@ private:
     {
         // Some events are valid even if they don't cause a state change
         // (e.g., CmdAbort when already aborting)
-        return event == GateEvent::CmdAbort;
+        return GateEvent::CmdAbort == event;
     }
 };

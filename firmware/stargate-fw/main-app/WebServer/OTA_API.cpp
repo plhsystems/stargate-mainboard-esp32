@@ -4,15 +4,15 @@
 
 #define TAG "OTA_API"
 
-esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
+esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t* req)
 {
     {
     ESP_LOGI(TAG, "OTAUploadPostHandler / uri: %s", req->uri);
 
-    const esp_partition_t *configured = esp_ota_get_boot_partition();
-    const esp_partition_t *running = esp_ota_get_running_partition();
+    const esp_partition_t* configured = esp_ota_get_boot_partition();
+    const esp_partition_t* running = esp_ota_get_running_partition();
 
-    if (configured != running)
+    if (running != configured)
     {
         ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x",
             (int)configured->address, (int)running->address);
@@ -22,8 +22,8 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
     ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
             (int)running->type, (int)running->subtype, (int)running->address);
 
-    const esp_partition_t* update_partition = esp_ota_get_next_update_partition(NULL);
-    assert(update_partition != NULL);
+    const esp_partition_t* update_partition = esp_ota_get_next_update_partition(nullptr);
+    assert(nullptr != update_partition);
     ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
             (int)update_partition->subtype, (int)update_partition->address);
 
@@ -31,7 +31,7 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
 
     esp_err_t err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
     err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
-    if (err != ESP_OK)
+    if (ESP_OK != err)
     {
         ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
         esp_ota_abort(update_handle);
@@ -46,7 +46,7 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
         ESP_LOGI(TAG, "OTAUploadPostHandler / receiving: %d bytes", (int)n);
 
         err = esp_ota_write( update_handle, (const void *)getI().m_buffers, n);
-        if (err != ESP_OK)
+        if (ESP_OK != err)
         {
             esp_ota_abort(update_handle);
             goto ERROR;
@@ -58,11 +58,14 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
     }
 
     err = esp_ota_end(update_handle);
-    if (err != ESP_OK)
+    if (ESP_OK != err)
     {
-        if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
+        if (ESP_ERR_OTA_VALIDATE_FAILED == err)
+        {
             ESP_LOGE(TAG, "Image validation failed, image is corrupted");
-        } else {
+        }
+        else
+        {
             ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
         }
 
@@ -71,7 +74,7 @@ esp_err_t WebServer::OTAUploadPostHandler(httpd_req_t *req)
     }
 
     err = esp_ota_set_boot_partition(update_partition);
-    if (err != ESP_OK)
+    if (ESP_OK != err)
     {
         ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
         goto ERROR;

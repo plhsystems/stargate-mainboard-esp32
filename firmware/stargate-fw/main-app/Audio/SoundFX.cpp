@@ -8,9 +8,9 @@ SoundFX::SoundFX()
 {
 }
 
-void SoundFX::Init(SGHW_HAL* p_sghw_hal)
+void SoundFX::Init(SGHW_HAL* sghw_hal)
 {
-    m_sghw_hal = p_sghw_hal;
+    m_sghw_hal = sghw_hal;
 }
 
 void SoundFX::Start()
@@ -20,11 +20,12 @@ void SoundFX::Start()
 
 SGResult SoundFX::PlaySound(FileID sound_file, bool repeat)
 {
-    const SoundFile* p_sound_file = GetFile(sound_file);
-    if (nullptr == p_sound_file) {
+    const SoundFile* sound_file_entry = GetFile(sound_file);
+    if (nullptr == sound_file_entry)
+    {
         return SGResult::Sound_InvalidFileID;
     }
-    ESP_LOGI(TAG, "TODO: Play sound file, name: %s", p_sound_file->name);
+    ESP_LOGI(TAG, "TODO: Play sound file, name: %s", sound_file_entry->name);
 
     char buffers[64];
     // GetValueInt32(&g_sSettingHandle, SETTINGS_EENTRY_Mp3PlayerVolume)
@@ -35,9 +36,13 @@ SGResult SoundFX::PlaySound(FileID sound_file, bool repeat)
 
     // Play once
     if (repeat)
+    {
         m_sghw_hal->SendMp3PlayerCMD("AT+PLAYMODE=1\r\n");
+    }
     else
+    {
         m_sghw_hal->SendMp3PlayerCMD("AT+PLAYMODE=3\r\n");
+    }
     vTaskDelay(pdMS_TO_TICKS(25));  // Not sure how long it needs to take the command but it doesn't like being spammed
 
     // Play number

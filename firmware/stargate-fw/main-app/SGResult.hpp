@@ -51,7 +51,7 @@ inline const char* const SGRESULT_TEXTS[] = {
 static_assert( std::size(SGRESULT_TEXTS) == static_cast<size_t>(SGResult::Count), "SGResultText array size must match SGResult enum count");
 
 // Helper function to get text for an enum value
-inline const char* GetSGResultText(SGResult result)
+inline const char* getSGResultText(SGResult result)
 {
     return SGRESULT_TEXTS[static_cast<size_t>(result)];
 }
