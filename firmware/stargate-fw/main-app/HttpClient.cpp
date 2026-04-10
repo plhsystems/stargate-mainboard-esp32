@@ -1,4 +1,5 @@
 #include "HttpClient.hpp"
+#include <cstring>
 #include "esp_tls.h"
 #include "esp_tls_errors.h"
 #include "esp_crt_bundle.h"
@@ -22,16 +23,18 @@ void HttpClient::Init()
 
 void HttpClient::Start()
 {
-	if (xTaskCreatePinnedToCore(TaskRunning, "HttpClient", FWCONFIG_HTTPCLIENT_STACKSIZE, (void*)this, FWCONFIG_HTTPCLIENT_PRIORITY_DEFAULT, &m_task_http_client_handle, FWCONFIG_HTTPCLIENT_COREID) != pdPASS )
-	{
-		ESP_ERROR_CHECK(ESP_FAIL);
-	}
+    return; // Disable for now, as the API is not yet ready and we don't want to spam the server with failed requests.
+    if (pdPASS != xTaskCreatePinnedToCore(TaskRunning, "HttpClient", FWCONFIG_HTTPCLIENT_STACKSIZE, (void*)this, FWCONFIG_HTTPCLIENT_PRIORITY_DEFAULT, &m_task_http_client_handle, FWCONFIG_HTTPCLIENT_COREID))
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
 }
 
 std::shared_ptr<char[]> HttpClient::GetFanGateListString()
 {
     std::shared_ptr<char[]> result;
-    if (xSemaphoreTake(m_fanGate_mutex, portMAX_DELAY) == pdTRUE) {
+    if (pdTRUE == xSemaphoreTake(m_fanGate_mutex, portMAX_DELAY))
+    {
         result = m_fanGate;  // Safe copy
         xSemaphoreGive(m_fanGate_mutex);
     }
@@ -46,13 +49,13 @@ void HttpClient::TaskRunning(void* arg)
 
     while(true)
     {
-        esp_http_client_handle_t h = NULL;
+        esp_http_client_handle_t h = nullptr;
         bool error = false;
-        std::shared_ptr<char[]> sptr_buffer;
+        std::shared_ptr<char[]> buffer;
 
         do {
             // Check if Wi-Fi is connected before attempting HTTP request
-            if (WifiMgr::getI().GetWifiSTAState() != WifiMgr::EState::Connected)
+            if (WifiMgr::EState::Connected != WifiMgr::getI().GetWifiSTAState())
             {
                 ESP_LOGW(TAG, "Wi-Fi not connected, skipping HTTP request");
                 error = true;
@@ -80,10 +83,16 @@ void HttpClient::TaskRunning(void* arg)
             };
 
             h = esp_http_client_init(&config);
+            if (nullptr == h)
+            {
+                ESP_LOGE(TAG, "esp_http_client_init failed (out of memory?)");
+                error = true;
+                break;
+            }
 
             ESP_LOGD(TAG, "HTTP connection in progress ... url: %s", config.url);
-            esp_err_t err;
-            if (ESP_OK != (err = esp_http_client_open(h, 0)))
+            const esp_err_t err = esp_http_client_open(h, 0);
+            if (ESP_OK != err)
             {
                 ESP_LOGE(TAG, "Unable to open HTTP client connection, returned: %d, text: %s", err, esp_err_to_name(err));
                 error = true;
@@ -92,42 +101,52 @@ void HttpClient::TaskRunning(void* arg)
             ESP_LOGI(TAG, "HTTP connection succeeded! ");
 
             esp_http_client_fetch_headers(h);
-            const int statusCode = esp_http_client_get_status_code(h);
-            if (statusCode != 200)
+            const int status_code = esp_http_client_get_status_code(h);
+            if (200 != status_code)
             {
-                ESP_LOGE(TAG, "HTTP server didn't return 200, it returned: %d", statusCode);
+                ESP_LOGE(TAG, "HTTP server didn't return 200, it returned: %d", status_code);
                 error = true;
                 break;
             }
 
-            const int len = esp_http_client_get_content_length(h);
-
-            sptr_buffer = std::make_shared<char[]>(len+1);
-            char* buffers = sptr_buffer.get();
-
+            // Read body in chunks into a static buffer to avoid heap fragmentation.
+            // Content-Length may be -1 for chunked transfer-encoded responses.
+            static constexpr int READ_CHUNK = 512;
+            static constexpr int MAX_SIZE   = 32768;
+            static char s_read_buf[MAX_SIZE + 1];
             int offset = 0;
-            while(offset < len)
+
+            while(offset < MAX_SIZE)
             {
-                int n = esp_http_client_read(h, (char*)buffers + offset, len);
-                if (n < 0) {
+                const int n = esp_http_client_read(h, s_read_buf + offset, READ_CHUNK);
+                if (0 > n)
+                {
                     ESP_LOGE(TAG, "HTTP Read error, it returned: %d", n);
                     error = true;
                     break;
                 }
+                if (0 == n)
+                {
+                    break;  // EOF
+                }
                 offset += n;
             }
 
-            if (error) {
+            if (error)
+            {
                 break;
             }
 
-            buffers[offset] = 0;
-            ESP_LOGI(TAG, "URL: %s, size: %d / %d", url, offset, len);
+            s_read_buf[offset] = '\0';
+            ESP_LOGI(TAG, "URL: %s, size: %d", url, offset);
 
-            // Keep the data ...
-            // In TaskRunning, replace the assignment:
-            if (xSemaphoreTake(http_client->m_fanGate_mutex, portMAX_DELAY) == pdTRUE) {
-                http_client->m_fanGate = sptr_buffer;
+            // Copy only the actual data into a right-sized heap allocation
+            buffer = std::make_shared<char[]>(offset + 1);
+            memcpy(buffer.get(), s_read_buf, offset + 1);
+
+            if (pdTRUE == xSemaphoreTake(http_client->m_fanGate_mutex, portMAX_DELAY))
+            {
+                http_client->m_fanGate = buffer;
                 http_client->m_last_update_ticks = xTaskGetTickCount();
                 xSemaphoreGive(http_client->m_fanGate_mutex);
             }
@@ -135,23 +154,26 @@ void HttpClient::TaskRunning(void* arg)
         } while(false);
 
         // Cleanup
-        if (h != NULL) {
+        if (nullptr != h)
+        {
             esp_http_client_close(h);
             esp_http_client_cleanup(h);
         }
 
         // Fast retry (30s)
-        if (error && fast_attempt-- >= 0) {
+        if (error && fast_attempt-- >= 0)
+        {
             ESP_LOGI(TAG, "Fast attempt in 30 s");
             vTaskDelay(pdMS_TO_TICKS(30*1000));
         }
         // Wait 10 minutes
-        else {
+        else
+        {
             fast_attempt = FWCONFIG_HTTPCLIENT_FASTATTEMPT_COUNT;
             ESP_LOGI(TAG, "Next refresh in 10 min");
             vTaskDelay(pdMS_TO_TICKS(10*60*1000));
         }
     }
-    http_client->m_task_http_client_handle = NULL;
-    vTaskDelete(NULL);
+    http_client->m_task_http_client_handle = nullptr;
+    vTaskDelete(nullptr);
 }
