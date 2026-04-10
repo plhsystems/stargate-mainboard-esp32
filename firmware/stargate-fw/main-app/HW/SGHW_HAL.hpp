@@ -91,7 +91,7 @@ class SGHW_HAL
     virtual void SendMp3PlayerCMD(const char* cmd) { }
 
     // Stepper
-    virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) { return false;};
+    virtual bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count, const volatile bool* cancel_flag = nullptr) { return false;};
 
     virtual bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms) { return false;};
 };

@@ -90,7 +90,7 @@ void PinkySGHW::Init()
     #if CONFIG_UART_ISR_IN_IRAM
     intr_alloc_flags = ESP_INTR_FLAG_IRAM;
     #endif
-    ESP_ERROR_CHECK(uart_driver_install(MP3PLAYER_PORT_NUM, MP3PLAYER_BUFFSIZE * 2, 0, 0, NULL, intr_alloc_flags));
+    ESP_ERROR_CHECK(uart_driver_install(MP3PLAYER_PORT_NUM, MP3PLAYER_BUFFSIZE * 2, 0, 0, nullptr, intr_alloc_flags));
     ESP_ERROR_CHECK(uart_param_config(MP3PLAYER_PORT_NUM, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(MP3PLAYER_PORT_NUM, MP3PLAYER_TX2RXD, MP3PLAYER_RX2TXD, -1, -1));
 
@@ -210,10 +210,10 @@ void PinkySGHW::SetChevronLight(EChevron chevron, bool state)
     // No such things on the pinky board.
 }
 
-void PinkySGHW::SetRampLight(double dPerc)
+void PinkySGHW::SetRampLight(double perc)
 {
     LockMutex();
-    ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 4095 * dPerc));
+    ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 4095 * perc));
     // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
     UnlockMutex();
@@ -253,16 +253,16 @@ void PinkySGHW::PowerUpServo()
     SetServo(m_last_servo_position);
 }
 
-void PinkySGHW::SetServo(double dPosition)
+void PinkySGHW::SetServo(double position)
 {
     LockMutex();
     // Convert position (0.0 to 1.0) to pulse width
     // Servo typically needs 1000us (1ms) to 2000us (2ms) pulse width
     // Center is at 1500us (1.5ms)
-    const uint32_t pulse_width_us = 1000 + (uint32_t)(dPosition * 1000);
+    const uint32_t pulse_width_us = 1000 + (uint32_t)(position * 1000);
     ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(m_servo.comparator, pulse_width_us));
-    m_last_servo_position = dPosition;
-    ESP_LOGI(TAG, "pulse_width_us: %lu pos: %f", pulse_width_us, (float)dPosition);
+    m_last_servo_position = position;
+    ESP_LOGI(TAG, "pulse_width_us: %lu pos: %f", pulse_width_us, (float)position);
     UnlockMutex();
 }
 
@@ -325,28 +325,34 @@ void PinkySGHW::SendMp3PlayerCMD(const char* cmd)
     uart_write_bytes(MP3PLAYER_PORT_NUM, (const char *)cmd, strlen(cmd));
 }
 
-bool PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count)
+bool PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count, const volatile bool* cancel_flag)
 {
-    TickType_t ttStart = xTaskGetTickCount();
+    const TickType_t start_tick = xTaskGetTickCount();
     bool old_sensor_state = GetIsHomeSensorActive();
 
-    while ((xTaskGetTickCount() - ttStart) < pdMS_TO_TICKS(timeout_ms))
+    while ((xTaskGetTickCount() - start_tick) < pdMS_TO_TICKS(timeout_ms))
     {
-        /*if (m_bIsCancelAction) {
+        if (nullptr != cancel_flag && *cancel_flag)
+        {
+            ESP_LOGI(TAG, "SpinUntil cancelled");
             return false;
-        }*/
+        }
 
         const bool new_home_sensor_state = GetIsHomeSensorActive();
 
-        if (spin_direction == ESpinDirection::CCW) {
+        if (ESpinDirection::CCW == spin_direction)
+        {
             StepStepperCCW();
-            if (ref_tick_count != nullptr) {
+            if (nullptr != ref_tick_count)
+            {
                 (*ref_tick_count)++;
             }
         }
-        if (spin_direction == ESpinDirection::CW) {
+        if (ESpinDirection::CW == spin_direction)
+        {
             StepStepperCW();
-            if (ref_tick_count != nullptr) {
+            if (nullptr != ref_tick_count)
+            {
                 (*ref_tick_count)--;
             }
         }
@@ -358,7 +364,8 @@ bool PinkySGHW::SpinUntil(ESpinDirection spin_direction, ETransition transition,
             ESP_LOGI(TAG, "Rising transition detected");
             return true;
         }
-        else if (ETransition::Failing == transition && is_falling) {
+        else if (ETransition::Failing == transition && is_falling)
+        {
             ESP_LOGI(TAG, "Failing transition detected");
             return true;
         }
@@ -382,22 +389,22 @@ bool PinkySGHW::MoveStepperTo(int32_t ticks, uint32_t timeout_ms)
 
     ESP_ERROR_CHECK(esp_timer_start_once(this->m_stepper.signal_timer_handle, this->m_stepper.period));
 
-    const TickType_t xMaxBlockTime = pdMS_TO_TICKS( timeout_ms );
+    const TickType_t max_block_time = pdMS_TO_TICKS( timeout_ms );
 
     /* Wait to be notified of an interrupt. */
-    uint32_t ulNotifiedValue = 0;
+    uint32_t notified_value = 0;
     ESP_LOGI(TAG, "MoveStepperTo before");
-    const BaseType_t xResult = xTaskNotifyWait(
-        pdFALSE,          /* Don't clear bits on entry. */
-        ULONG_MAX,        /* Clear all bits on exit. */
-        &ulNotifiedValue, /* Stores the notified value. */
-        xMaxBlockTime );
+    const BaseType_t notify_result = xTaskNotifyWait(
+        pdFALSE,           /* Don't clear bits on entry. */
+        ULONG_MAX,         /* Clear all bits on exit. */
+        &notified_value,   /* Stores the notified value. */
+        max_block_time );
     ESP_LOGI(TAG, "MoveStepperTo after");
 
     // No longer need to run the timer ...
     esp_timer_stop(this->m_stepper.signal_timer_handle);
 
-    if( xResult != pdPASS )
+    if (pdPASS != notify_result)
     {
         ESP_LOGE(TAG, "Error, cannot reach it's destination with-in time ...");
         return false;
@@ -410,11 +417,11 @@ IRAM_ATTR void PinkySGHW::tmr_signal_callback(void* arg)
     PinkySGHW* gc = (PinkySGHW*)arg;
     Stepper* step = (Stepper*)&gc->m_stepper;
 
-    static BaseType_t xHigherPriorityTaskWoken;
+    static BaseType_t higher_priority_task_woken;
 
-    xHigherPriorityTaskWoken = pdFALSE;
+    higher_priority_task_woken = pdFALSE;
 
-    const int32_t s32 = MISCMACRO_MIN(abs(step->count) , abs(step->target - step->count));
+    const int32_t ramp_pos = MISCMACRO_MIN(abs(step->count) , abs(step->target - step->count));
     /* I just did some tests until I was satisfied */
     /* #1 (100, 1000), (1400, 300)
         a = -0.53846153846153846153846153846154
@@ -424,35 +431,44 @@ IRAM_ATTR void PinkySGHW::tmr_signal_callback(void* arg)
         b = 738.44 */
     const int32_t a = -400;
     const int32_t b = 1400000;
-    step->period = (a * s32 + b)/1000;
+    step->period = (a * ramp_pos + b)/1000;
 
     // I hoped it would reduce jitter.
     step->period = (step->period / 50) * 50;
 
-    if (step->period < 600)
+    if (600 > step->period)
+    {
         step->period = 600;
-    if (step->period > 1600)
+    }
+    if (1600 < step->period)
+    {
         step->period = 1600;
+    }
 
     // Wait until the period go to low before considering it finished
-    if (step->target == step->count)
+    if (step->count == step->target)
     {
         xTaskNotifyFromISR( step->task_control_handle,
             STEPEND_BIT,
             eSetBits,
-            &xHigherPriorityTaskWoken );
+            &higher_priority_task_woken );
     }
-    else {
+    else
+    {
         // Count every two
         if (step->is_ccw)
+        {
             gc->StepStepperCCW();
+        }
         else
+        {
             gc->StepStepperCW();
+        }
 
         step->count++;
 
         ESP_ERROR_CHECK(esp_timer_start_once(step->signal_timer_handle, step->period));
     }
 
-    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( higher_priority_task_woken );
 }

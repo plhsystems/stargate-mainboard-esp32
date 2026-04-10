@@ -64,7 +64,7 @@ class PinkySGHW : public SGHW_HAL
     void SendMp3PlayerCMD(const char* cmd) override;
 
     // Stepper
-    bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count) override;
+    bool SpinUntil(ESpinDirection spin_direction, ETransition transition, uint32_t timeout_ms, int32_t* ref_tick_count, const volatile bool* cancel_flag = nullptr) override;
     bool MoveStepperTo(int32_t ticks, uint32_t timeout_ms) override;
 
     private:
