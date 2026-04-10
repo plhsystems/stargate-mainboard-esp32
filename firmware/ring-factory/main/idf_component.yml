@@ -1,6 +1,7 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/led_strip: "*"
+  espressif/cjson: "*"
   ## Required IDF version
   idf:
     version: ">=5.3.0"
