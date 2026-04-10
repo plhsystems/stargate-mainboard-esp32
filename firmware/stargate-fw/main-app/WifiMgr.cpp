@@ -9,12 +9,15 @@ static const char* TAG = "WifiMgr";
 void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     // WifiMgr* wifi_mgr = (WifiMgr*)arg;
-    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+    if (WIFI_EVENT_AP_STACONNECTED == event_id)
+    {
         wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
         ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x join, AID=%d",
                  event->mac[0], event->mac[1],event->mac[2], event->mac[3],event->mac[4], event->mac[5],
                  (int)event->aid);
-    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    }
+    else if (WIFI_EVENT_AP_STADISCONNECTED == event_id)
+    {
         wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
         ESP_LOGI(TAG, "station %02x:%02x:%02x:%02x:%02x:%02x leave, AID=%d",
                  event->mac[0], event->mac[1],event->mac[2], event->mac[3],event->mac[4], event->mac[5],
@@ -25,24 +28,32 @@ void WifiMgr::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t
 void WifiMgr::wifistation_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     WifiMgr* wifi_mgr = (WifiMgr*)arg;
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    if (WIFI_EVENT == event_base && WIFI_EVENT_STA_START == event_id)
+    {
         wifi_mgr->m_wifi_sta_state = EState::Connecting;
         esp_wifi_connect();
-     }
-     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED ) {
+    }
+    else if (WIFI_EVENT == event_base && WIFI_EVENT_STA_CONNECTED == event_id)
+    {
         ESP_LOGI(TAG, "Connected to the AP");
         esp_netif_create_ip6_linklocal(wifi_mgr->m_wifi_sta);
         wifi_mgr->m_wifi_sta_state = EState::Connected;
-     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    }
+    else if (WIFI_EVENT == event_base && WIFI_EVENT_STA_DISCONNECTED == event_id)
+    {
         wifi_mgr->m_wifi_sta_state = EState::Connecting;
         //TODO add a timer
         esp_wifi_connect();
         ESP_LOGI(TAG, "connect to the AP faile, retry to connect to the AP");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    }
+    else if (IP_EVENT == event_base && IP_EVENT_STA_GOT_IP == event_id)
+    {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_GOT_IP6) {
-        ip_event_got_ip6_t *event = (ip_event_got_ip6_t *)event_data;
+    }
+    else if (IP_EVENT == event_base && IP_EVENT_GOT_IP6 == event_id)
+    {
+        ip_event_got_ip6_t* event = (ip_event_got_ip6_t*)event_data;
         ESP_LOGI(TAG, "Got IPv6 address " IPV6STR, IPV62STR(event->ip6_info.ip));
     }
 }
@@ -52,8 +63,8 @@ void WifiMgr::Init()
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    const bool isWiFiSTA = Settings::getI().GetValueInt32(Settings::Entry::WSTAIsActive) == 1;
-    if (isWiFiSTA)
+    const bool is_wifi_sta = 1 == Settings::getI().GetValueInt32(Settings::Entry::WSTAIsActive);
+    if (is_wifi_sta)
     {
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
     }
@@ -65,19 +76,19 @@ void WifiMgr::Init()
     // Access point mode
     m_wifi_soft_ap = esp_netif_create_default_wifi_ap();
 
-    esp_netif_ip_info_t ipInfo;
-    IP4_ADDR(&ipInfo.ip, 192, 168, 66, 1);
-	IP4_ADDR(&ipInfo.gw, 192, 168, 66, 1);
-	IP4_ADDR(&ipInfo.netmask, 255, 255, 255, 0);
+    esp_netif_ip_info_t ip_info;
+    IP4_ADDR(&ip_info.ip, 192, 168, 66, 1);
+	IP4_ADDR(&ip_info.gw, 192, 168, 66, 1);
+	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
 	esp_netif_dhcps_stop(m_wifi_soft_ap);
-	esp_netif_set_ip_info(m_wifi_soft_ap, &ipInfo);
+	esp_netif_set_ip_info(m_wifi_soft_ap, &ip_info);
 	esp_netif_dhcps_start(m_wifi_soft_ap);
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
                                                         &wifi_event_handler,
                                                         this,
-                                                        NULL));
+                                                        nullptr));
 
     wifi_config_t wifi_configAP;
     memset(&wifi_configAP, 0, sizeof(wifi_configAP));
@@ -90,10 +101,11 @@ void WifiMgr::Init()
     //esp_read_mac(macAddr, ESP_MAC_WIFI_SOFTAP);
     //sprintf((char*)wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_SSID_BASE, macAddr[3], macAddr[4], macAddr[5]);
     strcpy((char*)wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_SSID);
-    int n = strlen((const char*)wifi_configAP.ap.ssid);
+    const int n = strlen((const char*)wifi_configAP.ap.ssid);
     wifi_configAP.ap.ssid_len = n;
 
-    if (strlen((const char*)FWCONFIG_SOFTAP_WIFI_PASS) == 0) {
+    if (0 == strlen((const char*)FWCONFIG_SOFTAP_WIFI_PASS))
+    {
         wifi_configAP.ap.authmode = WIFI_AUTH_OPEN;
     }
 
@@ -103,7 +115,7 @@ void WifiMgr::Init()
     ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s",
              wifi_configAP.ap.ssid, FWCONFIG_SOFTAP_WIFI_PASS);
 
-    if (isWiFiSTA)
+    if (is_wifi_sta)
     {
         m_wifi_sta = esp_netif_create_default_wifi_sta();
 
@@ -133,10 +145,10 @@ void WifiMgr::Init()
         wifi_configSTA.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;
         wifi_configSTA.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
 
-        size_t staSSIDLength = 32;
-        Settings::getI().GetValueString(Settings::Entry::WSTASSID, (char*)wifi_configSTA.sta.ssid, &staSSIDLength);
-        size_t staPassLength = 64;
-        Settings::getI().GetValueString(Settings::Entry::WSTAPass, (char*)wifi_configSTA.sta.password, &staPassLength);
+        size_t sta_ssid_length = 32;
+        Settings::getI().GetValueString(Settings::Entry::WSTASSID, (char*)wifi_configSTA.sta.ssid, &sta_ssid_length);
+        size_t sta_pass_length = 64;
+        Settings::getI().GetValueString(Settings::Entry::WSTAPass, (char*)wifi_configSTA.sta.password, &sta_pass_length);
 
         ESP_LOGI(TAG, "STA mode is active, attempt to connect to ssid: %s", wifi_configSTA.sta.ssid);
 
@@ -159,7 +171,8 @@ void WifiMgr::Start()
 
 bool WifiMgr::GetWiFiSTAIP(esp_netif_ip_info_t& outIP)
 {
-    if (m_wifi_sta != NULL) {
+    if (nullptr != m_wifi_sta)
+    {
         esp_netif_get_ip_info(m_wifi_sta, &outIP);
         return true;
     }
@@ -168,7 +181,8 @@ bool WifiMgr::GetWiFiSTAIP(esp_netif_ip_info_t& outIP)
 
 bool WifiMgr::GetWiFiSoftAPIP(esp_netif_ip_info_t& outIP)
 {
-    if (m_wifi_soft_ap != NULL) {
+    if (nullptr != m_wifi_soft_ap)
+    {
         esp_netif_get_ip_info(m_wifi_soft_ap, &outIP);
         return true;
     }
@@ -177,7 +191,8 @@ bool WifiMgr::GetWiFiSoftAPIP(esp_netif_ip_info_t& outIP)
 
 int32_t WifiMgr::GetWiFiSTAIPv6(esp_ip6_addr_t if_ip6[CONFIG_LWIP_IPV6_NUM_ADDRESSES])
 {
-    if (m_wifi_sta != NULL) {
+    if (nullptr != m_wifi_sta)
+    {
         return esp_netif_get_all_ip6(m_wifi_sta, if_ip6);
     }
     return 0;

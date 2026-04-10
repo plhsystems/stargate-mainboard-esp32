@@ -22,10 +22,10 @@ void GateControl::Init(SGHW_HAL* sghw_hal)
 
 void GateControl::StartTask()
 {
-	if (xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_gate_control_handle, FWCONFIG_GATECONTROL_COREID) != pdPASS )
-	{
-		ESP_ERROR_CHECK(ESP_FAIL);
-	}
+    if (pdPASS != xTaskCreatePinnedToCore(TaskRunning, "GateControl", FWCONFIG_GATECONTROL_STACKSIZE, (void*)this, FWCONFIG_GATECONTROL_PRIORITY_DEFAULT, &m_gate_control_handle, FWCONFIG_GATECONTROL_COREID))
+    {
+        ESP_ERROR_CHECK(ESP_FAIL);
+    }
 }
 
 void GateControl::QueueAutoHome()
@@ -85,7 +85,7 @@ void GateControl::TaskRunning(void* arg)
         gc->m_next_cmd.cmd = ECmd::Idle;   // Reset the command "queue"
         xSemaphoreGive(gc->m_semaphore_handle);
 
-        if (gc->m_curr_cmd.cmd == ECmd::Idle)
+        if (ECmd::Idle == gc->m_curr_cmd.cmd)
         {
             // TODO: Will be replaced by a manual event.
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -173,7 +173,7 @@ void GateControl::TaskRunning(void* arg)
                     while (!gc->m_is_cancel_action)
                     {
                         // Unlimited time, it violate laws of physics! (AKA the needs of the plot)
-                        SGResult wm_result = wm.RunTicks();
+                        const SGResult wm_result = wm.RunTicks();
                         if (SGResult::OK != wm_result)
                         {
                             result = wm_result;
@@ -197,11 +197,11 @@ void GateControl::TaskRunning(void* arg)
 
         if (SGResult::OK != result)
         {
-            ESP_LOGE(TAG, "Error occurred: %s (code: %d)", GetSGResultText(result), (int)result);
+            ESP_LOGE(TAG, "Error occurred: %s (code: %d)", getSGResultText(result), (int)result);
 
             // To be displayed into the web page.
             xSemaphoreTake(gc->m_semaphore_handle, portMAX_DELAY);
-            strncpy(gc->m_errors, GetSGResultText(result), ERROR_LEN);
+            strncpy(gc->m_errors, getSGResultText(result), ERROR_LEN);
             gc->m_last_error_code = result;
             gc->m_is_in_error = true;
             xSemaphoreGive(gc->m_semaphore_handle);
@@ -225,17 +225,19 @@ SGResult GateControl::AutoCalibrate()
         ReleaseClamp();
 
         ESP_LOGI(TAG, "Finding home in progress");
-        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
-            ESP_LOGE(TAG, "Calibration failed: timeout finding first home position");
-            result = SGResult::Timeout;
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr, &m_is_cancel_action))
+        {
+            ESP_LOGE(TAG, "Calibration failed: %s finding first home position", m_is_cancel_action ? "cancelled" : "timeout");
+            result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
             break;
         }
 
         ESP_LOGI(TAG, "Home has been found once");
         int32_t new_steps_per_rotation = 0;
-        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation)) {
-            ESP_LOGE(TAG, "Calibration failed: timeout finding second home position");
-            result = SGResult::Timeout;
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, &new_steps_per_rotation, &m_is_cancel_action))
+        {
+            ESP_LOGE(TAG, "Calibration failed: %s finding second home position", m_is_cancel_action ? "cancelled" : "timeout");
+            result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
             break;
         }
 
@@ -245,14 +247,16 @@ SGResult GateControl::AutoCalibrate()
         // Continue to move until it get out of the home range.
         int32_t gap = 0;
 
-        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap)) {
-            ESP_LOGE(TAG, "Calibration failed: timeout measuring gap (failing edge)");
-            result = SGResult::Timeout;
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Failing, timeout, &gap, &m_is_cancel_action))
+        {
+            ESP_LOGE(TAG, "Calibration failed: %s measuring gap (failing edge)", m_is_cancel_action ? "cancelled" : "timeout");
+            result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
             break;
         }
-        if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap)) {
-            ESP_LOGE(TAG, "Calibration failed: timeout measuring gap (rising edge)");
-            result = SGResult::Timeout;
+        if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Rising, timeout, &gap, &m_is_cancel_action))
+        {
+            ESP_LOGE(TAG, "Calibration failed: %s measuring gap (rising edge)", m_is_cancel_action ? "cancelled" : "timeout");
+            result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
             break;
         }
 
@@ -271,7 +275,8 @@ SGResult GateControl::AutoCalibrate()
         result = SGResult::OK;
     } while(false);
 
-    if (result != SGResult::OK) {
+    if (SGResult::OK != result)
+    {
         // Cleanup on error
         m_sghw_hal->PowerDownStepper();
         LockClamp();
@@ -290,7 +295,7 @@ SGResult GateControl::AutoHome()
 
         const int32_t new_steps_per_rotation = Settings::getI().GetValueInt32(Settings::Entry::StepsPerRotation);
         const int32_t gap = Settings::getI().GetValueInt32(Settings::Entry::RingHomeGapRange);
-        if (new_steps_per_rotation == 0 || gap == 0)
+        if (0 == new_steps_per_rotation || 0 == gap)
         {
             ESP_LOGE(TAG, "Homing failed: calibration not done");
             result = SGResult::NotCalibrated;
@@ -300,25 +305,30 @@ SGResult GateControl::AutoHome()
         const uint32_t timeout = Settings::getI().GetValueInt32(Settings::Entry::RingCalibTimeout);
 
         // If the ring is already near the home sensor, we just need to move a little bit.
-        if (m_sghw_hal->GetIsHomeSensorActive()) {
+        if (m_sghw_hal->GetIsHomeSensorActive())
+        {
             ESP_LOGI(TAG, "Homing using the fast algorithm");
 
-            if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr)) {
-                ESP_LOGE(TAG, "Homing failed: timeout exiting home zone");
-                result = SGResult::Timeout;
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CW, ETransition::Failing, timeout, nullptr, &m_is_cancel_action))
+            {
+                ESP_LOGE(TAG, "Homing failed: %s exiting home zone", m_is_cancel_action ? "cancelled" : "timeout");
+                result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
                 break;
             }
-            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
-                ESP_LOGE(TAG, "Homing failed: timeout re-entering home zone");
-                result = SGResult::Timeout;
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr, &m_is_cancel_action))
+            {
+                ESP_LOGE(TAG, "Homing failed: %s re-entering home zone", m_is_cancel_action ? "cancelled" : "timeout");
+                result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
                 break;
             }
         }
-        else {
+        else
+        {
             ESP_LOGI(TAG, "Homing using the slow algorithm");
-            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr)) {
-                ESP_LOGE(TAG, "Homing failed: timeout searching for home zone");
-                result = SGResult::Timeout;
+            if (!m_sghw_hal->SpinUntil(ESpinDirection::CCW, ETransition::Rising, timeout, nullptr, &m_is_cancel_action))
+            {
+                ESP_LOGE(TAG, "Homing failed: %s searching for home zone", m_is_cancel_action ? "cancelled" : "timeout");
+                result = m_is_cancel_action ? SGResult::Cancelled : SGResult::Timeout;
                 break;
             }
         }
@@ -343,7 +353,8 @@ SGResult GateControl::AutoHome()
         result = SGResult::OK;
     } while(false);
 
-    if (result != SGResult::OK) {
+    if (SGResult::OK != result)
+    {
         LockClamp();
         // Go into the other direction until it get out of the sensor
         m_sghw_hal->PowerDownStepper();
@@ -358,25 +369,30 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
     SGResult result = SGResult::HardwareFailure;
     bool process_started = false;
 
-    auto endOfProcess = [&](bool is_error) -> void
+    auto end_of_process = [&](bool is_error) -> void
     {
         vTaskDelay(pdMS_TO_TICKS(500));
-        if (is_error) {
+        if (is_error)
+        {
             RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_ErrorToOff);
             SoundFX::getI().PlaySound(SoundFX::FileID::SGU_7_lockfail, false);
-        } else {
+        }
+        else
+        {
             RingBLEClient::getI().SendGateAnimation(SGUCommNS::EChevronAnimation::Chevron_FadeOut);
         }
         AnimRampLight(false);
 
-        if (!is_error) {
+        if (!is_error)
+        {
             // If no error happened, just wait a little bit for the effect.
             vTaskDelay(pdMS_TO_TICKS(5000));
         }
         // Go back to home position
         ESP_LOGI(TAG, "Move near the home position");
         const int32_t move_ticks = MISCFA_CircleDiffd32(m_current_position_ticks, 0, new_steps_per_rotation);
-        if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+        if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000))
+        {
             return;
         }
 
@@ -395,7 +411,8 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
         ReleaseClamp();
         process_started = true;
 
-        if (!m_is_homing_done) {
+        if (!m_is_homing_done)
+        {
             ESP_LOGE(TAG, "Dial failed: homing not done");
             result = SGResult::NotHomed;
             break;
@@ -411,7 +428,8 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
         // const EChevron chevrons[] = { EChevron::Chevron1, EChevron::Chevron2, EChevron::Chevron3, EChevron::Chevron4, EChevron::Chevron5, EChevron::Chevron6, EChevron::Chevron7_Master, EChevron::Chevron8, EChevron::Chevron9 };
         for(int32_t i = 0; i < dial_arg.gate_address.GetSymbolCount(); i++)
         {
-            if (m_is_cancel_action) {
+            if (m_is_cancel_action)
+            {
                 ESP_LOGW(TAG, "Dial cancelled by user at symbol %d", (int)i);
                 result = SGResult::Cancelled;
                 dial_loop_ok = false;
@@ -430,7 +448,8 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
             ESP_LOGI(TAG, "led index: %" PRId32 ", angle: %.2f, symbol2Ticks: %" PRId32, led_index, angle, symbol_to_ticks);
             SoundFX::getI().PlaySound(SoundFX::FileID::SGU_6_lggroll, true);
             vTaskDelay(pdMS_TO_TICKS(250));
-            if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000)) {
+            if (!m_sghw_hal->MoveStepperTo(move_ticks, 30000))
+            {
                 ESP_LOGE(TAG, "Dial failed: motor timeout at symbol %d", (int)i);
                 result = SGResult::Timeout;
                 dial_loop_ok = false;
@@ -446,8 +465,10 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
             vTaskDelay(pdMS_TO_TICKS(2000));
         }
 
-        if (!dial_loop_ok || m_is_cancel_action) {
-            if (m_is_cancel_action && result == SGResult::OK) {
+        if (!dial_loop_ok || m_is_cancel_action)
+        {
+            if (m_is_cancel_action && SGResult::OK == result)
+            {
                 result = SGResult::Cancelled;
             }
             break;
@@ -466,7 +487,7 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
             {
                 break;
             }
-            SGResult wm_result = wm.RunTicks();
+            const SGResult wm_result = wm.RunTicks();
             if (SGResult::OK != wm_result)
             {
                 result = wm_result;
@@ -483,8 +504,9 @@ SGResult GateControl::DialAddress(const SDialArg& dial_arg)
         result = SGResult::OK;
     } while(false);
 
-    if (process_started) {
-        endOfProcess(result != SGResult::OK);
+    if (process_started)
+    {
+        end_of_process(SGResult::OK != result);
     }
 
     return result;
@@ -496,15 +518,19 @@ void GateControl::AnimRampLight(bool is_active)
     const float pwm_on = (float)Settings::getI().GetValueInt32(Settings::Entry::RampOnPercent) / 100.0f;
     const float inc = 0.005f;
 
-    if (is_active) {
-        for(float value = 0.0f; value <= 1.0f; value += inc) {
+    if (is_active)
+    {
+        for(float value = 0.0f; value <= 1.0f; value += inc)
+        {
             // Log corrected
             m_sghw_hal->SetRampLight(MISCFA_LinearizeLEDOutput(value)*pwm_on);
             vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
-    else {
-        for(float value = 1.0f; value >= 0.0f; value -= inc) {
+    else
+    {
+        for(float value = 1.0f; value >= 0.0f; value -= inc)
+        {
             m_sghw_hal->SetRampLight(MISCFA_LinearizeLEDOutput(value)*pwm_on);
             vTaskDelay(pdMS_TO_TICKS(5));
         }

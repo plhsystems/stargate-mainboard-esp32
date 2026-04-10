@@ -75,7 +75,8 @@ void WebServer::Start()
 {
     // Start the httpd server
     ESP_LOGI(TAG, "Starting server on port: '%d'", m_config.server_port);
-    if (httpd_start(&m_server, &m_config) == ESP_OK) {
+    if (ESP_OK == httpd_start(&m_server, &m_config))
+    {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(m_server, &m_http_ota_upload_post);
@@ -90,30 +91,50 @@ void WebServer::Start()
     (strcasecmp(&filename[strlen(filename) - sizeof(ext) + 1], ext) == 0)
 
 /* Set HTTP response content type according to file extension */
-esp_err_t WebServer::set_content_type_from_file(httpd_req_t *req, const char *filename)
+esp_err_t WebServer::set_content_type_from_file(httpd_req_t* req, const char* filename)
 {
-    if (IS_FILE_EXT(filename, ".pdf")) {
+    if (IS_FILE_EXT(filename, ".pdf"))
+    {
         return httpd_resp_set_type(req, "application/pdf");
-    } else if (IS_FILE_EXT(filename, ".ico")) {
+    }
+    else if (IS_FILE_EXT(filename, ".ico"))
+    {
         return httpd_resp_set_type(req, "image/x-icon");
-    } else if (IS_FILE_EXT(filename, ".css")) {
+    }
+    else if (IS_FILE_EXT(filename, ".css"))
+    {
         return httpd_resp_set_type(req, "text/css");
-    } else if (IS_FILE_EXT(filename, ".txt")) {
+    }
+    else if (IS_FILE_EXT(filename, ".txt"))
+    {
         return httpd_resp_set_type(req, "text/plain");
-    } else if (IS_FILE_EXT(filename, ".js")) {
+    }
+    else if (IS_FILE_EXT(filename, ".js"))
+    {
         return httpd_resp_set_type(req, "text/javascript");
-    } else if (IS_FILE_EXT(filename, ".json")) {
+    }
+    else if (IS_FILE_EXT(filename, ".json"))
+    {
         return httpd_resp_set_type(req, "application/json");
-    } else if (IS_FILE_EXT(filename, ".ttf")) {
+    }
+    else if (IS_FILE_EXT(filename, ".ttf"))
+    {
         return httpd_resp_set_type(req, "application/x-font-truetype");
-    } else if (IS_FILE_EXT(filename, ".woff")) {
+    }
+    else if (IS_FILE_EXT(filename, ".woff"))
+    {
         return httpd_resp_set_type(req, "application/font-woff");
-    } else if (IS_FILE_EXT(filename, ".html") || IS_FILE_EXT(filename, ".htm")) {
+    }
+    else if (IS_FILE_EXT(filename, ".html") || IS_FILE_EXT(filename, ".htm"))
+    {
         return httpd_resp_set_type(req, "text/html");
-    } else if (IS_FILE_EXT(filename, ".jpeg") || IS_FILE_EXT(filename, ".jpg")) {
+    }
+    else if (IS_FILE_EXT(filename, ".jpeg") || IS_FILE_EXT(filename, ".jpg"))
+    {
         return httpd_resp_set_type(req, "image/jpeg");
     }
-    else if (IS_FILE_EXT(filename, ".svg")) {
+    else if (IS_FILE_EXT(filename, ".svg"))
+    {
         return httpd_resp_set_type(req, "image/svg+xml");
     }
     /* This is a limited set only */
@@ -123,10 +144,10 @@ esp_err_t WebServer::set_content_type_from_file(httpd_req_t *req, const char *fi
 }
 
 /* An HTTP GET handler */
-esp_err_t WebServer::file_get_handler(httpd_req_t *req)
+esp_err_t WebServer::file_get_handler(httpd_req_t* req)
 {
     // Redirect root to index.html
-    if (strcmp(req->uri, "/") == 0)
+    if (0 == strcmp(req->uri, "/"))
     {
         // Remember, browser keep 301 in cache so be careful
         ESP_LOGW(TAG, "Redirect URI: '%s', to '%s'", req->uri, DEFAULT_RELATIVE_URI);
@@ -134,14 +155,14 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
         httpd_resp_set_type(req, "text/html");
         httpd_resp_set_status(req, "301 Moved Permanently");
         httpd_resp_set_hdr(req, "Location", DEFAULT_RELATIVE_URI);
-        httpd_resp_send(req, NULL, 0);
+        httpd_resp_send(req, nullptr, 0);
         return ESP_OK;
     }
 
     ESP_LOGI(TAG, "Opening file uri: %s", req->uri);
 
     const EF_SFile* file = GetFile(req->uri+1);
-    if (file == NULL)
+    if (nullptr == file)
     {
         ESP_LOGE(TAG, "Failed to open file for reading");
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File does not exist");
@@ -164,22 +185,24 @@ esp_err_t WebServer::file_get_handler(httpd_req_t *req)
     {
         const uint32_t n = MISCMACRO_MIN(send_length - index, HTTPSERVER_BUFFERSIZE);
 
-        if (n > 0) {
+        if (0 < n)
+        {
             /* Send the buffer contents as HTTP response m_buffers */
-            if (httpd_resp_send_chunk(req, (char*)(file->start_addr + index), n) != ESP_OK) {
+            if (ESP_OK != httpd_resp_send_chunk(req, (char*)(file->start_addr + index), n))
+            {
                 ESP_LOGE(TAG, "File sending failed!");
                 /* Abort sending file */
-                httpd_resp_sendstr_chunk(req, NULL);
+                httpd_resp_sendstr_chunk(req, nullptr);
                 /* Respond with 500 Internal Server Error */
                 httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
-               return ESP_FAIL;
-           }
+                return ESP_FAIL;
+            }
         }
         index += n;
     }
 
     httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_send_chunk(req, NULL, 0);
+    httpd_resp_send_chunk(req, nullptr, 0);
     return ESP_OK;
 }
 
@@ -188,14 +211,16 @@ const EF_SFile* WebServer::GetFile(const char* filename)
     for(int i = 0; i < EF_EFILE_COUNT; i++)
     {
         const EF_SFile* file = &EF_g_files[i];
-        if (strcmp(file->filename, filename) == 0)
+        if (0 == strcmp(file->filename, filename))
+        {
             return file;
+        }
     }
-    return NULL;
+    return nullptr;
 }
 
 // WebSocket handler
-esp_err_t WebServer::WebSocketHandler(httpd_req_t *req)
+esp_err_t WebServer::WebSocketHandler(httpd_req_t* req)
 {
     if (HTTP_GET == req->method)
     {
@@ -220,8 +245,8 @@ esp_err_t WebServer::WebSocketHandler(httpd_req_t *req)
     if (ws_pkt.len)
     {
         // Allocate buffer for frame payload
-        uint8_t *buf = (uint8_t*)calloc(1, ws_pkt.len + 1);
-        if (NULL == buf)
+        uint8_t* buf = (uint8_t*)calloc(1, ws_pkt.len + 1);
+        if (nullptr == buf)
         {
             ESP_LOGE(TAG, "Failed to allocate memory for ws frame");
             return ESP_ERR_NO_MEM;
@@ -256,7 +281,7 @@ esp_err_t WebServer::WebSocketHandler(httpd_req_t *req)
             {
                 // Get status and send it back
                 char* status_json = WebServer::getI().GetStatus();
-                if (NULL != status_json)
+                if (nullptr != status_json)
                 {
                     httpd_ws_frame_t ws_resp;
                     memset(&ws_resp, 0, sizeof(httpd_ws_frame_t));

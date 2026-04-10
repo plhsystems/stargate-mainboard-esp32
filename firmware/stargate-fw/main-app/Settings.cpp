@@ -70,5 +70,5 @@ bool Settings::ImportJSON(const char* json)
 bool Settings::ValidateWifiPassword(const NVSJSON_SSettingEntry* setting_entry, const char* value)
 {
     const size_t n = strlen(value);
-    return n > 8 || n == 0;
+    return 8 < n || 0 == n;
 }

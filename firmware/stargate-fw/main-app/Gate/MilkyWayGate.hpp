@@ -11,7 +11,7 @@ class MilkyWayGate : public BaseGate
 
     inline const GateSymbol& GetSymbol(uint8_t symbol_num) const override
     {
-        if (symbol_num < 1 || symbol_num > m_symbol_count)
+        if (1 > symbol_num || m_symbol_count < symbol_num)
             return BaseGate::InvalidSymbol;
         return m_symbols[symbol_num-1];
     }

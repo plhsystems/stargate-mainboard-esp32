@@ -31,3 +31,5 @@ firmware/stargate-fw/pinky-board/dependencies.lock
 
 # Ignore sdkconfig backups
 *.bak
+firmware/stargate-fw/main-app/WebServer/EmbeddedFiles.bin
+firmware/stargate-fw/main-app/WebServer/EmbeddedFiles.c

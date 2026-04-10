@@ -28,10 +28,10 @@ private:
     RingBLEClient();
 
     // Friend functions for BLE callbacks that need access to private members
-    friend void OnBLESync();
-    friend void OnBLEReset(int reason);
-    friend int OnDiscoveryComplete(uint16_t conn_handle, const struct ble_gatt_error *error,
-                                   const struct ble_gatt_chr *chr, void *arg);
+    friend void onBLESync();
+    friend void onBLEReset(int reason);
+    friend int onDiscoveryComplete(uint16_t conn_handle, const struct ble_gatt_error* error,
+                                   const struct ble_gatt_chr* chr, void* arg);
 
 public:
     // Singleton pattern
@@ -105,7 +105,7 @@ public:
     /**
      * @brief GAP event handler
      */
-    static int GapEventHandler(struct ble_gap_event *event, void *arg);
+    static int gapEventHandler(struct ble_gap_event* event, void* arg);
 
 private:
     bool LockMutex() { return (pdTRUE == xSemaphoreTake(m_mutex_handle, (TickType_t)pdMS_TO_TICKS(100))); }
@@ -140,6 +140,7 @@ private:
     uint8_t m_ring_addr[6] = {0};
     uint8_t m_ring_addr_type = 0;
     bool m_ring_found = false;
+    bool m_is_scanning = false;
 
     // Mutex
     StaticSemaphore_t m_mutex_buffer;

@@ -97,7 +97,7 @@ class GateControl
 
     void AbortAction();
 
-    void GetState(UIState& uiState);
+    void GetState(UIState& ui_state);
 
     static GateControl& getI()
     {
